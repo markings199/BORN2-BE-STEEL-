@@ -1,0 +1,144 @@
+const E_DEFAULT_KSI = 29000;
+const PHI_T_DEFAULT = 0.9;
+const PHI_C_DEFAULT = 0.9;
+const PHI_B_DEFAULT = 0.9;
+const PHI_V_DEFAULT = 1.0;
+
+function tensionMember({ Fy, Ag, Pu, phiT = PHI_T_DEFAULT }) {
+  const Pn = Fy * Ag;
+  const phiPn = phiT * Pn;
+  const utilization =
+    Pu !== undefined && phiPn > 0 ? Pu / phiPn : undefined;
+  return {
+    unit: "US customary: Fy (ksi), Ag (in^2), forces (kips), moments (kip-ft)",
+    nominal: { Pn },
+    design: { phiT, phiPn },
+    utilization: utilization !== undefined ? { Pu, ratio: utilization } : undefined,
+    notes: ["Nominal: Pn = Fy*Ag per AISC 360 Chapter D (yielding on gross area)."],
+  };
+}
+
+function tensionRod({ Fy, An, Pu, phiT = PHI_T_DEFAULT }) {
+  const Pn = Fy * An;
+  const phiPn = phiT * Pn;
+  const utilization =
+    Pu !== undefined && phiPn > 0 ? Pu / phiPn : undefined;
+  return {
+    unit: "US customary: Fy (ksi), An (in^2), forces (kips)",
+    nominal: { Pn },
+    design: { phiT, phiPn },
+    utilization: utilization !== undefined ? { Pu, ratio: utilization } : undefined,
+    notes: [
+      "Simplified: Pn = Fy*An on net area; connection/threads not modeled - verify per AISC D.",
+    ],
+  };
+}
+
+function flexuralBucklingStress({ Fy, E, KLr }) {
+  if (KLr <= 0 || !Number.isFinite(KLr)) {
+    const err = new Error("KL/r must be a positive finite number");
+    err.status = 400;
+    throw err;
+  }
+  const Fe = (Math.PI ** 2 * E) / (KLr ** 2);
+  const limit = 4.71 * Math.sqrt(E / Fy);
+  let Fcr;
+  if (KLr <= limit) {
+    const exp = Fy / Fe;
+    Fcr = Math.pow(0.658, exp) * Fy;
+  } else {
+    Fcr = 0.877 * Fe;
+  }
+  return { Fe, Fcr, limitKLr: limit };
+}
+
+function compressionMember({
+  Fy,
+  Ag,
+  K,
+  L,
+  r,
+  E = E_DEFAULT_KSI,
+  Pu,
+  phiC = PHI_C_DEFAULT,
+}) {
+  const KLr = (K * L) / r;
+  const { Fe, Fcr, limitKLr } = flexuralBucklingStress({ Fy, E, KLr });
+  const Pn = Fcr * Ag;
+  const phiPn = phiC * Pn;
+  const utilization =
+    Pu !== undefined && phiPn > 0 ? Pu / phiPn : undefined;
+  return {
+    unit: "US customary: Fy, E (ksi); Ag (in^2); K*L and r (in); forces (kips)",
+    slenderness: { KLr, Fe, limitKLr },
+    nominal: { Fcr, Pn },
+    design: { phiC, phiPn },
+    utilization: utilization !== undefined ? { Pu, ratio: utilization } : undefined,
+    notes: [
+      "Flexural buckling only (AISC 360 E3); no torsional/flexural-torsional checks.",
+    ],
+  };
+}
+
+function bendingCompact({ Fy, Zx, Mu, phiB = PHI_B_DEFAULT }) {
+  const Mn_kip_in = Fy * Zx;
+  const Mn_kip_ft = Mn_kip_in / 12;
+  const phiMn_kip_ft = (phiB * Mn_kip_in) / 12;
+  const utilization =
+    Mu !== undefined && phiMn_kip_ft > 0 ? Mu / phiMn_kip_ft : undefined;
+  return {
+    unit: "US customary: Fy (ksi), Zx (in^3), moments (kip-ft)",
+    nominal: { Mn_kip_in, Mn_kip_ft },
+    design: { phiB, phiMn_kip_ft },
+    utilization: utilization !== undefined ? { Mu, ratio: utilization } : undefined,
+    notes: [
+      "Plastic moment: Mn = Fy*Zx for compact doubly symmetric I-shapes (AISC 360 Chapter F overview).",
+      "Lateral-torsional buckling and flange local buckling not checked here.",
+    ],
+  };
+}
+
+function shearWeb({ Fy, Aw, Vu, phiV = PHI_V_DEFAULT }) {
+  const Vn = 0.6 * Fy * Aw;
+  const phiVn = phiV * Vn;
+  const utilization =
+    Vu !== undefined && phiVn > 0 ? Vu / phiVn : undefined;
+  return {
+    unit: "US customary: Fy (ksi), Aw (in^2), forces (kips)",
+    nominal: { Vn },
+    design: { phiV, phiVn },
+    utilization: utilization !== undefined ? { Vu, ratio: utilization } : undefined,
+    notes: ["Web shear yielding: Vn = 0.6*Fy*Aw (AISC 360 G2.1)."],
+  };
+}
+
+function sectionPropertiesReport(props) {
+  const out = { ...props };
+  const rx =
+    props.Ix !== undefined && props.Ag !== undefined && props.Ag > 0
+      ? Math.sqrt(props.Ix / props.Ag)
+      : undefined;
+  const ry =
+    props.Iy !== undefined && props.Ag !== undefined && props.Ag > 0
+      ? Math.sqrt(props.Iy / props.Ag)
+      : undefined;
+  if (rx !== undefined) out.rx = Number(rx.toFixed(4));
+  if (ry !== undefined) out.ry = Number(ry.toFixed(4));
+  return {
+    unit: "Lengths in inches; Ag (in^2); I (in^4); S, Z (in^3)",
+    properties: out,
+    notes: [
+      "rx = sqrt(Ix/Ag), ry = sqrt(Iy/Ag) when Ix, Iy, and Ag are provided.",
+    ],
+  };
+}
+
+module.exports = {
+  tensionMember,
+  tensionRod,
+  compressionMember,
+  bendingCompact,
+  shearWeb,
+  sectionPropertiesReport,
+  E_DEFAULT_KSI,
+};
