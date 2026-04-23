@@ -231,15 +231,15 @@
 
   // #region agent log
   function sendDebugLog(hypothesisId, location, message, data) {
-    fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
+    fetch("http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Debug-Session-Id": "76664a",
+        "X-Debug-Session-Id": "858e61",
       },
       body: JSON.stringify({
-        sessionId: "76664a",
-        runId: "initial-debug",
+        sessionId: "858e61",
+        runId: "initial",
         hypothesisId: hypothesisId,
         location: location,
         message: message,
@@ -247,6 +247,86 @@
         timestamp: Date.now(),
       }),
     }).catch(function () {});
+  }
+
+  // Capture which exact resource URL triggers the 404.
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener(
+      "error",
+      function (evt) {
+        var target = evt && evt.target ? evt.target : null;
+        var url =
+          target && (target.src || target.href)
+            ? String(target.src || target.href)
+            : null;
+        if (url) {
+          sendDebugLog("H404", "main.js:resource-error", "Resource load error", {
+            url: url,
+            tagName: target && target.tagName ? String(target.tagName) : null,
+          });
+        }
+      },
+      true
+    );
+  }
+
+  // Capture 404s from fetch() calls (API/static endpoints).
+  if (typeof window !== "undefined" && window.fetch && !window.__steelFetchWrapped) {
+    window.__steelFetchWrapped = true;
+    var __steelOrigFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var url = null;
+      try {
+        url = typeof input === "string" ? input : input && input.url ? String(input.url) : null;
+      } catch (e) {
+        url = null;
+      }
+      var method = init && init.method ? String(init.method) : "GET";
+      return __steelOrigFetch(input, init).then(function (res) {
+        if (res && res.status === 404) {
+          sendDebugLog("H404F", "main.js:fetch-wrap", "fetch() returned 404", {
+            url: url,
+            method: method,
+            status: res.status,
+            statusText: res.statusText,
+          });
+        }
+        return res;
+      });
+    };
+  }
+
+  // Capture 404s from XMLHttpRequest() calls.
+  if (typeof window !== "undefined" && window.XMLHttpRequest && !window.__steelXhrWrapped) {
+    window.__steelXhrWrapped = true;
+    var __steelOrigXhrOpen = window.XMLHttpRequest.prototype.open;
+    var __steelOrigXhrSend = window.XMLHttpRequest.prototype.send;
+    window.XMLHttpRequest.prototype.open = function (method, url) {
+      try {
+        this.__steelMethod = method ? String(method) : "GET";
+        this.__steelUrl = url ? String(url) : null;
+      } catch (e) {}
+      return __steelOrigXhrOpen.apply(this, arguments);
+    };
+    window.XMLHttpRequest.prototype.send = function () {
+      var xhr = this;
+      var done = function () {
+        try {
+          if (xhr && xhr.status === 404) {
+            sendDebugLog("H404X", "main.js:xhr-wrap", "XMLHttpRequest returned 404", {
+              url: xhr.responseURL || xhr.__steelUrl || null,
+              method: xhr.__steelMethod || "GET",
+              status: xhr.status,
+              statusText: xhr.statusText,
+            });
+          }
+        } catch (e) {}
+      };
+      try {
+        xhr.addEventListener("loadend", done);
+      } catch (e) {}
+      return __steelOrigXhrSend.apply(this, arguments);
+    };
   }
 
   function logSteelLayout(source) {
@@ -493,6 +573,35 @@
     if (dashboardMain) dashboardMain.classList.toggle("no-card", !showCard);
     // #region agent log
     if (showCard) logSteelLayout("activateSection:steelGradeSection");
+    // #endregion
+
+    // #region agent log
+    // Height diagnostics for full-height pages (Section Props + calculation shells)
+    (function logSectionHeights() {
+      if (!activePanel || !window || !window.fetch) return;
+      var center = document.querySelector(".center-panel");
+      function rect(el) {
+        if (!el || !el.getBoundingClientRect) return null;
+        var r = el.getBoundingClientRect();
+        return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top), bottom: Math.round(r.bottom) };
+      }
+      function px(n) { return Math.round(Number(n) || 0); }
+      function compute() {
+        var shell =
+          activePanel.querySelector(".section-props-dashboard") ||
+          activePanel.querySelector(".tension-shell") ||
+          null;
+        var c = center ? window.getComputedStyle(center) : null;
+        var p = activePanel ? window.getComputedStyle(activePanel) : null;
+        var s = shell ? window.getComputedStyle(shell) : null;
+        var viewportH = window.innerHeight || 0;
+        var activeBottom = activePanel ? activePanel.getBoundingClientRect().bottom : null;
+        var gapToViewport = activeBottom == null ? null : px(viewportH - activeBottom);
+        fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fdf447'},body:JSON.stringify({sessionId:'fdf447',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_FULL_HEIGHT',location:'js/main.js:activateSection:logSectionHeights',message:'Section height snapshot',data:{sectionId:sectionId,viewportH:viewportH,centerRect:rect(center),activePanelRect:rect(activePanel),shellClass:shell?(shell.className||null):null,shellRect:rect(shell),gapToViewport:gapToViewport,styles:{center:{display:c?c.display:null,flex:c?c.flex:null,minHeight:c?c.minHeight:null,height:c?c.height:null},panel:{display:p?p.display:null,flex:p?p.flex:null,minHeight:p?p.minHeight:null,height:p?p.height:null},shell:{display:s?s.display:null,flex:s?s.flex:null,minHeight:s?s.minHeight:null,height:s?s.height:null}}},timestamp:Date.now()})}).catch(()=>{});
+      }
+      if (window.requestAnimationFrame) window.requestAnimationFrame(compute);
+      else compute();
+    })();
     // #endregion
   }
 

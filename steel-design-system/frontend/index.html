@@ -11,14 +11,56 @@
       box-sizing: border-box;
     }
 
+    :root {
+      /* Design tokens (visual-only) */
+      --steel-bg: #d4e6f1;
+      --panel-bg: #fafdff;
+      --card-bg: #f9fcff;
+      --border: rgba(39, 70, 88, 0.55);
+      --border-soft: #cfe3f0;
+      --shadow-sm: 0 2px 10px rgba(17, 55, 75, 0.08);
+      --shadow-md: 0 6px 16px rgba(17, 55, 75, 0.10);
+      --radius-sm: 10px;
+      --radius-md: 12px;
+      --radius-lg: 14px;
+      --space-1: 0.22rem;
+      --space-2: 0.34rem;
+      --space-3: 0.46rem;
+      --space-4: 0.58rem;
+      --space-5: 0.72rem;
+      --focus: rgba(90, 155, 181, 0.25);
+    }
+
+    html, body {
+      height: 100%;
+    }
+
     body {
-      background: #d4e6f1;  /* soft sky blue background */
+      background: var(--steel-bg);  /* soft sky blue background */
       font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
       padding: 0.65rem;
       color: #1a3a4f;
       overflow-x: hidden;
       min-height: 100dvh;
     }
+
+    /* Consistent focus styling across the app */
+    :where(button, a, input, select, textarea):focus {
+      outline: none;
+    }
+    :where(button, a, input, select, textarea):focus-visible {
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+
+    /* Subtle, consistent scrollbars (Chromium/Edge) */
+    *::-webkit-scrollbar { width: 10px; height: 10px; }
+    *::-webkit-scrollbar-track { background: rgba(238, 244, 250, 0.9); border-radius: 10px; }
+    *::-webkit-scrollbar-thumb {
+      background: rgba(90, 155, 181, 0.75);
+      border-radius: 10px;
+      border: 2px solid rgba(238, 244, 250, 0.9);
+    }
+    *::-webkit-scrollbar-thumb:hover { background: rgba(61, 125, 154, 0.85); }
 
     /* main container - white card with sky accents */
     .steel-dashboard {
@@ -31,8 +73,8 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      min-height: calc(100dvh - 1.3rem);
       height: calc(100dvh - 1.3rem);
-      max-height: calc(100dvh - 1.3rem);
     }
 
     /* header - compact tier + reference-style fade line */
@@ -236,19 +278,23 @@
       min-height: 0;
     }
 
-    /* LEFT SIDEBAR - white with sky accents (ANALYSIS TOOLS REMOVED) */
+    /* LEFT SIDEBAR (restyled to soft-blue glassmorphism) */
     .left-nav {
       flex: 0 0 230px;
       max-width: 230px;
       min-width: 210px;
-      background: linear-gradient(180deg, #b8d9ea 0%, #a9d0e3 100%);
-      border-right: 1px solid #8ebed5;
+      background:
+        radial-gradient(240px 240px at 40% 20%, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%),
+        linear-gradient(180deg, rgba(203, 231, 246, 0.95) 0%, rgba(159, 204, 226, 0.92) 100%);
+      border-right: 1px solid rgba(136, 187, 212, 0.55);
       padding: 0;
       border-bottom-right-radius: 14px;
+      border-top-right-radius: 14px;
       display: flex;
       flex-direction: column;
       align-self: stretch;
       min-height: 100%;
+      box-shadow: inset -1px 0 0 rgba(255,255,255,0.45);
     }
     .left-brand-wrap {
       background: linear-gradient(180deg, #1c2a3c 0%, #0f1b2b 100%);
@@ -295,13 +341,18 @@
       transition: 0.2s ease;
       cursor: pointer;
       margin-bottom: 0.35rem;
-      border-radius: 12px;
-      border: 1px solid rgba(90, 155, 181, 0.2);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.55);
       min-height: 46px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.3);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.30));
+      box-shadow:
+        0 10px 22px rgba(17, 55, 75, 0.10),
+        inset 0 1px 0 rgba(255,255,255,0.65);
+      backdrop-filter: blur(10px);
     }
 
     .nav-list li::before {
@@ -309,16 +360,20 @@
     }
 
     .nav-list li.active-nav {
-      background: linear-gradient(135deg, #76c7eb 0%, #67b8dd 100%);
+      background:
+        linear-gradient(135deg, rgba(134, 212, 243, 0.95) 0%, rgba(103, 184, 221, 0.92) 100%);
       color: #0f3144;
       font-weight: 800;
-      border-color: rgba(70, 137, 166, 0.4);
-      box-shadow: 0 3px 10px rgba(78, 148, 180, 0.25);
+      border-color: rgba(255,255,255,0.65);
+      box-shadow:
+        0 14px 26px rgba(35, 120, 155, 0.18),
+        inset 0 1px 0 rgba(255,255,255,0.75);
     }
 
     .nav-list li:not(.active-nav):hover {
-      background: rgba(255, 255, 255, 0.62);
-      border-color: rgba(90, 155, 181, 0.35);
+      transform: translateY(-1px);
+      background: linear-gradient(180deg, rgba(255,255,255,0.66), rgba(255,255,255,0.38));
+      border-color: rgba(255,255,255,0.7);
       color: #12384d;
     }
 
@@ -330,12 +385,50 @@
     .center-panel {
       flex: 1 1 0;
       min-width: 0;
-      padding: 0.64rem 0.58rem;
-      background: #ffffff;
-      border-right: 1px solid #dceaf2;
+      padding: 0.78rem 0.8rem;
+      background: transparent;
+      border-right: 1px solid rgba(220, 234, 242, 0.6);
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Make each active page stretch to bottom */
+    .content-panel.active-panel {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Section Properties: stretch dashboard grid to full height */
+    #sectionPropsSection .section-props-dashboard {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+    }
+
+    /* Calculation pages: stretch shell to full height */
+    #tensionSection .tension-shell,
+    #compressionSection .tension-shell,
+    #tensionRodSection .tension-shell,
+    #bendingSection .tension-shell,
+    #shearSection .tension-shell {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Ensure the main form/view can stretch if needed */
+    #compressionSection .tension-view,
+    #tensionRodSection .tension-view,
+    #bendingSection .tension-view,
+    #shearSection .tension-view,
+    #tensionSection .tension-view {
+      flex: 1 1 auto;
       min-height: 0;
     }
 
@@ -623,14 +716,17 @@
     }
 
     .dashboard-main.no-card .content-panel.active-panel {
-      display: block !important;
+      display: flex !important;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
       width: 100%;
       margin: 0;
       padding-top: 0;
       align-self: stretch;
       margin-top: 0;
       overflow-x: hidden;
-      min-height: 100%;
+      min-height: 0;
     }
 
     .dashboard-main.no-card .calc-panel-inner {
@@ -1153,6 +1249,352 @@
       margin-bottom: 0.25rem;
     }
 
+    /* Overview (soft blue, glassmorphism; landscape) */
+    .retro-overview {
+      position: relative;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.62);
+      overflow: hidden;
+      padding: 1rem 1.05rem 0.95rem;
+      background:
+        radial-gradient(1200px 520px at 55% 18%, rgba(255,255,255,0.46), rgba(255,255,255,0) 62%),
+        radial-gradient(820px 460px at 18% 10%, rgba(255,255,255,0.30), rgba(255,255,255,0) 64%),
+        linear-gradient(180deg, #bfe4f6 0%, #94c7e2 38%, #7aaeca 100%);
+      box-shadow:
+        0 18px 34px rgba(17, 55, 75, 0.12),
+        inset 0 1px 0 rgba(255,255,255,0.55);
+      height: 100%;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+    }
+    .retro-overview::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.55;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px) 0 0 / 64px 64px,
+        linear-gradient(180deg, rgba(255,255,255,0.14) 1px, transparent 1px) 0 0 / 64px 64px,
+        radial-gradient(circle at 16px 16px, rgba(255,255,255,0.18) 2px, transparent 3px) 0 0 / 64px 64px;
+      pointer-events: none;
+    }
+    .retro-overview::after {
+      content: "";
+      position: absolute;
+      inset: -40px -30px auto -30px;
+      height: 280px;
+      background:
+        radial-gradient(closest-side at 40% 45%, rgba(255,255,255,0.25), rgba(255,255,255,0) 70%),
+        radial-gradient(closest-side at 70% 45%, rgba(255,255,255,0.18), rgba(255,255,255,0) 72%),
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0));
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    .retro-overview > * { position: relative; }
+
+    /* Floating tabs inside main panel (reference-style) */
+    .retro-top-tabs {
+      display: inline-flex;
+      gap: 0.4rem;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.72);
+      border-radius: 999px;
+      padding: 0.35rem 0.45rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+      margin: 0;
+      position: absolute;
+      left: 1.1rem;
+      bottom: 3.15rem;
+      z-index: 4;
+      backdrop-filter: blur(10px);
+    }
+    .retro-top-tab {
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255,255,255,0.78);
+      font-weight: 700;
+      font-size: 0.76rem;
+      color: #0b2b3b;
+      cursor: default;
+      white-space: nowrap;
+    }
+    .retro-top-tab.is-active {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(15, 23, 42, 0.18);
+      box-shadow: 0 6px 18px rgba(17, 55, 75, 0.10);
+    }
+
+    /* Landscape layout */
+    .retro-grid {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1.2fr 0.85fr;
+      gap: clamp(0.75rem, 1.4vw, 1.2rem);
+      align-items: start;
+      padding: 0.2rem 0.1rem 0.9rem;
+    }
+    @media (max-width: 1060px) {
+      .retro-grid { grid-template-columns: 1fr; }
+    }
+
+    .retro-card {
+      background: rgba(255,255,255,0.62);
+      border: 1px solid rgba(255,255,255,0.78);
+      border-radius: 22px;
+      box-shadow: 0 18px 34px rgba(17, 55, 75, 0.12);
+      overflow: hidden;
+      backdrop-filter: blur(6px);
+    }
+    .retro-card .retro-card-head {
+      padding: 0.7rem 0.9rem;
+      background: rgba(255,255,255,0.42);
+      border-bottom: 1px solid rgba(255,255,255,0.55);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: #0b2b3b;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+    .retro-card .retro-card-body {
+      padding: 0.9rem;
+    }
+
+    .ov-hero {
+      position: relative;
+      min-height: 0;
+      padding: 0.35rem 0.2rem 0.25rem;
+    }
+    /* Ensure enough room so floating tabs don't overlap content */
+    .ov-hero .retro-body { padding-bottom: 1.8rem; }
+
+    /* Title typography closer to reference (modern bold) */
+    .pixel-title {
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, "Roboto", sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.94);
+      text-shadow: 0 2px 0 rgba(8, 47, 68, 0.18), 0 12px 34px rgba(8, 47, 68, 0.16);
+    }
+    .pixel-title .pixel-steel {
+      font-size: clamp(2.2rem, 3.6vw, 3.1rem);
+      line-height: 1;
+    }
+    .pixel-title .pixel-design {
+      font-size: clamp(1.6rem, 2.7vw, 2.2rem);
+      line-height: 1;
+      opacity: 0.96;
+      margin-left: 0.3rem;
+      text-transform: lowercase;
+      letter-spacing: 0.01em;
+      font-weight: 800;
+    }
+    .retro-subtitle {
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: rgba(8, 47, 68, 0.9);
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+    .retro-body {
+      margin-top: 0.65rem;
+      font-size: 0.82rem;
+      color: rgba(8, 47, 68, 0.92);
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      max-width: 68ch;
+    }
+
+    .retro-hero-art {
+      display: grid;
+      grid-template-columns: 1fr;
+      place-items: center;
+      margin-top: 0.25rem;
+    }
+    .retro-connection {
+      width: min(300px, 100%);
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255,255,255,0.60), rgba(255,255,255,0) 62%),
+        radial-gradient(circle at 50% 55%, rgba(8, 47, 68, 0.13), rgba(8, 47, 68, 0) 64%),
+        linear-gradient(180deg, rgba(255,255,255,0.48), rgba(255,255,255,0.14));
+      border: 1px solid rgba(255,255,255,0.88);
+      box-shadow: 0 26px 70px rgba(17, 55, 75, 0.14);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .retro-connection svg {
+      width: 70%;
+      height: 70%;
+      opacity: 0.95;
+      filter: drop-shadow(0 10px 18px rgba(8, 47, 68, 0.18));
+    }
+
+    .retro-computing {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin-top: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.92);
+      text-transform: uppercase;
+    }
+    .retro-loadbar {
+      width: 120px;
+      height: 10px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.32);
+      border: 1px solid rgba(255,255,255,0.55);
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    .retro-loadbar > span {
+      display: block;
+      height: 100%;
+      width: 58%;
+      background: linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0.55));
+    }
+
+    .retro-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.55rem 0.9rem;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(255,255,255,0.82);
+      border-radius: 999px;
+      font-weight: 900;
+      color: #0b2b3b;
+      box-shadow: 0 16px 32px rgba(17, 55, 75, 0.12);
+      width: fit-content;
+      margin-top: 0.8rem;
+    }
+
+    /* Decorative icons (match screenshot vibe, but responsive for landscape) */
+    .ov-icon {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.42);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: 0 16px 32px rgba(17, 55, 75, 0.12);
+      backdrop-filter: blur(6px);
+      display: grid;
+      place-items: center;
+      color: rgba(8, 47, 68, 0.65);
+      user-select: none;
+      pointer-events: none;
+    }
+    .ov-icon svg { width: 70%; height: 70%; opacity: 0.85; }
+    .ov-icon.small { width: 52px; height: 52px; border-radius: 14px; }
+    .ov-icon.tall { width: 52px; height: 86px; border-radius: 18px; }
+
+    .retro-about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem 1.2rem;
+      font-size: 0.78rem;
+      color: rgba(8, 47, 68, 0.92);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      margin-top: 0.6rem;
+    }
+    .retro-about-grid ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      line-height: 1.35;
+    }
+    .retro-about-grid li { margin: 0.18rem 0; }
+
+    .retro-explore-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.6rem 0.85rem;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid rgba(255,255,255,0.80);
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 0.74rem;
+      letter-spacing: 0.04em;
+      color: #0b2b3b;
+      box-shadow: 0 16px 32px rgba(17, 55, 75, 0.12);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .retro-explore-btn:hover { filter: brightness(0.98); }
+    .retro-explore-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.35), 0 14px 28px rgba(17, 55, 75, 0.12);
+    }
+
+    /* Bottom nav inside overview */
+    .ov-bottom-nav {
+      margin-top: auto;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.52);
+      border: 1px solid rgba(255,255,255,0.74);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.70), 0 14px 30px rgba(17, 55, 75, 0.12);
+      backdrop-filter: blur(10px);
+    }
+    .ov-bottom-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 900;
+      font-size: 0.78rem;
+      color: rgba(11, 43, 59, 0.9);
+      padding-left: 0.25rem;
+      white-space: nowrap;
+    }
+    .ov-bottom-tabs span {
+      padding: 0.18rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.66);
+      box-shadow: 0 10px 22px rgba(17, 55, 75, 0.10);
+    }
+    .ov-bottom-tabs span.is-active {
+      background: rgba(255,255,255,0.94);
+      border-color: rgba(15, 23, 42, 0.16);
+    }
+    .ov-bottom-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 950;
+      color: rgba(8, 47, 68, 0.88);
+      font-size: 0.74rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .ov-bottom-brand img {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(255,255,255,0.92);
+      box-shadow: 0 12px 26px rgba(17, 55, 75, 0.12);
+      object-fit: contain;
+      padding: 0.25rem;
+    }
+
     .panel-title {
       font-size: 1rem;
       font-weight: 800;
@@ -1160,7 +1602,7 @@
       margin-bottom: 0.75rem;
     }
     .calc-panel-inner {
-      background: #fafdff;
+      background: var(--panel-bg);
       border-radius: 24px;
       border: 1px solid #cde0ec;
       padding: 1.25rem;
@@ -1416,30 +1858,31 @@
       color: #2c6e8f;
     }
 
-    /* Section Properties dashboard */
+    /* Section Properties dashboard (layout v2) */
     .section-props-dashboard {
-      background: #e8f4fb;
+      background: #eef7fd;
       border: 1px solid #c6dfed;
-      border-radius: 14px;
-      padding: 0.5rem;
+      border-radius: 16px;
+      padding: 0.9rem;
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       grid-template-areas:
         "hero main guide"
         "fields fields guide"
         "db db db";
-      gap: 0.46rem;
+      gap: 0.9rem;
       align-items: stretch;
     }
     .sp-card {
       background: #ffffff;
-      border: none;
-      border-radius: 12px;
-      padding: 0.45rem;
+      border: 1px solid #d7e8f3;
+      border-radius: 14px;
+      padding: 0.9rem;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
       overflow: visible;
+      box-shadow: 0 8px 20px rgba(17, 55, 75, 0.06);
     }
     .sp-hero {
       grid-area: hero;
@@ -1474,50 +1917,51 @@
       color: #1e2f3c;
       font-weight: 900;
       font-size: 0.78rem;
-      border-radius: 9px;
-      padding: 0.3rem 0.56rem;
+      border-radius: 10px;
+      padding: 0.42rem 0.7rem;
       cursor: pointer;
       box-shadow: 0 4px 10px rgba(34, 57, 71, 0.16);
+      transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
     }
     .sp-main-image {
       width: 100%;
       border-radius: 10px;
-      border: none;
-      margin-bottom: 0.34rem;
+      border: 1px solid #d7e8f3;
+      margin-bottom: 0.6rem;
       display: block;
-      height: 172px;
-      object-fit: cover;
+      height: 190px;
+      object-fit: contain;
       object-position: center center;
-      background: #ffffff;
+      background: #f6fbff;
     }
     .sp-hero .sp-main-image {
-      object-fit: cover;
-      object-position: right center;
-      height: 172px;
+      object-fit: contain;
+      object-position: center center;
+      height: 190px;
     }
     .sp-main-card .sp-main-image {
-      height: 172px;
-      object-position: center top;
+      height: 190px;
+      object-position: center center;
     }
     .sp-hero .sp-main-image {
-      margin-bottom: 0.42rem;
+      margin-bottom: 0.6rem;
     }
     .sp-search-row {
       display: flex;
-      gap: 0.3rem;
+      gap: 0.6rem;
       align-items: center;
     }
     .sp-search-row input {
       flex: 1 1 auto;
       border: 1px solid #b8d8ea;
       border-radius: 9px;
-      padding: 0.32rem 0.56rem;
-      font-size: 0.84rem;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.9rem;
     }
     .sp-search-row .sp-search-btn {
-      width: 34px;
-      min-width: 34px;
-      height: 34px;
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
       border-radius: 9px;
       border: 1px solid #5e8aa3;
       background: linear-gradient(135deg, #7ab3c8 0%, #5a9bb5 100%);
@@ -1526,15 +1970,16 @@
       font-weight: 800;
       cursor: pointer;
       line-height: 1;
+      transition: filter 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
     }
     .sp-guide-image {
       width: 100%;
       border-radius: 10px;
-      border: none;
-      height: 132px;
-      object-fit: cover;
-      object-position: top center;
-      background: #ffffff;
+      border: 1px solid #d7e8f3;
+      height: 160px;
+      object-fit: contain;
+      object-position: center center;
+      background: #f6fbff;
       display: block;
     }
     .sp-guide-title {
@@ -1544,79 +1989,122 @@
       letter-spacing: 0.01em;
       color: #082f44;
     }
+    .sp-accent-aisc {
+      color: #ca7f4b;
+    }
     .sp-guide-subimage {
       width: 100%;
       border-radius: 7px;
-      border: none;
+      border: 1px solid #d7e8f3;
       display: block;
-      margin-top: 0.08rem;
-      object-fit: cover;
-      object-position: top center;
-      height: 238px;
-      background: #ffffff;
+      margin-top: 0.35rem;
+      object-fit: contain;
+      object-position: center center;
+      height: 260px;
+      background: #f6fbff;
     }
     .sp-fields {
       grid-area: fields;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.3rem;
-      background: #6ec0e6;
-      border-radius: 11px;
-      padding: 0.48rem;
+      gap: 0.8rem;
+      background: #f6fbff;
+      border-radius: 14px;
+      padding: 0.9rem;
+      border: 1px solid #d7e8f3;
     }
     .sp-fields h5 {
       grid-column: 1 / span 2;
-      font-size: 0.94rem;
+      font-size: 1rem;
       color: #06283a;
       font-weight: 900;
-      margin-bottom: 0.1rem;
+      margin-bottom: 0.4rem;
     }
     .sp-field-col {
       display: grid;
-      gap: 0.16rem;
+      gap: 0.5rem;
     }
     .sp-field {
       display: grid;
-      grid-template-columns: 1.3fr 0.72fr 0.28fr;
+      grid-template-columns: minmax(180px, 1fr) minmax(96px, 120px) minmax(44px, 56px);
       align-items: center;
-      gap: 0.14rem;
+      gap: 0.5rem;
       color: #06283a;
       font-weight: 700;
-      font-size: 0.69rem;
+      font-size: 0.8rem;
+      line-height: 1.2;
     }
     .sp-field input {
-      border: 1px solid #3a6b82;
-      background: #f0f8fc;
-      border-radius: 4px;
-      padding: 0.1rem 0.22rem;
-      font-size: 0.68rem;
+      border: 1px solid #b7d4e5;
+      background: #f2f8fd;
+      border-radius: 8px;
+      padding: 0.35rem 0.5rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #17384e;
       text-align: center;
     }
+    .sp-field span {
+      justify-self: end;
+      color: #335a72;
+      font-weight: 700;
+    }
     .sp-db-panel {
-      margin-top: 0.6rem;
-      background: #ffffff;
-      border: 1px solid #cde0ec;
-      border-radius: 12px;
-      padding: 0.5rem;
       display: none;
       grid-area: db;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      padding: 1rem;
+      background: rgba(6, 40, 58, 0.45);
+      backdrop-filter: blur(3px);
     }
     .sp-db-panel.is-open {
-      display: block;
+      display: grid;
+      place-items: center;
+    }
+    .sp-db-backdrop {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+    }
+    .sp-db-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(1060px, calc(100vw - 2rem));
+      max-height: calc(100dvh - 2rem);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      background: #ffffff;
+      border-radius: 18px; /* rounded-2xl */
+      box-shadow: 0 24px 60px rgba(2, 14, 22, 0.25); /* shadow-2xl-ish */
+      border: 1px solid rgba(199, 218, 232, 0.9);
     }
     .sp-db-top {
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 0.4rem;
+      gap: 0.6rem;
       align-items: center;
-      margin-bottom: 0.4rem;
+      background: #f8fafc; /* bg-slate-50 */
+      border-bottom: 1px solid #d7e8f3;
+      border-radius: 18px 18px 0 0;
+      padding: 1.1rem 1.25rem; /* p-6-ish */
+      margin-bottom: 0;
+    }
+    .sp-db-dialog .steel-table-wrapper {
+      margin: 0;
+      border: 0;
+      border-radius: 0 0 18px 18px;
+      overflow: auto;
     }
     .sp-db-panel .steel-table-wrapper {
-      max-height: 250px;
+      max-height: min(70vh, 640px);
       min-height: 0;
       margin-bottom: 0;
+      background: #ffffff;
+      border-radius: 0 0 18px 18px;
     }
     .sp-db-panel .grade-table {
       font-size: 0.62rem;
@@ -1628,22 +2116,124 @@
     }
     .sp-chip-group {
       display: flex;
-      gap: 0.25rem;
+      gap: 0.4rem;
       flex-wrap: wrap;
     }
     .sp-chip {
-      border: 1px solid #c7a78f;
-      background: #ebc2a4;
-      border-radius: 4px;
-      padding: 0.2rem 0.45rem;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: #ffffff;
+      border-radius: 999px;
+      padding: 0.42rem 0.85rem;
       font-size: 0.72rem;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
+      transition: filter 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
     }
     .sp-chip.is-active {
-      background: #d89b6d;
-      border-color: #a8744f;
+      background: #1f2937; /* bg-slate-800 */
+      border-color: #0f172a;
+      color: #ffffff;
     }
+
+    /* DB header controls (input + button sizing + hierarchy) */
+    #aiscDbSearchInput {
+      width: 100%;
+      max-width: 360px; /* reduce width */
+      height: 40px;
+      border: 1px solid rgba(148, 163, 184, 0.65);
+      border-radius: 12px;
+      background: #f8fafc; /* bg-slate-50 */
+      padding: 0.5rem 0.75rem 0.5rem 2.35rem; /* room for icon */
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #0f172a;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2364758b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 0.75rem 50%;
+      background-size: 18px 18px;
+    }
+    #aiscDbSearchInput::placeholder {
+      color: #64748b;
+      font-weight: 600;
+    }
+    #aiscDbSearchInput:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.75);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+      background-color: #ffffff;
+    }
+    #backToSectionDashboardBtn.sp-btn {
+      height: 40px; /* match input */
+      padding: 0 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    /* Table polish: header contrast, padding, striping, hover, alignment */
+    #aiscDbTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    #aiscDbTable thead th {
+      position: sticky;
+      top: 0;
+      background: #0f172a; /* deep slate */
+      color: #ffffff;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      padding: 0.9rem 0.85rem; /* taller header */
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    #aiscDbTable tbody td {
+      padding: 0.85rem 0.85rem; /* py-3-ish */
+      border-bottom: 1px solid #eef2f7;
+      color: #0f172a;
+      font-weight: 650;
+    }
+    #aiscDbTable tbody tr:nth-child(even) td {
+      background: #f8fafc; /* subtle zebra */
+    }
+    #aiscDbTable tbody tr:hover td {
+      background: rgba(59, 130, 246, 0.08); /* hover:bg-blue-50-ish */
+      transition: background 0.12s ease;
+    }
+    /* Alignment: first column left, numeric columns right */
+    #aiscDbTable th:first-child,
+    #aiscDbTable td:first-child {
+      text-align: left;
+      padding-left: 1.05rem;
+    }
+    #aiscDbTable th:nth-child(n+2),
+    #aiscDbTable td:nth-child(n+2) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Modal centering polish */
+    .sp-db-panel.is-open {
+      place-items: center;
+      align-content: center;
+    }
+
+    /* Focus + hover (a11y & affordance) */
+    .sp-btn:focus,
+    .sp-search-btn:focus,
+    .sp-chip:focus,
+    .sp-search-row input:focus { outline: none; }
+
+    .sp-btn:focus-visible,
+    .sp-search-btn:focus-visible,
+    .sp-chip:focus-visible,
+    .sp-search-row input:focus-visible {
+      box-shadow: 0 0 0 3px rgba(90, 155, 181, 0.35);
+      border-color: rgba(90, 155, 181, 0.9);
+    }
+    .sp-btn:hover { filter: brightness(0.98); transform: translateY(-1px); }
+    .sp-search-btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .sp-chip:hover { filter: brightness(0.98); }
 
     @media (max-width: 1250px) {
       .section-props-dashboard {
@@ -1669,21 +2259,157 @@
       }
     }
 
+    @media (max-width: 900px) {
+      .sp-fields {
+        grid-template-columns: 1fr;
+      }
+      .sp-fields h5 {
+        grid-column: 1;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .sp-search-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .sp-search-row .sp-search-btn {
+        width: 100%;
+        height: 44px;
+      }
+      .sp-field {
+        grid-template-columns: 1fr;
+      }
+      .sp-field span {
+        justify-self: start;
+        opacity: 0.85;
+      }
+    }
+
     /* Tension module (client layout v1) */
     .tension-shell {
-      background: #e5f3fb;
+      background: #e8f5fc;
       border: 1px solid #b9d8ea;
       border-radius: 14px;
-      padding: 0.44rem;
+      padding: 0.52rem;
       display: flex;
       flex-direction: column;
-      gap: 0.38rem;
+      gap: 0.46rem;
     }
-    /* Make Tension panel occupy remaining vertical space (prevents bottom gap) */
+    /* Shared buttons for Tension-like pages (Compression uses these too) */
+    .tension-primary-btn {
+      border: 1px solid rgba(61, 135, 170, 0.75);
+      background: linear-gradient(135deg, #7ab3c8 0%, #5a9bb5 100%);
+      color: #fff;
+      border-radius: 12px;
+      height: 40px;
+      padding: 0 1.1rem;
+      font-size: 0.78rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(17, 55, 75, 0.14);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+    .tension-primary-btn:hover {
+      filter: brightness(1.02);
+      transform: translateY(-1px);
+    }
+    .tension-primary-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(90, 155, 181, 0.35), 0 6px 14px rgba(17, 55, 75, 0.14);
+    }
+    .tension-mini-btn {
+      border: 1px solid #c7dae8;
+      background: #ffffff;
+      color: #16394f;
+      border-radius: 10px;
+      height: 34px;
+      padding: 0 0.8rem;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    }
+    .tension-mini-btn:hover {
+      border-color: rgba(61, 125, 154, 0.55);
+      box-shadow: 0 3px 12px rgba(17, 55, 75, 0.10);
+    }
+    .tension-mini-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(90, 155, 181, 0.35);
+    }
+
+    /* Capacity & Demand spreadsheet view (static v1) */
+    .cd-sheet-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start; /* unified top alignment */
+    }
+    @media (max-width: 1100px) {
+      .cd-sheet-grid { grid-template-columns: 1fr; }
+    }
+    .cd-sheet-title {
+      font-weight: 950;
+      letter-spacing: 0.06em;
+      color: #0b2b3b;
+      font-size: 0.82rem;
+      margin: 0.1rem 0 0.35rem;
+    }
+    .cd-sheet-frame {
+      border: 1px solid #b7c8d6;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+    table.cd-sheet {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "SF Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .cd-sheet th,
+    .cd-sheet td {
+      border: 1px solid rgba(15, 23, 42, 0.28);
+      padding: 0.28rem 0.4rem;
+      line-height: 1.15;
+    }
+    .cd-sheet thead th {
+      background: #f2c86f; /* tan/yellow-ish header like spreadsheet */
+      color: #1f2b34;
+      font-weight: 900;
+      text-align: center;
+    }
+    .cd-sheet tbody td {
+      background: #ffffff;
+      color: #0b2230;
+    }
+    .cd-sheet tbody tr:nth-child(even) td {
+      background: #fbfdff;
+    }
+    .cd-left { text-align: left; padding-left: 0.55rem !important; }
+    .cd-num { text-align: right; }
+    .cd-remark-safe {
+      background: rgba(21, 128, 61, 0.88) !important;
+      color: #ffffff !important;
+      font-weight: 950;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    .cd-remark-unsafe {
+      background: rgba(185, 28, 28, 0.9) !important;
+      color: #ffffff !important;
+      font-weight: 950;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    /* Make Tension-like pages occupy remaining vertical space (prevents bottom gap) */
     #tensionSection.content-panel.active-panel {
-      min-height: calc(100dvh - 210px);
-      display: flex;
-      flex-direction: column;
+      flex: 1 1 auto;
     }
     #tensionSection .tension-shell {
       flex: 1 1 auto;
@@ -1693,35 +2419,48 @@
     @media (max-height: 820px) {
       #tensionSection.content-panel.active-panel {
         min-height: 0;
-        display: block;
       }
-      #tensionSection .tension-shell {
-        flex: initial;
-      }
+    }
+
+    /* Keep calculator shells stretching + scrollable on short viewports */
+    #tensionSection .tension-shell,
+    #compressionSection .tension-shell,
+    #tensionRodSection .tension-shell,
+    #bendingSection .tension-shell,
+    #shearSection .tension-shell {
+      overflow: auto;
     }
     .tension-top-tabs {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 0.26rem;
       background: #f3f8fc;
-      border: 1px solid #cfe3f0;
-      border-radius: 10px;
-      padding: 0.18rem;
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 0.22rem;
     }
     .tension-tab {
       border: 1px solid #c7dae8;
       background: #ffffff;
       color: #16394f;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.7rem;
       font-weight: 800;
       text-transform: uppercase;
-      padding: 0.22rem 0.3rem;
+      padding: 0.26rem 0.36rem;
       cursor: pointer;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    }
+    .tension-tab:hover {
+      border-color: rgba(61, 125, 154, 0.55);
+      box-shadow: 0 3px 12px rgba(17, 55, 75, 0.10);
     }
     .tension-tab.is-active {
       background: #84c7e8;
       border-color: #3d87aa;
+      box-shadow: 0 6px 14px rgba(17, 55, 75, 0.14);
+      transform: translateY(-1px);
     }
     .tension-subtabs {
       display: inline-flex;
@@ -1767,20 +2506,21 @@
     .tension-grid-3 {
       display: grid;
       grid-template-columns: minmax(220px, 320px) minmax(180px, 220px) minmax(0, 1fr);
-      gap: 0.38rem;
+      gap: 0.46rem;
+      align-items: stretch;
     }
     .tension-top-right {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(200px, 240px);
-      gap: 0.38rem;
-      align-items: start;
+      gap: 0.46rem;
+      align-items: stretch;
     }
     .tension-guide {
-      background: #f9fcff;
-      border: 1px solid rgba(39, 70, 88, 0.55);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 0.3rem 0.36rem;
-      box-shadow: 0 6px 16px rgba(17, 55, 75, 0.08);
+      padding: 0.36rem 0.44rem;
+      box-shadow: var(--shadow-md);
       display: grid;
       gap: 0.3rem;
       align-content: start;
@@ -1839,14 +2579,18 @@
     .tension-grid-2 {
       display: grid;
       grid-template-columns: 1.25fr 1fr;
-      gap: 0.38rem;
+      gap: 0.46rem;
+      align-items: stretch;
     }
     .tension-card {
-      background: #f9fcff;
-      border: 1px solid rgba(39, 70, 88, 0.55);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 0.3rem 0.36rem;
-      box-shadow: 0 6px 16px rgba(17, 55, 75, 0.08);
+      padding: 0.36rem 0.44rem;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
     .tension-card.compact {
       display: grid;
@@ -1857,11 +2601,12 @@
       font-size: 0.74rem;
       text-transform: uppercase;
       color: #0e2d42;
-      margin-bottom: 0.22rem;
+      margin-bottom: 0.28rem;
       border-bottom: 1px solid #d7e8f3;
-      padding: 0.18rem 0.3rem;
+      padding: 0.22rem 0.36rem;
       background: linear-gradient(180deg, rgba(132, 199, 232, 0.55), rgba(132, 199, 232, 0.12));
       border-radius: 8px;
+      letter-spacing: 0.02em;
     }
     .t-row {
       display: grid;
@@ -1880,14 +2625,27 @@
     .t-row input,
     .t-row select {
       width: 100%;
-      height: 1.32rem;
+      height: 1.44rem;
       border: 1px solid #7f9bae;
-      border-radius: 0;
+      border-radius: 8px;
       font-size: 0.74rem;
       font-weight: 800;
       text-align: center;
-      padding: 0.06rem 0.18rem;
+      padding: 0.08rem 0.22rem;
       color: #112a3a;
+      justify-self: end;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+      transition: box-shadow 0.12s ease, border-color 0.12s ease, filter 0.12s ease;
+      font-variant-numeric: tabular-nums;
+    }
+    .t-row input:hover,
+    .t-row select:hover {
+      border-color: rgba(61, 125, 154, 0.65);
+    }
+    .t-row input:focus-visible,
+    .t-row select:focus-visible {
+      border-color: rgba(61, 125, 154, 0.75);
+      box-shadow: 0 0 0 3px var(--focus), inset 0 1px 0 rgba(255,255,255,0.85);
     }
     .in-yellow {
       background: #f5d679;
@@ -1895,9 +2653,18 @@
     .out-green {
       background: #a8e2d3;
     }
+
+    /* Slightly different affordance for editable vs readonly */
+    .in-yellow { cursor: text; }
+    .t-row select.in-yellow { cursor: pointer; }
+    .out-green[readonly] {
+      cursor: not-allowed;
+      filter: saturate(0.98);
+    }
     .big-select {
-      font-size: 1.45rem !important;
-      height: 3.05rem !important;
+      font-size: 0.78rem !important;
+      height: 1.44rem !important;
+      border-radius: 8px !important;
     }
     .tension-shear-layout {
       display: grid;
@@ -1926,6 +2693,50 @@
       text-align: center;
       margin: 0.2rem 0 0.35rem;
       padding: 0.12rem 0.25rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.6rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+
+    /* SAFE / NOT SAFE badge styling on the remarks input (class toggled in JS) */
+    #tensionSafeRemark,
+    #compressionSafeRemark,
+    #tensionRodSafeRemark,
+    #bendingSafeRemark,
+    #shearSafeRemark {
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 950;
+    }
+    #tensionSafeRemark.is-safe,
+    #compressionSafeRemark.is-safe,
+    #tensionRodSafeRemark.is-safe,
+    #bendingSafeRemark.is-safe,
+    #shearSafeRemark.is-safe {
+      background: #1f9d63 !important;
+      border-color: #0d5d3a !important;
+      color: #ffffff !important;
+      box-shadow: 0 6px 14px rgba(31, 157, 99, 0.22);
+    }
+    #tensionSafeRemark.is-unsafe,
+    #compressionSafeRemark.is-unsafe,
+    #tensionRodSafeRemark.is-unsafe,
+    #bendingSafeRemark.is-unsafe,
+    #shearSafeRemark.is-unsafe {
+      background: #c84a3a !important;
+      border-color: #7a241b !important;
+      color: #ffffff !important;
+      box-shadow: 0 6px 14px rgba(200, 74, 58, 0.18);
+    }
+
+    /* Ensure “horizon line” alignment + equal heights in top-right group */
+    .tension-grid-3 > .tension-card,
+    .tension-top-right > .tension-card,
+    .tension-top-right > .tension-guide {
+      height: 100%;
     }
 
     /* Compact: reduce yellow bar height slightly on laptops */
@@ -2357,19 +3168,112 @@
     <!-- CENTER PANEL: Steel Grade Table -->
     <div class="center-panel">
       <div id="overviewSection" class="content-panel active-panel">
-        <div class="overview-hero">
-          <h2>BORN2BE STEEL — Structural design workspace</h2>
-          <p>LRFD checks aligned with <strong>AISC 360-22</strong> (simplified member strength models on the server). Select a steel grade in <strong>Steel Grade</strong>, then run calculations in each tool. Demands (Pu, Mu, Vu) are optional for utilization ratios.</p>
-        </div>
-        <div class="overview-grid" id="overviewQuickNav">
-          <button type="button" class="overview-tile" data-goto="steelGradeSection"><strong>Steel grades</strong>ASTM database &amp; material card</button>
-          <button type="button" class="overview-tile" data-goto="sectionPropsSection"><strong>Section properties</strong>Catalog shapes &amp; rx, ry</button>
-          <button type="button" class="overview-tile" data-goto="tensionSection"><strong>Tension</strong>φtPn = 0.9 Fy Ag</button>
-          <button type="button" class="overview-tile" data-goto="compressionSection"><strong>Compression</strong>Flexural buckling (E3)</button>
-          <button type="button" class="overview-tile" data-goto="tensionRodSection"><strong>Tension rod</strong>Net area</button>
-          <button type="button" class="overview-tile" data-goto="bendingSection"><strong>Bending</strong>Mn = Fy Zx (compact)</button>
-          <button type="button" class="overview-tile" data-goto="shearSection"><strong>Shear</strong>Vn = 0.6 Fy Aw</button>
-        </div>
+        <section class="retro-overview" aria-label="Born2BeSteel overview (retro dashboard)">
+          <div class="retro-grid">
+            <!-- HERO (left) -->
+            <div class="ov-hero">
+              <div class="retro-computing" aria-label="Computing status">
+                <div class="retro-loadbar" aria-hidden="true"><span></span></div>
+                <div>COMPUTING...</div>
+              </div>
+
+              <div class="retro-hero-art">
+                <div class="retro-connection" aria-label="Central steel structure illustration">
+                  <svg viewBox="0 0 140 140" fill="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#e9f3f8"/>
+                        <stop offset="0.55" stop-color="#9eb9c8"/>
+                        <stop offset="1" stop-color="#6b8797"/>
+                      </linearGradient>
+                      <linearGradient id="gB" x1="0" y1="1" x2="1" y2="0">
+                        <stop offset="0" stop-color="#7a95a5"/>
+                        <stop offset="1" stop-color="#d6e7ef"/>
+                      </linearGradient>
+                    </defs>
+                    <!-- vertical column -->
+                    <path d="M66 18 L86 28 L86 122 L66 112 Z" fill="url(#gA)" stroke="#4e6b7c" stroke-width="2"/>
+                    <path d="M54 24 L66 18 L66 112 L54 118 Z" fill="url(#gB)" stroke="#4e6b7c" stroke-width="2"/>
+                    <!-- beams crossing -->
+                    <path d="M28 56 L88 32 L108 44 L48 68 Z" fill="url(#gA)" stroke="#4e6b7c" stroke-width="2"/>
+                    <path d="M32 78 L92 54 L112 66 L52 90 Z" fill="url(#gB)" stroke="#4e6b7c" stroke-width="2"/>
+                    <!-- gusset/plate hint -->
+                    <path d="M58 56 L86 44 L86 76 L58 88 Z" fill="rgba(255,255,255,0.28)" stroke="#5a7a8d" stroke-width="1.6"/>
+                    <!-- bolt rows -->
+                    <g fill="#4e6b7c" opacity="0.85">
+                      <circle cx="72" cy="54" r="2.2"/><circle cx="79" cy="51" r="2.2"/>
+                      <circle cx="72" cy="64" r="2.2"/><circle cx="79" cy="61" r="2.2"/>
+                      <circle cx="72" cy="74" r="2.2"/><circle cx="79" cy="71" r="2.2"/>
+                    </g>
+                    <!-- outline highlight -->
+                    <path d="M54 24 L66 18 L86 28 L86 122 L66 112 L54 118 Z" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="pixel-title" aria-label="Steel design title">
+                <span class="pixel-steel">STEEL</span><span class="pixel-design">design</span>
+              </div>
+              <div class="retro-subtitle">ADVANCED STEEL CALCULATOR ←</div>
+
+              <div class="retro-body">
+                Welcome to your premier engineering hub for comprehensive steel structure design. Whether you are mastering the fundamentals or seeking to streamline complex calculations, our platform provides the tools, data, and visual guides you need to elevate your modern steel engineering projects.
+              </div>
+
+              <div class="retro-pill" aria-label="Steel Experts Engineering Hub">
+                Steel Experts <span aria-hidden="true">|</span> Engineering Hub
+              </div>
+
+            </div>
+
+            <!-- ABOUT (right) -->
+            <div>
+              <div class="retro-card">
+                <div class="retro-card-head">ABOUT Born2BeSteel</div>
+                <div class="retro-card-body">
+                  <div id="overviewTools" aria-hidden="true"></div>
+                  <div style="display:flex;align-items:flex-start;gap:0.75rem;justify-content:space-between;">
+                    <div style="flex:1 1 auto;">
+                      <div style="font-family:ui-monospace,monospace;font-size:0.78rem;color:rgba(8,47,68,.9);line-height:1.35;">
+                        Explore our extensive knowledge base and tools tailored to help you build safer and more efficient structures:
+                      </div>
+                      <div class="retro-about-grid" aria-label="About features list">
+                        <ul>
+                          <li>Introduction to Steel Grades</li>
+                          <li>Introduction to Structural Shapes</li>
+                          <li>Tension Member Analysis and Design</li>
+                          <li>Compression Member Analysis and Design</li>
+                          <li>Specialized Tension Rod System</li>
+                        </ul>
+                        <ul>
+                          <li>Bending/Flexural Member Analysis and Design</li>
+                          <li>Member Analysis and Design</li>
+                          <li>Shear Force Analysis and Design</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;justify-content:flex-end;margin-top:0.65rem;">
+                    <a class="retro-explore-btn" href="#overviewTools">EXPLORE TOOLS <span aria-hidden="true">^_^</span></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ov-bottom-nav" aria-label="Bottom navigation bar (visual)">
+            <div class="ov-bottom-tabs" aria-hidden="true">
+              <span class="is-active">About</span>
+              <span>Steel Grade</span>
+              <span>Section Properties</span>
+            </div>
+            <div class="ov-bottom-brand" aria-label="Born2BeSteel brand">
+              <img src="assets/branding/born2be-steel-main.png" alt="Born2BeSteel logo" loading="lazy">
+              <span>BORN2BE STEEL</span>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div id="steelGradeSection" class="content-panel">
@@ -2415,14 +3319,19 @@
           </div>
           <div class="sp-card sp-main-card">
             <img id="sectionPropsMainImage" class="sp-main-image" src="assets/section-properties/guide-extra.png" alt="Section properties hero guide" loading="lazy">
+            <div class="sp-selection" aria-label="Selected shape summary" style="margin-bottom:0.6rem;">
+              <div id="spSelectedDesignation" style="font-weight:900;color:#082f44;font-size:1rem;line-height:1.2;">—</div>
+              <div id="spSelectedMeta" style="color:#335a72;font-size:0.78rem;line-height:1.25;margin-top:0.15rem;">Pick a shape to view properties</div>
+            </div>
             <div class="sp-search-row">
               <input id="sectionShapeSearch" type="search" placeholder="Search shape (e.g., W14x132)">
               <button type="button" class="sp-search-btn" id="sectionShapeSearchBtn" aria-label="Search shape">🔍</button>
             </div>
           </div>
+
           <div class="sp-card sp-guide-card">
             <img id="sectionPropsGuideImage" class="sp-guide-image" src="assets/section-properties/hero-character.png" alt="AISC shapes guide top" loading="lazy">
-            <div class="sp-guide-title">HOW TO READ <span style="color:#ca7f4b;">AISC</span> SHAPES:</div>
+            <div class="sp-guide-title">HOW TO READ <span class="sp-accent-aisc">AISC</span> SHAPES:</div>
             <img class="sp-guide-subimage" src="assets/section-properties/guide-bottom.png" alt="AISC shapes guide details" loading="lazy">
           </div>
 
@@ -2440,9 +3349,10 @@
               <label class="sp-field">Ix (Moment of Inertia X) <input id="spIx" name="Ix" readonly><span>in⁴</span></label>
               <label class="sp-field">Iy (Moment of Inertia Y) <input id="spIy" name="Iy" readonly><span>in⁴</span></label>
               <label class="sp-field">Iz (Moment of Inertia Z) <input id="spIz" readonly><span>in⁴</span></label>
-              <label class="sp-field">tw (Web Thickness) <input id="spTw2" readonly><span>in</span></label>
-              <label class="sp-field">bf (Flange Width) <input id="spBf2" readonly><span>in</span></label>
-              <label class="sp-field">tf (Flange Thickness) <input id="spTf2" readonly><span>in</span></label>
+              <label class="sp-field">rx (Radius of Gyration X) <input id="spRx" readonly><span>in</span></label>
+              <label class="sp-field">ry (Radius of Gyration Y) <input id="spRy" readonly><span>in</span></label>
+              <label class="sp-field">Sx (Elastic Section Modulus) <input id="spSx" readonly><span>in³</span></label>
+              <label class="sp-field">Zx (Plastic Section Modulus) <input id="spZx" readonly><span>in³</span></label>
             </div>
             <select id="secDesignation" name="designation" style="display:none;"><option value="">--</option></select>
             <input type="hidden" name="Sx" id="spSxHidden">
@@ -2451,24 +3361,27 @@
           </form>
 
           <div class="sp-db-panel" id="aiscDbPanel">
-            <div class="sp-db-top">
-              <div class="sp-chip-group" id="aiscShapeFilterChips"></div>
-              <input id="aiscDbSearchInput" type="search" placeholder="Filter designation...">
-              <button type="button" class="sp-btn" id="backToSectionDashboardBtn">SECTION PROPERTIES DASHBOARD</button>
-            </div>
-            <div class="steel-table-wrapper">
-              <table class="grade-table" id="aiscDbTable">
-                <thead>
-                  <tr>
-                    <th>Shapes</th>
-                    <th>Weight</th>
-                    <th>A</th>
-                    <th>d</th>
-                    <th>bf</th>
-                  </tr>
-                </thead>
-                <tbody id="aiscDbTableBody"></tbody>
-              </table>
+            <div class="sp-db-backdrop" data-close-db aria-hidden="true"></div>
+            <div class="sp-db-dialog" role="dialog" aria-modal="true" aria-label="AISC shapes properties">
+              <div class="sp-db-top">
+                <div class="sp-chip-group" id="aiscShapeFilterChips"></div>
+                <input id="aiscDbSearchInput" type="search" placeholder="Filter designation...">
+                <button type="button" class="sp-btn" id="backToSectionDashboardBtn">SECTION PROPERTIES DASHBOARD</button>
+              </div>
+              <div class="steel-table-wrapper">
+                <table class="grade-table" id="aiscDbTable">
+                  <thead>
+                    <tr>
+                      <th>Shapes</th>
+                      <th>Weight</th>
+                      <th>A</th>
+                      <th>d</th>
+                      <th>bf</th>
+                    </tr>
+                  </thead>
+                  <tbody id="aiscDbTableBody"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -2512,7 +3425,6 @@
                     <div class="legend-item"><span class="swatch yellow" aria-hidden="true"></span><span>Yellow cells: user input</span></div>
                     <div class="legend-item"><span class="swatch green" aria-hidden="true"></span><span>Green cells: computed / auto</span></div>
                   </div>
-                  <img src="assets/tension-page/icon-checklist.png" alt="Guide icon" loading="lazy">
                   <div class="disclaimer">
                     Disclaimer: This dashboard is developed for educational and structural steel design purposes. Users should independently verify all strength and capacity results per LRFD/ASD specifications.
                   </div>
@@ -2535,7 +3447,6 @@
                     <div class="t-row"><span>Connection</span><select id="tensionConnection" class="in-yellow"><option value="WEB">WEB</option><option value="FLANGE">FLANGE</option><option value="FLANGE_WEB">FLANGE &amp; WEB</option></select></div>
                     <div class="t-row"><span>Shear Lag Factor, U</span><input id="tensionU" class="out-green" readonly></div>
                   </div>
-                  <img id="tensionConnectionImage" class="tension-connection-image" src="assets/tension-page/tension-detail-1.png" alt="Connection detail">
                 </div>
               </div>
             </div>
@@ -2563,8 +3474,105 @@
 
           <section class="tension-view" id="tensionViewAnalysisNon">
             <div class="tension-card">
-              <h4>Capacity and Demand Analysis (Coming next)</h4>
-              <div class="tension-hint">You said you’ll send the final design for this tab later. For now, the Analysis Calculator (Non‑Staggered / Staggered) is implemented in the <strong>Analysis Calculator</strong> tab only.</div>
+              <h4>Capacity and Demand Analysis</h4>
+              <div class="cd-sheet-grid" role="group" aria-label="Capacity and Demand spreadsheet tables">
+                <div>
+                  <div class="cd-sheet-title">[CAPACITY]</div>
+                  <div class="cd-sheet-frame">
+                    <table class="cd-sheet" aria-label="Capacity table">
+                      <thead>
+                        <tr>
+                          <th>Angle</th>
+                          <th>Area (in2)</th>
+                          <th>Weight (lb/ft)</th>
+                          <th>t</th>
+                          <th>rx</th>
+                          <th>ry</th>
+                          <th>rmin</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td class="cd-left">L12X12X1-3/8</td><td class="cd-num">31.1</td><td class="cd-num">105</td><td class="cd-num">1.38</td><td class="cd-num">3.64</td><td class="cd-num">3.64</td><td class="cd-num">3.64</td></tr>
+                        <tr><td class="cd-left">L12X12X1-1/4</td><td class="cd-num">28.4</td><td class="cd-num">96.4</td><td class="cd-num">1.25</td><td class="cd-num">3.66</td><td class="cd-num">3.66</td><td class="cd-num">3.66</td></tr>
+                        <tr><td class="cd-left">L12X12X1-1/8</td><td class="cd-num">25.8</td><td class="cd-num">87.2</td><td class="cd-num">1.13</td><td class="cd-num">3.68</td><td class="cd-num">3.68</td><td class="cd-num">3.68</td></tr>
+                        <tr><td class="cd-left">L12X12X1</td><td class="cd-num">23.0</td><td class="cd-num">77.8</td><td class="cd-num">1.00</td><td class="cd-num">3.70</td><td class="cd-num">3.70</td><td class="cd-num">3.70</td></tr>
+                        <tr><td class="cd-left">L10X10X1-3/8</td><td class="cd-num">25.6</td><td class="cd-num">87.1</td><td class="cd-num">1.38</td><td class="cd-num">3.00</td><td class="cd-num">3.00</td><td class="cd-num">3.00</td></tr>
+                        <tr><td class="cd-left">L10X10X1-1/4</td><td class="cd-num">23.4</td><td class="cd-num">79.9</td><td class="cd-num">1.25</td><td class="cd-num">3.02</td><td class="cd-num">3.02</td><td class="cd-num">3.02</td></tr>
+                        <tr><td class="cd-left">L10X10X1-1/8</td><td class="cd-num">21.3</td><td class="cd-num">72.3</td><td class="cd-num">1.13</td><td class="cd-num">3.03</td><td class="cd-num">3.03</td><td class="cd-num">3.03</td></tr>
+                        <tr><td class="cd-left">L10X10X1</td><td class="cd-num">19.0</td><td class="cd-num">64.7</td><td class="cd-num">1.00</td><td class="cd-num">3.05</td><td class="cd-num">3.05</td><td class="cd-num">3.05</td></tr>
+                        <tr><td class="cd-left">L10X10X7/8</td><td class="cd-num">16.8</td><td class="cd-num">56.9</td><td class="cd-num">0.875</td><td class="cd-num">3.07</td><td class="cd-num">3.07</td><td class="cd-num">3.07</td></tr>
+                        <tr><td class="cd-left">L10X10X3/4</td><td class="cd-num">14.5</td><td class="cd-num">49.1</td><td class="cd-num">0.750</td><td class="cd-num">3.10</td><td class="cd-num">3.10</td><td class="cd-num">3.10</td></tr>
+                        <tr><td class="cd-left">L8X8X1-1/8</td><td class="cd-num">16.8</td><td class="cd-num">56.9</td><td class="cd-num">1.13</td><td class="cd-num">2.41</td><td class="cd-num">2.41</td><td class="cd-num">2.41</td></tr>
+                        <tr><td class="cd-left">L8X8X1</td><td class="cd-num">15.1</td><td class="cd-num">51.0</td><td class="cd-num">1.00</td><td class="cd-num">2.43</td><td class="cd-num">2.43</td><td class="cd-num">2.43</td></tr>
+                        <tr><td class="cd-left">L8X8X7/8</td><td class="cd-num">13.3</td><td class="cd-num">45.0</td><td class="cd-num">0.875</td><td class="cd-num">2.45</td><td class="cd-num">2.45</td><td class="cd-num">2.45</td></tr>
+                        <tr><td class="cd-left">L8X8X3/4</td><td class="cd-num">11.5</td><td class="cd-num">38.9</td><td class="cd-num">0.750</td><td class="cd-num">2.46</td><td class="cd-num">2.46</td><td class="cd-num">2.46</td></tr>
+                        <tr><td class="cd-left">L8X8X5/8</td><td class="cd-num">9.69</td><td class="cd-num">32.7</td><td class="cd-num">0.625</td><td class="cd-num">2.48</td><td class="cd-num">2.48</td><td class="cd-num">2.48</td></tr>
+                        <tr><td class="cd-left">L8X8X9/16</td><td class="cd-num">8.77</td><td class="cd-num">29.6</td><td class="cd-num">0.563</td><td class="cd-num">2.49</td><td class="cd-num">2.49</td><td class="cd-num">2.49</td></tr>
+                        <tr><td class="cd-left">L8X8X1/2</td><td class="cd-num">7.84</td><td class="cd-num">26.4</td><td class="cd-num">0.500</td><td class="cd-num">2.49</td><td class="cd-num">2.49</td><td class="cd-num">2.49</td></tr>
+                        <tr><td class="cd-left">L8X6X1</td><td class="cd-num">13.1</td><td class="cd-num">44.2</td><td class="cd-num">1.00</td><td class="cd-num">2.49</td><td class="cd-num">1.72</td><td class="cd-num">1.72</td></tr>
+                        <tr><td class="cd-left">L8X6X7/8</td><td class="cd-num">11.5</td><td class="cd-num">39.1</td><td class="cd-num">0.875</td><td class="cd-num">2.50</td><td class="cd-num">1.74</td><td class="cd-num">1.74</td></tr>
+                        <tr><td class="cd-left">L8X6X3/4</td><td class="cd-num">9.99</td><td class="cd-num">33.8</td><td class="cd-num">0.750</td><td class="cd-num">2.52</td><td class="cd-num">1.75</td><td class="cd-num">1.75</td></tr>
+                        <tr><td class="cd-left">L8X6X5/8</td><td class="cd-num">8.41</td><td class="cd-num">28.5</td><td class="cd-num">0.625</td><td class="cd-num">2.54</td><td class="cd-num">1.77</td><td class="cd-num">1.77</td></tr>
+                        <tr><td class="cd-left">L8X6X9/16</td><td class="cd-num">7.61</td><td class="cd-num">25.7</td><td class="cd-num">0.563</td><td class="cd-num">2.55</td><td class="cd-num">1.78</td><td class="cd-num">1.78</td></tr>
+                        <tr><td class="cd-left">L8X6X1/2</td><td class="cd-num">6.80</td><td class="cd-num">23.0</td><td class="cd-num">0.500</td><td class="cd-num">2.55</td><td class="cd-num">1.79</td><td class="cd-num">1.79</td></tr>
+                        <tr><td class="cd-left">L8X6X7/16</td><td class="cd-num">5.99</td><td class="cd-num">20.2</td><td class="cd-num">0.438</td><td class="cd-num">2.56</td><td class="cd-num">1.80</td><td class="cd-num">1.80</td></tr>
+                        <tr><td class="cd-left">L8X4X1</td><td class="cd-num">11.1</td><td class="cd-num">37.4</td><td class="cd-num">1.00</td><td class="cd-num">2.51</td><td class="cd-num">1.03</td><td class="cd-num">1.03</td></tr>
+                        <tr><td class="cd-left">L8X4X7/8</td><td class="cd-num">9.79</td><td class="cd-num">33.1</td><td class="cd-num">0.875</td><td class="cd-num">2.53</td><td class="cd-num">1.04</td><td class="cd-num">1.04</td></tr>
+                        <tr><td class="cd-left">L8X4X3/4</td><td class="cd-num">8.49</td><td class="cd-num">28.7</td><td class="cd-num">0.750</td><td class="cd-num">2.55</td><td class="cd-num">1.05</td><td class="cd-num">1.05</td></tr>
+                        <tr><td class="cd-left">L8X4X5/8</td><td class="cd-num">7.16</td><td class="cd-num">24.2</td><td class="cd-num">0.625</td><td class="cd-num">2.56</td><td class="cd-num">1.06</td><td class="cd-num">1.06</td></tr>
+                        <tr><td class="cd-left">L8X4X9/16</td><td class="cd-num">6.49</td><td class="cd-num">21.9</td><td class="cd-num">0.563</td><td class="cd-num">2.57</td><td class="cd-num">1.07</td><td class="cd-num">1.07</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="cd-sheet-title">[DEMAND]</div>
+                  <div class="cd-sheet-frame">
+                    <table class="cd-sheet" aria-label="Demand table">
+                      <thead>
+                        <tr>
+                          <th>Angle</th>
+                          <th>Aₕₒₗₑ</th>
+                          <th>Ag</th>
+                          <th>Ag REMARKS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td class="cd-left">L12X12X1-3/8</td><td class="cd-num">1.2075</td><td class="cd-num">7.5825</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L12X12X1-1/4</td><td class="cd-num">1.09375</td><td class="cd-num">7.4688</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L12X12X1-1/8</td><td class="cd-num">0.98875</td><td class="cd-num">7.3538</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L12X12X1</td><td class="cd-num">0.875</td><td class="cd-num">7.2500</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L10X10X1-3/8</td><td class="cd-num">1.2075</td><td class="cd-num">7.5825</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L10X10X1-1/4</td><td class="cd-num">1.09375</td><td class="cd-num">7.4688</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L10X10X1-1/8</td><td class="cd-num">0.98875</td><td class="cd-num">7.3538</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L10X10X1</td><td class="cd-num">0.875</td><td class="cd-num">7.2500</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L10X10X7/8</td><td class="cd-num">0.765625</td><td class="cd-num">7.1406</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L10X10X3/4</td><td class="cd-num">0.65625</td><td class="cd-num">7.0313</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X8X1-1/8</td><td class="cd-num">0.98875</td><td class="cd-num">7.3538</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X8X1</td><td class="cd-num">0.875</td><td class="cd-num">7.2500</td><td class="cd-remark-unsafe">UNSAFE</td></tr>
+                        <tr><td class="cd-left">L8X8X7/8</td><td class="cd-num">0.765625</td><td class="cd-num">7.1406</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X8X3/4</td><td class="cd-num">0.65625</td><td class="cd-num">7.0313</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X8X5/8</td><td class="cd-num">0.546875</td><td class="cd-num">6.9219</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X8X9/16</td><td class="cd-num">0.492625</td><td class="cd-num">6.8676</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X8X1/2</td><td class="cd-num">0.4375</td><td class="cd-num">6.8125</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X6X1</td><td class="cd-num">0.875</td><td class="cd-num">7.2500</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X6X7/8</td><td class="cd-num">0.765625</td><td class="cd-num">7.1406</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X6X3/4</td><td class="cd-num">0.65625</td><td class="cd-num">7.0313</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X6X5/8</td><td class="cd-num">0.546875</td><td class="cd-num">6.9219</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X6X9/16</td><td class="cd-num">0.492625</td><td class="cd-num">6.8676</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X6X1/2</td><td class="cd-num">0.4375</td><td class="cd-num">6.8125</td><td class="cd-remark-unsafe">UNSAFE</td></tr>
+                        <tr><td class="cd-left">L8X6X7/16</td><td class="cd-num">0.38325</td><td class="cd-num">6.7583</td><td class="cd-remark-unsafe">UNSAFE</td></tr>
+                        <tr><td class="cd-left">L8X4X1</td><td class="cd-num">0.875</td><td class="cd-num">7.2500</td><td class="cd-remark-unsafe">UNSAFE</td></tr>
+                        <tr><td class="cd-left">L8X4X7/8</td><td class="cd-num">0.765625</td><td class="cd-num">7.1406</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X4X3/4</td><td class="cd-num">0.65625</td><td class="cd-num">7.0313</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X4X5/8</td><td class="cd-num">0.546875</td><td class="cd-num">6.9219</td><td class="cd-remark-safe">SAFE</td></tr>
+                        <tr><td class="cd-left">L8X4X9/16</td><td class="cd-num">0.492625</td><td class="cd-num">6.8676</td><td class="cd-remark-unsafe">UNSAFE</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="tension-view-spacer" aria-hidden="true"></div>
           </section>
@@ -2734,85 +3742,266 @@
       </div>
 
       <div id="compressionSection" class="content-panel">
-        <div class="calc-panel-inner">
-          <div class="panel-title">📉 Compression — flexural buckling (E3)</div>
-          <p class="calc-hint">Fcr from AISC 360 §E3; Pn = Fcr·Ag; φcPn = 0.9 Pn. Enter K, L, and r in consistent length units (in). E defaults to 29000 ksi if omitted. Torsional buckling not checked.</p>
-          <form id="formCompression">
-            <div class="form-grid">
-              <label>Fy (ksi) <input name="Fy" type="number" step="any" required min="0"></label>
-              <label>Ag (in²) <input name="Ag" type="number" step="any" required min="0"></label>
-              <label>K <input name="K" type="number" step="any" required min="0"></label>
-              <label>L (in) <input name="L" type="number" step="any" required min="0"></label>
-              <label>r (in) <input name="r" type="number" step="any" required min="0"></label>
-              <label>E (ksi, optional) <input name="E" type="number" step="any" min="0"></label>
-              <label>Pu (kips, optional) <input name="Pu" type="number" step="any" min="0"></label>
-              <label>φc (optional) <input name="phiC" type="number" step="0.01" min="0.5" max="1"></label>
+        <div class="tension-shell compression-shell">
+          <form id="formCompression" class="tension-view is-active" aria-label="Compression calculator">
+            <div class="tension-grid-3">
+              <div class="tension-card">
+                <h4>Input Parameters</h4>
+                <div class="t-row"><span>Steel Grade Fy (ksi)</span><input name="Fy" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row"><span>Area gross, Ag (in²)</span><input name="Ag" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row"><span>Modulus, E (ksi) (opt.)</span><input name="E" class="in-yellow" type="number" step="any" min="0"></div>
+                <div class="t-row" style="gap:0.5rem;align-items:center;">
+                  <span></span>
+                  <button type="button" class="tension-mini-btn" data-fill-steel style="justify-self:end;">Fy from material card</button>
+                </div>
+              </div>
+
+              <div class="tension-card compact">
+                <h4>Design Method</h4>
+                <div class="t-row"><span>φc (opt.)</span><input name="phiC" class="in-yellow" type="number" step="0.01" min="0.5" max="1"></div>
+                <div class="t-row"><span>Pu (kips) (opt.)</span><input name="Pu" class="in-yellow" type="number" step="any" min="0"></div>
+                <div class="tension-hint" style="margin-top:0.35rem;">
+                  Flexural buckling (AISC 360 §E3). Enter K, L, and r in consistent length units.
+                </div>
+              </div>
+
+              <div class="tension-top-right">
+                <div class="tension-card">
+                  <h4>Unbraced Lengths &amp; Factors</h4>
+                  <div class="t-row"><span>K</span><input name="K" class="in-yellow" type="number" step="any" required min="0"></div>
+                  <div class="t-row"><span>L (in)</span><input name="L" class="in-yellow" type="number" step="any" required min="0"></div>
+                  <div class="t-row"><span>r (in)</span><input name="r" class="in-yellow" type="number" step="any" required min="0"></div>
+                </div>
+                <aside class="tension-guide" aria-label="User guide">
+                  <h4>User Guide</h4>
+                  <div class="legend">
+                    <div class="legend-item"><span class="swatch yellow" aria-hidden="true"></span><span>Yellow cells: user input</span></div>
+                    <div class="legend-item"><span class="swatch green" aria-hidden="true"></span><span>Green cells: computed / auto</span></div>
+                  </div>
+                  <div class="disclaimer">
+                    Disclaimer: This dashboard is developed for educational and structural steel design purposes. Users should independently verify all strength and capacity results per LRFD/ASD specifications.
+                  </div>
+                </aside>
+              </div>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">Compute</button>
-              <button type="button" class="btn-secondary" data-fill-steel>Fy from material card</button>
+
+            <div class="tension-grid-2">
+              <div class="tension-card">
+                <h4>Results</h4>
+                <div class="calc-result" id="resultCompression" style="white-space:pre-wrap;"></div>
+              </div>
+              <div class="tension-card safe-card">
+                <h4>Lightest Safe Section</h4>
+                <div class="safe-name" id="compressionSafeSection">--</div>
+                <div class="t-row"><span>Area gross, Ag</span><input id="compressionSafeAg" class="in-yellow" readonly value="--"></div>
+                <div class="t-row"><span>Remarks</span><input id="compressionSafeRemark" class="in-yellow" readonly value="--"></div>
+              </div>
             </div>
-            <div class="calc-result" id="resultCompression"></div>
+
+            <div class="tension-grid-2">
+              <div class="tension-card" style="display:flex;gap:0.6rem;align-items:center;justify-content:flex-start;">
+                <button type="submit" class="tension-primary-btn">Compute</button>
+              </div>
+              <div class="tension-view-spacer" aria-hidden="true"></div>
+            </div>
           </form>
         </div>
       </div>
 
       <div id="tensionRodSection" class="content-panel">
-        <div class="calc-panel-inner">
-          <div class="panel-title">🧷 Tension rod / net area</div>
-          <p class="calc-hint">Simplified: Pn = Fy·An; φtPn = 0.9 Pn. Supply net area An (in²) including thread deductions as appropriate.</p>
-          <form id="formTensionRod">
-            <div class="form-grid">
-              <label>Fy (ksi) <input name="Fy" type="number" step="any" required min="0"></label>
-              <label>An (in²) <input name="An" type="number" step="any" required min="0"></label>
-              <label>Pu (kips, optional) <input name="Pu" type="number" step="any" min="0"></label>
-              <label>φt (optional) <input name="phiT" type="number" step="0.01" min="0.5" max="1"></label>
+        <div class="tension-shell">
+          <form id="formTensionRod" class="tension-view is-active" aria-label="Tension rod calculator">
+            <div class="tension-grid-3">
+              <div class="tension-card">
+                <h4>Input Parameters</h4>
+                <div class="t-row"><span>Steel Grade Fy (ksi)</span><input name="Fy" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row"><span>Net Area, An (in²)</span><input name="An" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row" style="gap:0.5rem;align-items:center;">
+                  <span></span>
+                  <button type="button" class="tension-mini-btn" data-fill-steel style="justify-self:end;">Fy from material card</button>
+                </div>
+              </div>
+
+              <div class="tension-card compact">
+                <h4>Design Method</h4>
+                <div class="t-row"><span>φt (opt.)</span><input name="phiT" class="in-yellow" type="number" step="0.01" min="0.5" max="1"></div>
+                <div class="t-row"><span>Pu (kips) (opt.)</span><input name="Pu" class="in-yellow" type="number" step="any" min="0"></div>
+                <div class="tension-hint" style="margin-top:0.35rem;">
+                  Tensile strength + net area checks for rods. (UI-only rod/thread specs at right.)
+                </div>
+              </div>
+
+              <div class="tension-top-right">
+                <div class="tension-card">
+                  <h4>Rod &amp; Thread Specifications</h4>
+                  <div class="t-row"><span>Rod diameter, d (in)</span><input class="in-yellow" type="number" step="any" min="0" inputmode="decimal"></div>
+                  <div class="t-row"><span>Thread type</span><select class="in-yellow"><option>UNC</option><option>UNF</option></select></div>
+                  <div class="t-row"><span>Threads / in (TPI)</span><input class="in-yellow" type="number" step="1" min="0" inputmode="numeric"></div>
+                </div>
+                <aside class="tension-guide" aria-label="User guide">
+                  <h4>User Guide</h4>
+                  <div class="legend">
+                    <div class="legend-item"><span class="swatch yellow" aria-hidden="true"></span><span>Yellow cells: user input</span></div>
+                    <div class="legend-item"><span class="swatch green" aria-hidden="true"></span><span>Green cells: computed / auto</span></div>
+                  </div>
+                  <div class="disclaimer">
+                    Disclaimer: This dashboard is developed for educational and structural steel design purposes. Users should independently verify all strength and capacity results per LRFD/ASD specifications.
+                  </div>
+                </aside>
+              </div>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">Compute</button>
-              <button type="button" class="btn-secondary" data-fill-steel>Fy from material card</button>
+
+            <div class="tension-grid-2">
+              <div class="tension-card">
+                <h4>Results</h4>
+                <div class="calc-result" id="resultTensionRod" style="white-space:pre-wrap;"></div>
+              </div>
+              <div class="tension-card safe-card">
+                <h4>Lightest Safe Section</h4>
+                <div class="safe-name" id="tensionRodSafeSection">--</div>
+                <div class="t-row"><span>Net area, An</span><input id="tensionRodSafeAn" class="in-yellow" readonly value="--"></div>
+                <div class="t-row"><span>Remarks</span><input id="tensionRodSafeRemark" class="in-yellow" readonly value="--"></div>
+              </div>
             </div>
-            <div class="calc-result" id="resultTensionRod"></div>
+
+            <div class="tension-grid-2">
+              <div class="tension-card" style="display:flex;gap:0.6rem;align-items:center;justify-content:flex-start;">
+                <button type="submit" class="tension-primary-btn">Compute</button>
+              </div>
+              <div class="tension-view-spacer" aria-hidden="true"></div>
+            </div>
           </form>
         </div>
       </div>
 
       <div id="bendingSection" class="content-panel">
-        <div class="calc-panel-inner">
-          <div class="panel-title">📐 Bending — plastic moment (compact W-shape idealization)</div>
-          <p class="calc-hint">Mn = Fy·Zx (kip·in) → Mn = Mn/12 (kip·ft). φbMn = 0.9 Mn. LTB and flange local buckling are not checked here.</p>
-          <form id="formBending">
-            <div class="form-grid">
-              <label>Fy (ksi) <input name="Fy" type="number" step="any" required min="0"></label>
-              <label>Zx (in³) <input name="Zx" type="number" step="any" required min="0"></label>
-              <label>Mu (kip·ft, optional) <input name="Mu" type="number" step="any" min="0"></label>
-              <label>φb (optional) <input name="phiB" type="number" step="0.01" min="0.5" max="1"></label>
+        <div class="tension-shell">
+          <form id="formBending" class="tension-view is-active" aria-label="Bending calculator">
+            <div class="tension-grid-3">
+              <div class="tension-card">
+                <h4>Input Parameters</h4>
+                <div class="t-row"><span>Steel Grade Fy (ksi)</span><input name="Fy" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row"><span>Plastic modulus, Zx (in³)</span><input name="Zx" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row" style="gap:0.5rem;align-items:center;">
+                  <span></span>
+                  <button type="button" class="tension-mini-btn" data-fill-steel style="justify-self:end;">Fy from material card</button>
+                </div>
+              </div>
+
+              <div class="tension-card compact">
+                <h4>Design Method</h4>
+                <div class="t-row"><span>φb (opt.)</span><input name="phiB" class="in-yellow" type="number" step="0.01" min="0.5" max="1"></div>
+                <div class="t-row"><span>Mu (kip·ft) (opt.)</span><input name="Mu" class="in-yellow" type="number" step="any" min="0"></div>
+                <div class="tension-hint" style="margin-top:0.35rem;">
+                  Moment capacity (UI mirrors Compression). Add lateral-torsional checks later if needed.
+                </div>
+              </div>
+
+              <div class="tension-top-right">
+                <div class="tension-card">
+                  <h4>Unbraced Length &amp; Factors</h4>
+                  <div class="t-row"><span>Lb (ft)</span><input class="in-yellow" type="number" step="any" min="0" inputmode="decimal"></div>
+                  <div class="t-row"><span>Cb</span><input class="in-yellow" type="number" step="any" min="0" inputmode="decimal"></div>
+                  <div class="t-row"><span>Elastic modulus, Sx (in³)</span><input class="in-yellow" type="number" step="any" min="0" inputmode="decimal"></div>
+                </div>
+                <aside class="tension-guide" aria-label="User guide">
+                  <h4>User Guide</h4>
+                  <div class="legend">
+                    <div class="legend-item"><span class="swatch yellow" aria-hidden="true"></span><span>Yellow cells: user input</span></div>
+                    <div class="legend-item"><span class="swatch green" aria-hidden="true"></span><span>Green cells: computed / auto</span></div>
+                  </div>
+                  <div class="disclaimer">
+                    Disclaimer: This dashboard is developed for educational and structural steel design purposes. Users should independently verify all strength and capacity results per LRFD/ASD specifications.
+                  </div>
+                </aside>
+              </div>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">Compute</button>
-              <button type="button" class="btn-secondary" data-fill-steel>Fy from material card</button>
+
+            <div class="tension-grid-2">
+              <div class="tension-card">
+                <h4>Results</h4>
+                <div class="calc-result" id="resultBending" style="white-space:pre-wrap;"></div>
+              </div>
+              <div class="tension-card safe-card">
+                <h4>Lightest Safe Section</h4>
+                <div class="safe-name" id="bendingSafeSection">--</div>
+                <div class="t-row"><span>Zx</span><input id="bendingSafeZx" class="in-yellow" readonly value="--"></div>
+                <div class="t-row"><span>Remarks</span><input id="bendingSafeRemark" class="in-yellow" readonly value="--"></div>
+              </div>
             </div>
-            <div class="calc-result" id="resultBending"></div>
+
+            <div class="tension-grid-2">
+              <div class="tension-card" style="display:flex;gap:0.6rem;align-items:center;justify-content:flex-start;">
+                <button type="submit" class="tension-primary-btn">Compute</button>
+              </div>
+              <div class="tension-view-spacer" aria-hidden="true"></div>
+            </div>
           </form>
         </div>
       </div>
 
       <div id="shearSection" class="content-panel">
-        <div class="calc-panel-inner">
-          <div class="panel-title">✂️ Shear — web yielding (G2.1)</div>
-          <p class="calc-hint">Vn = 0.6 Fy Aw; φvVn with φv = 1.0 for web yielding. Buckling and stiffeners are not modeled.</p>
-          <form id="formShear">
-            <div class="form-grid">
-              <label>Fy (ksi) <input name="Fy" type="number" step="any" required min="0"></label>
-              <label>Aw (in²) <input name="Aw" type="number" step="any" required min="0"></label>
-              <label>Vu (kips, optional) <input name="Vu" type="number" step="any" min="0"></label>
-              <label>φv (optional) <input name="phiV" type="number" step="0.01" min="0.5" max="1"></label>
+        <div class="tension-shell">
+          <form id="formShear" class="tension-view is-active" aria-label="Shear calculator">
+            <div class="tension-grid-3">
+              <div class="tension-card">
+                <h4>Input Parameters</h4>
+                <div class="t-row"><span>Steel Grade Fy (ksi)</span><input name="Fy" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row"><span>Shear area, Av (in²)</span><input name="Aw" class="in-yellow" type="number" step="any" required min="0"></div>
+                <div class="t-row" style="gap:0.5rem;align-items:center;">
+                  <span></span>
+                  <button type="button" class="tension-mini-btn" data-fill-steel style="justify-self:end;">Fy from material card</button>
+                </div>
+              </div>
+
+              <div class="tension-card compact">
+                <h4>Design Method</h4>
+                <div class="t-row"><span>φv (opt.)</span><input name="phiV" class="in-yellow" type="number" step="0.01" min="0.5" max="1"></div>
+                <div class="t-row"><span>Vu (kips) (opt.)</span><input name="Vu" class="in-yellow" type="number" step="any" min="0"></div>
+                <div class="tension-hint" style="margin-top:0.35rem;">
+                  Web yielding (G2.1). Av may be computed from h and tw (UI-only at right).
+                </div>
+              </div>
+
+              <div class="tension-top-right">
+                <div class="tension-card">
+                  <h4>Section Geometry</h4>
+                  <div class="t-row"><span>Section height, h (in)</span><input class="in-yellow" type="number" step="any" min="0" inputmode="decimal"></div>
+                  <div class="t-row"><span>Web thickness, tw (in)</span><input class="in-yellow" type="number" step="any" min="0" inputmode="decimal"></div>
+                  <div class="t-row"><span>Av (computed)</span><input class="out-green" readonly value="--"></div>
+                </div>
+                <aside class="tension-guide" aria-label="User guide">
+                  <h4>User Guide</h4>
+                  <div class="legend">
+                    <div class="legend-item"><span class="swatch yellow" aria-hidden="true"></span><span>Yellow cells: user input</span></div>
+                    <div class="legend-item"><span class="swatch green" aria-hidden="true"></span><span>Green cells: computed / auto</span></div>
+                  </div>
+                  <div class="disclaimer">
+                    Disclaimer: This dashboard is developed for educational and structural steel design purposes. Users should independently verify all strength and capacity results per LRFD/ASD specifications.
+                  </div>
+                </aside>
+              </div>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">Compute</button>
-              <button type="button" class="btn-secondary" data-fill-steel>Fy from material card</button>
+
+            <div class="tension-grid-2">
+              <div class="tension-card">
+                <h4>Results</h4>
+                <div class="calc-result" id="resultShear" style="white-space:pre-wrap;"></div>
+              </div>
+              <div class="tension-card safe-card">
+                <h4>Lightest Safe Section</h4>
+                <div class="safe-name" id="shearSafeSection">--</div>
+                <div class="t-row"><span>Av</span><input id="shearSafeAv" class="in-yellow" readonly value="--"></div>
+                <div class="t-row"><span>Remarks</span><input id="shearSafeRemark" class="in-yellow" readonly value="--"></div>
+              </div>
             </div>
-            <div class="calc-result" id="resultShear"></div>
+
+            <div class="tension-grid-2">
+              <div class="tension-card" style="display:flex;gap:0.6rem;align-items:center;justify-content:flex-start;">
+                <button type="submit" class="tension-primary-btn">Compute</button>
+              </div>
+              <div class="tension-view-spacer" aria-hidden="true"></div>
+            </div>
           </form>
         </div>
       </div>

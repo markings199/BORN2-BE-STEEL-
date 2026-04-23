@@ -4,6 +4,69 @@
   var root = document.getElementById("tensionSection");
   if (!root) return;
 
+  // #region agent log
+  (function logTensionLayoutSnapshot() {
+    function rect(el) {
+      if (!el || !el.getBoundingClientRect) return null;
+      var r = el.getBoundingClientRect();
+      return {
+        x: Math.round(r.x),
+        y: Math.round(r.y),
+        w: Math.round(r.width),
+        h: Math.round(r.height),
+        top: Math.round(r.top),
+        left: Math.round(r.left),
+        right: Math.round(r.right),
+        bottom: Math.round(r.bottom),
+      };
+    }
+    function overlap(a, b) {
+      if (!a || !b) return false;
+      return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    }
+    function send(data) {
+      fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_TENSION_LAYOUT',location:'tension-page-ui.js:layoutSnapshot',message:'Tension layout snapshot',data:data,timestamp:Date.now()})}).catch(()=>{});
+    }
+
+    var shell = root.querySelector(".tension-shell");
+    var grid3 = root.querySelector(".tension-grid-3");
+    var grid2s = root.querySelectorAll(".tension-grid-2");
+    var safe = root.querySelector(".safe-card");
+    var guide = root.querySelector(".tension-guide");
+    var connImg = document.getElementById("tensionConnectionImage");
+
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(function () {
+        var rRoot = rect(root);
+        var rShell = rect(shell);
+        var rGrid3 = rect(grid3);
+        var rSafe = rect(safe);
+        var rGuide = rect(guide);
+        var rImg = rect(connImg);
+
+        var anyOverflow = shell ? (shell.scrollWidth > shell.clientWidth) : null;
+        var g2Rects = [];
+        for (var i = 0; i < grid2s.length; i++) g2Rects.push(rect(grid2s[i]));
+
+        send({
+          viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 },
+          root: rRoot,
+          shell: rShell,
+          grid3: rGrid3,
+          grid2: g2Rects,
+          safe: rSafe,
+          guide: rGuide,
+          connectionImage: rImg,
+          overlaps: {
+            safe_guide: overlap(rSafe, rGuide),
+          },
+          horizontalOverflow: anyOverflow,
+        });
+      });
+    }
+  })();
+  // #endregion
+
   var viewButtons = root.querySelectorAll("[data-tension-view]");
   var analysisModeButtons = root.querySelectorAll("[data-tension-analysis-mode]");
   var analysisCalcNon = byId("analysisCalcNon");
@@ -273,6 +336,11 @@
     safeSectionOut.textContent = picked.name;
     safeAgOut.value = fmt(picked.Ag, 3);
     safeRemarkOut.value = picked.Ag >= reqAg ? "SAFE" : "NOT SAFE";
+    if (safeRemarkOut && safeRemarkOut.classList) {
+      var isSafe = safeRemarkOut.value === "SAFE";
+      safeRemarkOut.classList.toggle("is-safe", isSafe);
+      safeRemarkOut.classList.toggle("is-unsafe", !isSafe);
+    }
 
     return { gov: gov, reqAg: reqAg };
   }

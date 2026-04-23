@@ -13,11 +13,81 @@
   var openDbBtn = document.getElementById("openAiscDatabaseBtn");
   var backBtn = document.getElementById("backToSectionDashboardBtn");
   var dbPanel = document.getElementById("aiscDbPanel");
+  var dbBackdrop = dbPanel ? dbPanel.querySelector("[data-close-db]") : null;
   var dbSearch = document.getElementById("aiscDbSearchInput");
   var dbBody = document.getElementById("aiscDbTableBody");
   var chipWrap = document.getElementById("aiscShapeFilterChips");
+  var selectedDesignation = document.getElementById("spSelectedDesignation");
+  var selectedMeta = document.getElementById("spSelectedMeta");
 
   if (!form || !secSel || !searchInput || !dbPanel || !dbBody || !chipWrap) return;
+
+  // #region agent log
+  (function logLayoutSnapshot() {
+    function rect(el) {
+      if (!el || !el.getBoundingClientRect) return null;
+      var r = el.getBoundingClientRect();
+      return {
+        x: Math.round(r.x),
+        y: Math.round(r.y),
+        w: Math.round(r.width),
+        h: Math.round(r.height),
+        top: Math.round(r.top),
+        left: Math.round(r.left),
+        right: Math.round(r.right),
+        bottom: Math.round(r.bottom),
+      };
+    }
+    function overlap(a, b) {
+      if (!a || !b) return false;
+      return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    }
+    function send(data) {
+      fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_LAYOUT',location:'section-properties-ui.js:layoutSnapshot',message:'Props layout snapshot',data:data,timestamp:Date.now()})}).catch(()=>{});
+    }
+
+    var props = document.getElementById("sectionPropsSection");
+    var dash = props ? props.querySelector(".section-props-dashboard") : null;
+    var hero = props ? props.querySelector(".sp-hero") : null;
+    var main = props ? props.querySelector(".sp-main-card") : null;
+    var guide = props ? props.querySelector(".sp-guide-card") : null;
+    var fields = props ? props.querySelector(".sp-fields") : null;
+    var mainImg = document.getElementById("sectionPropsMainImage");
+    var guideImg = document.getElementById("sectionPropsGuideImage");
+    var userGuideImg = document.getElementById("sectionPropsUserGuideImage");
+
+    // delay one frame to measure after layout
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(function () {
+        var rHero = rect(hero);
+        var rMain = rect(main);
+        var rGuide = rect(guide);
+        var rFields = rect(fields);
+        var rDash = rect(dash);
+        send({
+          viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 },
+          dash: rDash,
+          hero: rHero,
+          main: rMain,
+          guide: rGuide,
+          fields: rFields,
+          imgs: {
+            userGuide: rect(userGuideImg),
+            main: rect(mainImg),
+            guideTop: rect(guideImg),
+          },
+          overlaps: {
+            hero_main: overlap(rHero, rMain),
+            main_guide: overlap(rMain, rGuide),
+            hero_guide: overlap(rHero, rGuide),
+            guide_fields: overlap(rGuide, rFields),
+          },
+          horizontalOverflow: dash ? (dash.scrollWidth > dash.clientWidth) : null,
+        });
+      });
+    }
+  })();
+  // #endregion
 
   var sectionRows = [];
   var selectedShapePrefix = "";
@@ -32,11 +102,10 @@
     Ix: document.getElementById("spIx"),
     Iy: document.getElementById("spIy"),
     Iz: document.getElementById("spIz"),
-    tw2: document.getElementById("spTw2"),
-    bf2: document.getElementById("spBf2"),
-    tf2: document.getElementById("spTf2"),
-    Sx: document.getElementById("spSxHidden"),
-    Zx: document.getElementById("spZxHidden"),
+    rx: document.getElementById("spRx"),
+    ry: document.getElementById("spRy"),
+    Sx: document.getElementById("spSx"),
+    Zx: document.getElementById("spZx"),
   };
 
   function prefixOf(designation) {
@@ -82,12 +151,25 @@
     setTextInput(fieldMap.tf, row.tf);
     setTextInput(fieldMap.Ix, row.Ix);
     setTextInput(fieldMap.Iy, row.Iy);
-    setTextInput(fieldMap.Iz, row.Iz != null ? row.Iz : "-");
-    setTextInput(fieldMap.tw2, row.tw);
-    setTextInput(fieldMap.bf2, row.bf);
-    setTextInput(fieldMap.tf2, row.tf);
+    if (fieldMap.Iz) setTextInput(fieldMap.Iz, row.Iz != null ? row.Iz : "-");
+    setTextInput(fieldMap.rx, row.rx);
+    setTextInput(fieldMap.ry, row.ry);
     setTextInput(fieldMap.Sx, row.Sx);
     setTextInput(fieldMap.Zx, row.Zx);
+
+    if (selectedDesignation) {
+      selectedDesignation.textContent = row.designation || "—";
+    }
+    if (selectedMeta) {
+      var w = row.weightPlf != null ? row.weightPlf : "—";
+      var a = row.Ag != null ? row.Ag : "—";
+      var d = row.d != null ? row.d : "—";
+      selectedMeta.textContent = "Weight " + w + " lb/ft · Area " + a + " in² · d " + d + " in";
+    }
+
+    // #region agent log
+    fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_SUMMARY',location:'section-properties-ui.js:applySectionRow',message:'Applied section row to UI',data:{designation:row.designation||null,weightPlf:row.weightPlf||null,Ag:row.Ag||null,d:row.d||null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
     if (mainImage && mainImage.dataset.dynamic === "true") {
       mainImage.src = imageForShape(row.designation);
@@ -129,8 +211,10 @@
     prefixes.forEach(function (p) {
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "sp-chip" + ((p === "ALL" ? "" : p) === selectedShapePrefix ? " is-active" : "");
+      var isActive = ((p === "ALL" ? "" : p) === selectedShapePrefix);
+      btn.className = "sp-chip" + (isActive ? " is-active" : "");
       btn.textContent = p;
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
       btn.addEventListener("click", function () {
         selectedShapePrefix = p === "ALL" ? "" : p;
         renderShapeChips();
@@ -147,13 +231,42 @@
 
   if (openDbBtn) {
     openDbBtn.addEventListener("click", function () {
+      window.__spScrollY = window.scrollY || 0;
       dbPanel.classList.add("is-open");
+      document.body.style.overflow = "hidden";
       fillDbTable(activeRows());
+
+      // #region agent log
+      fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_DB_OVERLAY',location:'section-properties-ui.js:openDb',message:'Opened DB overlay',data:{savedScrollY:window.__spScrollY,isOpen:dbPanel.classList.contains('is-open'),bodyOverflow:document.body.style.overflow||null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
     });
   }
   if (backBtn) {
     backBtn.addEventListener("click", function () {
+      var saved = typeof window.__spScrollY === "number" ? window.__spScrollY : null;
+      var before = window.scrollY || 0;
       dbPanel.classList.remove("is-open");
+      document.body.style.overflow = "";
+      if (saved !== null) {
+        window.scrollTo(0, saved);
+      }
+
+      // #region agent log
+      fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_DB_OVERLAY',location:'section-properties-ui.js:closeDb',message:'Closed DB overlay (before restore check)',data:{savedScrollY:saved,beforeCloseScrollY:before,isOpen:dbPanel.classList.contains('is-open'),bodyOverflow:document.body.style.overflow||null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function () {
+          // #region agent log
+          fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_DB_OVERLAY',location:'section-properties-ui.js:closeDb:raf',message:'Closed DB overlay (after restore check)',data:{afterCloseScrollY:window.scrollY||0,savedScrollY:saved},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+        });
+      }
+    });
+  }
+  if (dbBackdrop) {
+    dbBackdrop.addEventListener("click", function () {
+      if (backBtn) backBtn.click();
     });
   }
   if (dbSearch) {
