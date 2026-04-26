@@ -570,7 +570,177 @@
     var showCard = sectionId === "steelGradeSection";
     if (rightPanel) rightPanel.classList.toggle("is-hidden", !showCard);
     if (guidePanel) guidePanel.classList.toggle("is-hidden", !showCard);
-    if (dashboardMain) dashboardMain.classList.toggle("no-card", !showCard);
+    if (dashboardMain) {
+      dashboardMain.classList.toggle("no-card", !showCard);
+      dashboardMain.classList.toggle("steel-grade-active", showCard);
+      dashboardMain.classList.toggle("overview-active", sectionId === "overviewSection");
+      dashboardMain.classList.toggle("section-props-active", sectionId === "sectionPropsSection");
+      dashboardMain.classList.toggle("tension-rod-active", sectionId === "tensionRodSection");
+      // #region agent log
+      (function logLeftNavFit() {
+        var leftNav = document.querySelector(".left-nav");
+        if (!leftNav || !window || !window.fetch) return;
+        function rect(el) {
+          if (!el || !el.getBoundingClientRect) return null;
+          var r = el.getBoundingClientRect();
+          return { h: Math.round(r.height), top: Math.round(r.top), bottom: Math.round(r.bottom) };
+        }
+        fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "99e7ea" },
+          body: JSON.stringify({
+            sessionId: "99e7ea",
+            runId: "post-fix",
+            hypothesisId: "H_navfit",
+            location: "js/main.js:activateSection",
+            message: "Left nav fit snapshot",
+            data: {
+              sectionId: sectionId,
+              noCard: !!dashboardMain.classList.contains("no-card"),
+              viewportH: window.innerHeight,
+              centerScrollTop: document.querySelector(".center-panel") ? document.querySelector(".center-panel").scrollTop : null,
+              centerClientH: document.querySelector(".center-panel") ? document.querySelector(".center-panel").clientHeight : null,
+              centerScrollH: document.querySelector(".center-panel") ? document.querySelector(".center-panel").scrollHeight : null,
+              activeClientH: activePanel ? activePanel.clientHeight : null,
+              activeScrollH: activePanel ? activePanel.scrollHeight : null,
+              dashboardRect: rect(dashboardMain),
+              leftNavRect: rect(leftNav)
+            },
+            timestamp: Date.now()
+          })
+        }).catch(function () {});
+      })();
+      // #endregion
+    }
+    // #region agent log
+    (function logThreePageStyleSnapshot() {
+      if (sectionId !== "tensionRodSection" && sectionId !== "bendingSection" && sectionId !== "shearSection") return;
+      if (!activePanel || !window.getComputedStyle) return;
+      var card = activePanel.querySelector(".tension-card");
+      var cardHead = card ? card.querySelector("h4") : null;
+      var guide = activePanel.querySelector(".tension-guide");
+      var primary = activePanel.querySelector(".tension-primary-btn");
+      var safeName = activePanel.querySelector(".safe-name");
+      function css(el) {
+        if (!el) return null;
+        var c = window.getComputedStyle(el);
+        return {
+          background: c.backgroundColor,
+          border: c.border,
+          borderRadius: c.borderRadius,
+          boxShadow: c.boxShadow,
+          color: c.color
+        };
+      }
+      fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "9c1ad2" },
+        body: JSON.stringify({
+          sessionId: "9c1ad2",
+          runId: "pre-strip",
+          hypothesisId: "H_TRI_STYLE",
+          location: "js/main.js:activateSection",
+          message: "Three-page computed style snapshot",
+          data: {
+            sectionId: sectionId,
+            card: css(card),
+            cardHeader: css(cardHead),
+            userGuide: css(guide),
+            primaryButton: css(primary),
+            safeName: css(safeName)
+          },
+          timestamp: Date.now()
+        })
+      }).catch(function () {});
+    })();
+    // #endregion
+
+    // #region agent log
+    (function logTensionRodFitSnapshot() {
+      if (sectionId !== "tensionRodSection") return;
+      if (!activePanel || !window || !window.fetch) return;
+      function rect(el) {
+        if (!el || !el.getBoundingClientRect) return null;
+        var r = el.getBoundingClientRect();
+        return { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right), w: Math.round(r.width), h: Math.round(r.height) };
+      }
+      function sig(el) {
+        if (!el) return null;
+        return {
+          id: el.id || null,
+          className: el.className || null,
+          rect: rect(el),
+          clientH: el.clientHeight,
+          scrollH: el.scrollHeight,
+          clientW: el.clientWidth,
+          scrollW: el.scrollWidth
+        };
+      }
+      function css(el, keys) {
+        if (!el || !window.getComputedStyle) return null;
+        var c = window.getComputedStyle(el);
+        var out = {};
+        (keys || []).forEach(function (k) { out[k] = c[k]; });
+        return out;
+      }
+      var center = document.querySelector(".center-panel");
+      var shell = activePanel.querySelector(".tension-shell");
+      var form = document.getElementById("formTensionRod");
+      var trodShell = activePanel.querySelector(".trod-shell");
+      var top = activePanel.querySelector(".trod-top");
+      var main = activePanel.querySelector(".trod-main");
+      var grid = activePanel.querySelector(".trod-grid");
+      var bottom = activePanel.querySelector(".trod-bottom");
+      var diagrams = activePanel.querySelector(".trod-diagrams");
+      var actions = activePanel.querySelector(".trod-actions");
+      var methodBadge = activePanel.querySelector(".trod-method-badge");
+      var finalValue = activePanel.querySelector(".trod-final-value");
+
+      function send() {
+        fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b85dfb" },
+          body: JSON.stringify({
+            sessionId: "b85dfb",
+            runId: "pre-fix",
+            hypothesisId: "H_TR_FIT",
+            location: "js/main.js:activateSection:logTensionRodFitSnapshot",
+            message: "Tension Rod no-scroll fit snapshot",
+            data: {
+              viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 },
+              center: sig(center),
+              panel: sig(activePanel),
+              shell: sig(shell),
+              form: sig(form),
+              trodShell: sig(trodShell),
+              top: sig(top),
+              main: sig(main),
+              grid: sig(grid),
+              bottom: sig(bottom),
+              diagrams: sig(diagrams),
+              actions: sig(actions),
+              keyRects: { methodBadge: rect(methodBadge), finalValue: rect(finalValue) },
+              overflowFlags: {
+                centerY: center ? center.scrollHeight > center.clientHeight + 1 : null,
+                panelY: activePanel ? activePanel.scrollHeight > activePanel.clientHeight + 1 : null,
+                trodShellY: trodShell ? trodShell.scrollHeight > trodShell.clientHeight + 1 : null
+              },
+              styles: {
+                center: css(center, ["overflowY", "height", "minHeight", "paddingTop", "paddingBottom"]),
+                panel: css(activePanel, ["overflowY", "height", "minHeight", "paddingTop", "paddingBottom"]),
+                trodShell: css(trodShell, ["overflow", "gridTemplateRows", "gap", "padding"]),
+                grid: css(grid, ["gridTemplateColumns", "gap"]),
+                bottom: css(bottom, ["gridTemplateRows", "gap"])
+              }
+            },
+            timestamp: Date.now()
+          })
+        }).catch(function () {});
+      }
+      if (window.requestAnimationFrame) window.requestAnimationFrame(send);
+      else send();
+    })();
+    // #endregion
     // #region agent log
     if (showCard) logSteelLayout("activateSection:steelGradeSection");
     // #endregion
@@ -603,6 +773,70 @@
       else compute();
     })();
     // #endregion
+
+    // #region agent log
+    (function logOverviewTabFooterLike() {
+      if (sectionId !== "overviewSection") return;
+      try {
+        var quickNav = document.getElementById("overviewQuickNav");
+        var pill = document.querySelector("#overviewSection .ov-hero .retro-pill");
+        var tabs = quickNav ? quickNav.querySelector(".ov-bottom-tabs") : null;
+        function rect(el) {
+          if (!el || !el.getBoundingClientRect) return null;
+          var r = el.getBoundingClientRect();
+          return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height), w: Math.round(r.width) };
+        }
+        function css(el) {
+          if (!el || !window.getComputedStyle) return null;
+          var c = window.getComputedStyle(el);
+          return {
+            display: c.display,
+            position: c.position,
+            marginTop: c.marginTop,
+            padding: c.padding,
+            background: c.backgroundColor,
+            boxShadow: c.boxShadow,
+            borderRadius: c.borderRadius,
+          };
+        }
+        function parentSig(el) {
+          if (!el || !el.parentElement) return null;
+          var p = el.parentElement;
+          return { id: p.id || null, className: p.className || null, tag: p.tagName || null };
+        }
+        fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "014694" },
+          body: JSON.stringify({
+            sessionId: "014694",
+            runId: "pre-fix",
+            hypothesisId: "H_OV_FOOTERBOX",
+            location: "js/main.js:activateSection:logOverviewTabFooterLike",
+            message: "Overview tabs placement vs pill",
+            data: {
+              viewport: { w: window.innerWidth, h: window.innerHeight },
+              pill: pill ? { rect: rect(pill), css: css(pill), parent: parentSig(pill) } : null,
+              quickNav: quickNav
+                ? {
+                    rect: rect(quickNav),
+                    css: css(quickNav),
+                    parent: parentSig(quickNav),
+                    hasBrand: !!quickNav.querySelector(".ov-bottom-brand"),
+                    tabsRect: rect(tabs),
+                    tabsCss: css(tabs),
+                  }
+                : null,
+              deltaTop_px:
+                quickNav && pill
+                  ? Math.round(quickNav.getBoundingClientRect().top - pill.getBoundingClientRect().bottom)
+                  : null,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(function () {});
+      } catch (e) {}
+    })();
+    // #endregion
   }
 
   navItems.forEach(function (item) {
@@ -615,14 +849,40 @@
     });
   });
 
+  function goToSectionFromOverview(id) {
+    if (!id || sections.indexOf(id) === -1) return;
+    history.pushState(null, "", "#" + id);
+    activateSection(id);
+  }
+
   var quickNav = document.getElementById("overviewQuickNav");
   if (quickNav) {
     quickNav.querySelectorAll("[data-goto]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var id = btn.getAttribute("data-goto");
-        if (id) {
-          history.pushState(null, "", "#" + id);
-          activateSection(id);
+        goToSectionFromOverview(btn.getAttribute("data-goto"));
+      });
+    });
+  }
+
+  // Overview-level shortcut links/tabs (including EXPLORE TOOLS button).
+  var overviewSectionEl = document.getElementById("overviewSection");
+  if (overviewSectionEl) {
+    overviewSectionEl.querySelectorAll("[data-goto]").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        var id = el.getAttribute("data-goto");
+        if (!id) return;
+        if (e && typeof e.preventDefault === "function") e.preventDefault();
+        goToSectionFromOverview(id);
+      });
+
+      // Keyboard activation for non-button controls.
+      el.addEventListener("keydown", function (e) {
+        if (!e) return;
+        if (e.key === "Enter" || e.key === " ") {
+          var id = el.getAttribute("data-goto");
+          if (!id) return;
+          e.preventDefault();
+          goToSectionFromOverview(id);
         }
       });
     });

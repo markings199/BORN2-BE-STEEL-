@@ -17,8 +17,13 @@
   var dbSearch = document.getElementById("aiscDbSearchInput");
   var dbBody = document.getElementById("aiscDbTableBody");
   var chipWrap = document.getElementById("aiscShapeFilterChips");
+  var dbFilterShape = document.getElementById("spDbFilterShape");
+  var dbFilterType = document.getElementById("spDbFilterType");
+  var dbFilterLabel = document.getElementById("spDbFilterLabel");
+  var dbFilterReset = document.getElementById("spDbFilterReset");
   var selectedDesignation = document.getElementById("spSelectedDesignation");
   var selectedMeta = document.getElementById("spSelectedMeta");
+  var dbCount = document.getElementById("spDbResultCount");
 
   if (!form || !secSel || !searchInput || !dbPanel || !dbBody || !chipWrap) return;
 
@@ -125,6 +130,76 @@
     el.value = val == null || val === "" ? "-" : String(val);
   }
 
+  function normalizePrefix(val) {
+    var p = String(val || "").trim().toUpperCase();
+    if (!p) return "";
+    if (p.indexOf("HSS") === 0) return "HSS";
+    if (p.indexOf("PIPE") === 0) return "PIPE";
+    if (p.indexOf("2L") === 0) return "2L";
+    if (p.indexOf("WT") === 0 || p.indexOf("MT") === 0 || p.indexOf("ST") === 0) return "TEE";
+    if (p.indexOf("MC") === 0 || p === "C") return "C";
+    if (p.indexOf("W") === 0 || p.indexOf("S") === 0 || p.indexOf("HP") === 0 || p.indexOf("M") === 0) return "W";
+    if (p.indexOf("L") === 0) return "L";
+    return p;
+  }
+
+  function typeOfRow(row) {
+    var raw = String(row && row.designation || "").toUpperCase().trim();
+    if (!raw) return "";
+    if (/^HSS/.test(raw)) return "HSS";
+    if (/^PIPE/.test(raw)) return "PIPE";
+    if (/^2L/.test(raw)) return "2L";
+    if (/^WT|^MT|^ST/.test(raw)) return "TEE";
+    if (/^MC|^C/.test(raw)) return "C";
+    if (/^W|^S|^HP|^M/.test(raw)) return "W";
+    if (/^L/.test(raw)) return "L";
+    return prefixOf(raw);
+  }
+
+  function manualLabelOfRow(row) {
+    if (!row) return "";
+    return String(
+      row.AISC_Manual_Label ||
+      row.aisc_manual_label ||
+      row.aiscManualLabel ||
+      row.manualLabel ||
+      row.designation ||
+      ""
+    );
+  }
+
+  function buildSelectOptions(selectEl, values, placeholder) {
+    if (!selectEl) return;
+    selectEl.innerHTML = "";
+    var first = document.createElement("option");
+    first.value = "";
+    first.textContent = placeholder;
+    selectEl.appendChild(first);
+    values.forEach(function (v) {
+      var opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      selectEl.appendChild(opt);
+    });
+  }
+
+  function formatNumber(value) {
+    if (value == null || value === "") return "-";
+    var n = Number(value);
+    if (!isFinite(n)) return String(value);
+    if (Math.abs(n) >= 1000) return String(Math.round(n * 100) / 100);
+    if (Math.abs(n) >= 100) return String(Math.round(n * 1000) / 1000);
+    return String(Math.round(n * 10000) / 10000);
+  }
+
+  function sortByDesignation(rows) {
+    return rows.slice().sort(function (a, b) {
+      var da = String(a && a.designation || "");
+      var db = String(b && b.designation || "");
+      return da.localeCompare(db, undefined, { numeric: true, sensitivity: "base" });
+    });
+  }
+
   function imageForShape(designation) {
     var raw = String(designation || "").toUpperCase().trim();
     var p = prefixOf(raw);
@@ -136,6 +211,36 @@
     if (/^PIPE/.test(raw)) return "assets/section-properties/pipe-shape.png";
     if (/^WT|^MT|^ST/.test(raw)) return "assets/section-properties/tee-shape.png";
     return "assets/section-properties/section-main.png";
+  }
+
+  function normalizeDesignationKey(value) {
+    return String(value || "")
+      .toUpperCase()
+      .replace(/\s+/g, "")
+      .replace(/×/g, "X")
+      .replace(/-/g, "");
+  }
+
+  function findSectionRow(query) {
+    var q = normalizeDesignationKey(query);
+    if (!q) return null;
+
+    // 1) Exact normalized match (e.g., W14x99 / w14X99 / W14 x 99)
+    var exact = sectionRows.find(function (row) {
+      return normalizeDesignationKey(row.designation) === q;
+    });
+    if (exact) return exact;
+
+    // 2) Starts-with match for quick user input
+    var startsWith = sectionRows.find(function (row) {
+      return normalizeDesignationKey(row.designation).indexOf(q) === 0;
+    });
+    if (startsWith) return startsWith;
+
+    // 3) Contains match as last fallback
+    return sectionRows.find(function (row) {
+      return normalizeDesignationKey(row.designation).indexOf(q) !== -1;
+    }) || null;
   }
 
   function applySectionRow(row) {
@@ -178,17 +283,30 @@
 
   function fillDbTable(rows) {
     dbBody.innerHTML = "";
+    if (dbCount) {
+      dbCount.textContent = rows.length + " result" + (rows.length === 1 ? "" : "s");
+    }
+    if (!rows.length) {
+      var trEmpty = document.createElement("tr");
+      trEmpty.innerHTML = '<td colspan="7" class="sp-db-empty">No matching section found.</td>';
+      dbBody.appendChild(trEmpty);
+      return;
+    }
     rows.forEach(function (row) {
+      var type = typeOfRow(row) || "-";
+      var manualLabel = manualLabelOfRow(row) || "-";
       var tr = document.createElement("tr");
       tr.innerHTML =
         "<td>" + (row.designation || "") + "</td>" +
-        "<td>" + (row.weightPlf != null ? row.weightPlf : "-") + "</td>" +
-        "<td>" + (row.Ag != null ? row.Ag : "-") + "</td>" +
-        "<td>" + (row.d != null ? row.d : "-") + "</td>" +
-        "<td>" + (row.bf != null ? row.bf : "-") + "</td>";
+        "<td>" + type + "</td>" +
+        "<td>" + manualLabel + "</td>" +
+        "<td>" + formatNumber(row.weightPlf) + "</td>" +
+        "<td>" + formatNumber(row.Ag) + "</td>" +
+        "<td>" + formatNumber(row.d) + "</td>" +
+        "<td>" + formatNumber(row.bf) + "</td>";
       tr.addEventListener("click", function () {
         applySectionRow(row);
-        dbPanel.classList.remove("is-open");
+        if (backBtn) backBtn.click();
       });
       dbBody.appendChild(tr);
     });
@@ -196,16 +314,26 @@
 
   function activeRows() {
     var keyword = String(dbSearch.value || "").trim().toUpperCase();
+    var shapeFilter = normalizePrefix(dbFilterShape && dbFilterShape.value);
+    var typeFilter = normalizePrefix(dbFilterType && dbFilterType.value);
+    var labelFilter = String(dbFilterLabel && dbFilterLabel.value || "").trim().toUpperCase();
     return sectionRows.filter(function (row) {
-      var p = prefixOf(row.designation);
+      var p = normalizePrefix(prefixOf(row.designation));
+      var t = normalizePrefix(typeOfRow(row));
+      var label = manualLabelOfRow(row).toUpperCase();
       var byPrefix = !selectedShapePrefix || p === selectedShapePrefix;
       var bySearch = !keyword || String(row.designation || "").toUpperCase().indexOf(keyword) !== -1;
-      return byPrefix && bySearch;
+      var byShape = !shapeFilter || p === shapeFilter;
+      var byType = !typeFilter || t === typeFilter;
+      var byLabel = !labelFilter || label.indexOf(labelFilter) !== -1;
+      return byPrefix && bySearch && byShape && byType && byLabel;
     });
   }
 
   function renderShapeChips() {
-    var prefixes = Array.from(new Set(sectionRows.map(function (r) { return prefixOf(r.designation); }))).sort();
+    var prefixes = Array.from(new Set(sectionRows.map(function (r) {
+      return normalizePrefix(prefixOf(r.designation));
+    }))).filter(Boolean).sort();
     prefixes.unshift("ALL");
     chipWrap.innerHTML = "";
     prefixes.forEach(function (p) {
@@ -226,7 +354,30 @@
 
   function loadOne(designation) {
     if (!designation) return;
-    API.getSection(designation).then(applySectionRow).catch(function () {});
+    API.getSection(designation)
+      .then(function (payload) {
+        var row = payload && payload.section ? payload.section : payload;
+        if (row && row.designation) {
+          applySectionRow(row); // full-detail payload from API
+          return;
+        }
+        // fallback to local list row only when API payload is empty
+        var fallback = findSectionRow(designation);
+        if (fallback) {
+          applySectionRow(fallback);
+          return;
+        }
+        if (selectedMeta) selectedMeta.textContent = "No matching section found for " + designation;
+      })
+      .catch(function () {
+        // network/error fallback: try local cache by normalized designation
+        var fallback = findSectionRow(designation);
+        if (fallback) {
+          applySectionRow(fallback);
+          return;
+        }
+        if (selectedMeta) selectedMeta.textContent = "No matching section found for " + designation;
+      });
   }
 
   if (openDbBtn) {
@@ -274,13 +425,37 @@
       fillDbTable(activeRows());
     });
   }
+  if (dbFilterShape) {
+    dbFilterShape.addEventListener("change", function () {
+      fillDbTable(activeRows());
+    });
+  }
+  if (dbFilterType) {
+    dbFilterType.addEventListener("change", function () {
+      fillDbTable(activeRows());
+    });
+  }
+  if (dbFilterLabel) {
+    dbFilterLabel.addEventListener("input", function () {
+      fillDbTable(activeRows());
+    });
+  }
+  if (dbFilterReset) {
+    dbFilterReset.addEventListener("click", function () {
+      if (dbFilterShape) dbFilterShape.value = "";
+      if (dbFilterType) dbFilterType.value = "";
+      if (dbFilterLabel) dbFilterLabel.value = "";
+      if (dbSearch) dbSearch.value = "";
+      selectedShapePrefix = "";
+      renderShapeChips();
+      fillDbTable(activeRows());
+    });
+  }
   if (searchInput) {
     searchInput.addEventListener("input", function () {
-      var keyword = String(searchInput.value || "").trim().toUpperCase();
+      var keyword = String(searchInput.value || "").trim();
       if (!keyword) return;
-      var firstMatch = sectionRows.find(function (row) {
-        return String(row.designation || "").toUpperCase().indexOf(keyword) === 0;
-      });
+      var firstMatch = findSectionRow(keyword);
       if (firstMatch) applySectionRow(firstMatch);
     });
     searchInput.addEventListener("change", function () {
@@ -308,7 +483,7 @@
 
   API.listSections()
     .then(function (data) {
-      sectionRows = data.sections || [];
+      sectionRows = sortByDesignation(data.sections || []);
       secSel.innerHTML = '<option value="">--</option>';
       sectionRows.forEach(function (s) {
         var opt = document.createElement("option");
@@ -316,6 +491,14 @@
         opt.textContent = s.designation;
         secSel.appendChild(opt);
       });
+      var prefixes = Array.from(new Set(sectionRows.map(function (s) {
+        return normalizePrefix(prefixOf(s.designation));
+      }))).filter(Boolean).sort();
+      var types = Array.from(new Set(sectionRows.map(function (s) {
+        return normalizePrefix(typeOfRow(s));
+      }))).filter(Boolean).sort();
+      buildSelectOptions(dbFilterShape, prefixes, "Shapes");
+      buildSelectOptions(dbFilterType, types, "Type");
       renderShapeChips();
       fillDbTable(activeRows());
       if (sectionRows.length) loadOne(sectionRows[0].designation);
