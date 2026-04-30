@@ -1,24 +1,33 @@
 (function () {
   "use strict";
+  var ENABLE_TENSION_DEBUG_TELEMETRY = false;
+  var __nativeFetch = typeof window.fetch === "function" ? window.fetch.bind(window) : null;
+  function fetch(url, opts) {
+    var u = String(url || "");
+    if (u.indexOf("127.0.0.1:7885/ingest") !== -1 || u.indexOf("127.0.0.1:7611/ingest") !== -1) {
+      return Promise.resolve({ ok: false, skipped: true });
+    }
+    if (!__nativeFetch) return Promise.reject(new Error("fetch unavailable"));
+    return __nativeFetch(url, opts);
+  }
 
   var root = document.getElementById("tensionSection");
   if (!root) return;
   // #region agent log
   function dbg(runId, hypothesisId, location, message, data) {
+    if (!ENABLE_TENSION_DEBUG_TELEMETRY) return;
     var payload = { sessionId: "99e7ea", id: "log_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8), runId: runId, hypothesisId: hypothesisId, location: location, message: message, data: data || {}, timestamp: Date.now() };
     try {
       localStorage.setItem("steel-debug-99e7ea-tail", JSON.stringify(payload));
     } catch (e) {}
     fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", { method: "POST", headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "99e7ea" }, body: JSON.stringify(payload) }).catch(function () {});
-    // #region agent log
-    fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", { method: "POST", headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "9c1ad2" }, body: JSON.stringify({ sessionId: "9c1ad2", id: payload.id, runId: runId, hypothesisId: hypothesisId, location: location, message: message, data: data || {}, timestamp: payload.timestamp }) }).catch(function () {});
-    // #endregion
   }
   dbg("pre-fix", "H0", "tension-page-ui.js:init", "Tension UI script initialized", { rootFound: true });
   // #endregion
 
   // #region agent log
   (function logTensionLayoutSnapshot() {
+    if (!ENABLE_TENSION_DEBUG_TELEMETRY) return;
     function rect(el) {
       if (!el || !el.getBoundingClientRect) return null;
       var r = el.getBoundingClientRect();
@@ -180,7 +189,7 @@
     dbg("pre-fix", "H0", "tension-page-ui.js:setView", "Tension top view changed", { view: name });
     // #endregion
     enforceAnalysisScrollLayout();
-    if (name === "analysisStag") recomputeAll();
+    if (name === "analysisStag" || name === "analysisNon") recomputeAll();
   }
 
   viewButtons.forEach(function (btn) {
@@ -202,12 +211,10 @@
     }
     if (mode === "stag") {
       if (analysisStagUnsupportedLc && unsupportedLc) analysisStagUnsupportedLc.value = unsupportedLc.value;
-      if (analysisStagPlateLengthIn && plateLengthIn) analysisStagPlateLengthIn.value = plateLengthIn.value;
       if (analysisStagPlateThickness && plateThickness) analysisStagPlateThickness.value = plateThickness.value;
       syncShapeFromNonToStag();
     } else if (mode === "non") {
       if (analysisStagUnsupportedLc && unsupportedLc) unsupportedLc.value = analysisStagUnsupportedLc.value;
-      if (analysisStagPlateLengthIn && plateLengthIn) plateLengthIn.value = analysisStagPlateLengthIn.value;
       if (analysisStagPlateThickness && plateThickness) plateThickness.value = analysisStagPlateThickness.value;
       syncShapeFromStagToNon();
     }
@@ -246,6 +253,8 @@
   var fastenersPerLine = byId("tensionFastenersPerLine");
   var gageLines = byId("tensionGageLines");
   var connectionSelect = byId("tensionConnection");
+  var tensionNonStagConnectionSelect = byId("tensionNonStagConnectionSelect");
+  var tensionStagConnectionSelect = byId("tensionStagConnectionSelect");
   var uOut = byId("tensionU");
   var connImage = byId("tensionConnectionImage");
   var dlInput = byId("tensionDL");
@@ -265,9 +274,18 @@
   var safeSectionOut = byId("tensionSafeSection");
   var safeAgOut = byId("tensionSafeAg");
   var safeRemarkOut = byId("tensionSafeRemark");
+  var cdCapacityTbody = byId("cdCapacityTbody");
+  var cdDemandTbody = byId("cdDemandTbody");
+  var cdSheetScrollSynced = false;
 
   var shapeSelect = byId("tensionShapeSelect");
+  var nsAiscGrid = byId("nsAiscGrid");
+  var nsShapeIcons = byId("nsShapeIcons");
+  var nsTypeChips = byId("nsTypeChips");
   var shapeSelectStag = byId("tensionShapeSelectStag");
+  var stagAiscGrid = byId("stagAiscGrid");
+  var stagShapeIcons = byId("stagShapeIcons");
+  var stagTypeChips = byId("stagSectionTypeChips");
   var shapeAg = byId("tensionShapeAg");
   var shapeRx = byId("tensionShapeRx");
   var shapeRy = byId("tensionShapeRy");
@@ -373,12 +391,69 @@
   var analysisStagBsAnt = byId("analysisStagBsAnt");
   var analysisStagBsAvg = byId("analysisStagBsAvg");
   var analysisStagBsAvn = byId("analysisStagBsAvn");
+  var analysisStagBsFt = byId("analysisStagBsFt");
+  var analysisStagBsF1v = byId("analysisStagBsF1v");
+  var analysisStagBsF2v = byId("analysisStagBsF2v");
+  var analysisStagBsTn = byId("analysisStagBsTn");
+  var analysisStagBsLrfdTu = byId("analysisStagBsLrfdTu");
+  var analysisStagBsAsdTa = byId("analysisStagBsAsdTa");
 
   var analysisGoverningDisplay = byId("analysisGoverningDisplay");
   var analysisSafetyStatus = byId("analysisSafetyStatus");
   var analysisGoverningDisplayStag = byId("analysisGoverningDisplayStag");
   var analysisSafetyStatusStag = byId("analysisSafetyStatusStag");
   var analysisStagGovEqLabel = byId("analysisStagGovEqLabel");
+
+  function enforceRequestedVisualLocks() {
+    // Hard-apply styles in case cached/native select rendering ignores CSS.
+    if (methodSelect) {
+      methodSelect.style.textAlign = "center";
+      methodSelect.style.textAlignLast = "center";
+      methodSelect.style.paddingLeft = "0";
+      methodSelect.style.paddingRight = "0";
+      methodSelect.style.paddingTop = "0";
+      methodSelect.style.paddingBottom = "0";
+      methodSelect.style.height = "2.2rem";
+      methodSelect.style.lineHeight = "2.2rem";
+      methodSelect.style.appearance = "none";
+      methodSelect.style.webkitAppearance = "none";
+      methodSelect.style.mozAppearance = "none";
+    }
+    if (steelSelect) {
+      steelSelect.style.color = "#c01919";
+      steelSelect.style.fontWeight = "900";
+    }
+  }
+
+  function enforceNonStaggeredFieldModes() {
+    var nonRoot = byId("analysisCalcNon");
+    if (!nonRoot) return;
+    var computedInputs = nonRoot.querySelectorAll("input.out-green");
+    computedInputs.forEach(function (el) {
+      el.readOnly = true;
+      el.setAttribute("aria-readonly", "true");
+    });
+    var userInputs = nonRoot.querySelectorAll("input.in-yellow, select.in-yellow");
+    userInputs.forEach(function (el) {
+      if (el.tagName === "INPUT") el.readOnly = false;
+      el.removeAttribute("aria-readonly");
+    });
+  }
+
+  function enforceStaggeredFieldModes() {
+    var stagRoot = byId("analysisCalcStag");
+    if (!stagRoot) return;
+    var computedInputs = stagRoot.querySelectorAll("input.out-green");
+    computedInputs.forEach(function (el) {
+      el.readOnly = true;
+      el.setAttribute("aria-readonly", "true");
+    });
+    var userInputs = stagRoot.querySelectorAll("input.in-yellow, select.in-yellow");
+    userInputs.forEach(function (el) {
+      if (el.tagName === "INPUT") el.readOnly = false;
+      el.removeAttribute("aria-readonly");
+    });
+  }
 
   var sg1 = byId("tensionSg1");
   var g1 = byId("tensionG1");
@@ -411,19 +486,114 @@
     FLANGE_WEB: "assets/tension-page/tension-detail-3.png",
   };
 
-  var candidateSections = [
-    { name: "L4X4X3/8", family: "ANGLE", Ag: 2.88, rx: 1.2, ry: 0.79, t: 0.375, xbar: 1.16, ybar: 1.16 },
-    { name: "L5X5X1/2", family: "ANGLE", Ag: 4.75, rx: 1.5, ry: 1.0, t: 0.5, xbar: 1.4, ybar: 1.4 },
-    { name: "L6X6X1/2", family: "ANGLE", Ag: 5.75, rx: 1.75, ry: 1.16, t: 0.5, xbar: 1.64, ybar: 1.64 },
-    { name: "L6X6X3/4", family: "ANGLE", Ag: 8.32, rx: 1.78, ry: 1.18, t: 0.75, xbar: 1.73, ybar: 1.73 },
-    { name: "L6X6X1", family: "ANGLE", Ag: 10.7, rx: 1.8, ry: 1.2, t: 1.0, xbar: 1.82, ybar: 1.82 },
-    { name: "L8X6X3/4", family: "ANGLE", Ag: 10.2, rx: 2.12, ry: 1.34, t: 0.75, xbar: 2.1, ybar: 1.55 },
-    { name: "L10X10X1", family: "ANGLE", Ag: 19.0, rx: 3.13, ry: 3.13, t: 1.0, xbar: 2.82, ybar: 2.82 },
-    { name: "L10X10X1-1/8", family: "ANGLE", Ag: 21.2, rx: 3.12, ry: 3.12, t: 1.125, xbar: 2.88, ybar: 2.88 },
-    { name: "L12X12X1-3/8", family: "ANGLE", Ag: 30.9, rx: 3.74, ry: 3.74, t: 1.375, xbar: 3.47, ybar: 3.47 },
+  /** Sheet2 N-column labels → O-column U (matches Excel XLOOKUP on connection). */
+  var TENSION_CONNECTION_U = {
+    FLANGE: 0.6,
+    WEB: 0.6,
+    "FLANGES & WEB": 1,
+  };
+
+  var FALLBACK_ANGLE_SECTIONS = [
+    { name: "L4X4X3/8", family: "ANGLE", Ag: 2.88, weightLbFt: null, rx: 1.2, ry: 0.79, rmin: 0.79, t: 0.375, xbar: 1.16, ybar: 1.16 },
+    { name: "L5X5X1/2", family: "ANGLE", Ag: 4.75, weightLbFt: null, rx: 1.5, ry: 1.0, rmin: 1.0, t: 0.5, xbar: 1.4, ybar: 1.4 },
+    { name: "L6X6X1/2", family: "ANGLE", Ag: 5.75, weightLbFt: null, rx: 1.75, ry: 1.16, rmin: 1.16, t: 0.5, xbar: 1.64, ybar: 1.64 },
+    { name: "L6X6X3/4", family: "ANGLE", Ag: 8.32, weightLbFt: null, rx: 1.78, ry: 1.18, rmin: 1.18, t: 0.75, xbar: 1.73, ybar: 1.73 },
+    { name: "L6X6X1", family: "ANGLE", Ag: 10.7, weightLbFt: null, rx: 1.8, ry: 1.2, rmin: 1.2, t: 1.0, xbar: 1.82, ybar: 1.82 },
+    { name: "L8X6X3/4", family: "ANGLE", Ag: 10.2, weightLbFt: null, rx: 2.12, ry: 1.34, rmin: 1.34, t: 0.75, xbar: 2.1, ybar: 1.55 },
+    { name: "L10X10X1", family: "ANGLE", Ag: 19.0, weightLbFt: null, rx: 3.13, ry: 3.13, rmin: 3.13, t: 1.0, xbar: 2.82, ybar: 2.82 },
+    { name: "L10X10X1-1/8", family: "ANGLE", Ag: 21.2, weightLbFt: null, rx: 3.12, ry: 3.12, rmin: 3.12, t: 1.125, xbar: 2.88, ybar: 2.88 },
+    { name: "L12X12X1-3/8", family: "ANGLE", Ag: 30.9, weightLbFt: null, rx: 3.74, ry: 3.74, rmin: 3.74, t: 1.375, xbar: 3.47, ybar: 3.47 },
   ];
 
+  var candidateSections = FALLBACK_ANGLE_SECTIONS.slice();
+  var currentNsShapeFilter = "all";
+  var currentNsTypeFilter = "all";
+  var nsMasterShapeOptions = ["all", "ANGLE", "W", "HSS", "CHANNEL", "TEE", "PIPE", "OTHER"];
+  var nsMasterTypeOptions = ["all", "L", "2L"];
+
+  function mapUiConnectionToExcelKey(val) {
+    if (val === "FLANGE_WEB") return "FLANGES & WEB";
+    return val || "WEB";
+  }
+
+  function loadTensionCatalog(done) {
+    Promise.all([
+      fetch("data/aisc-sections.json").then(function (r) {
+        return r.ok ? r.json() : Promise.reject(new Error("bad aisc response"));
+      }),
+      fetch("data/tension-capacity-angles.json").then(function (r) {
+        return r.ok ? r.json() : Promise.reject(new Error("bad angle response"));
+      }).catch(function () {
+        return { sections: [] };
+      }),
+    ])
+      .then(function (allPayloads) {
+        var aiscPayload = allPayloads[0] || {};
+        var anglePayload = allPayloads[1] || {};
+        var aiscRows = aiscPayload.sections || [];
+        var angleRows = anglePayload.sections || [];
+        if (!aiscRows.length) throw new Error("empty aisc catalog");
+
+        var angleByName = {};
+        angleRows.forEach(function (row) {
+          var key = String(row.designation || "").toUpperCase().trim();
+          if (!key) return;
+          angleByName[key] = row;
+        });
+
+        candidateSections = aiscRows
+          .map(function (row) {
+            var type = String(row && row.type || "").toUpperCase().trim();
+            var name = row.aiscManualLabel || row.designation;
+            if (!name) return null;
+            var fam = nsFamilyFromType(type);
+            var key = String(name).toUpperCase().trim();
+            var angleOverride = angleByName[key];
+            var rxVal = Number(row.rx);
+            var ryVal = Number(row.ry);
+            var tFromAisc =
+              row.t != null ? Number(row.t)
+                : row.tw != null ? Number(row.tw)
+                : row.tf != null ? Number(row.tf)
+                : NaN;
+            var tVal = angleOverride && Number.isFinite(Number(angleOverride.t))
+              ? Number(angleOverride.t)
+              : (Number.isFinite(tFromAisc) ? tFromAisc : 0);
+            var xbarVal =
+              angleOverride && Number.isFinite(Number(angleOverride.xbar)) ? Number(angleOverride.xbar) : 0;
+            var ybarVal =
+              angleOverride && Number.isFinite(Number(angleOverride.ybar)) ? Number(angleOverride.ybar) : 0;
+            var rminVal = Math.min(
+              Number.isFinite(rxVal) ? rxVal : Infinity,
+              Number.isFinite(ryVal) ? ryVal : Infinity
+            );
+            if (!Number.isFinite(rminVal)) rminVal = 0;
+            return {
+              name: name,
+              family: fam,
+              type: type || "OTHER",
+              Ag: Number(row.Ag) || 0,
+              weightLbFt: Number.isFinite(Number(row.weightPlf)) ? Number(row.weightPlf) : null,
+              rx: Number.isFinite(rxVal) ? rxVal : 0,
+              ry: Number.isFinite(ryVal) ? ryVal : 0,
+              rmin: rminVal,
+              t: tVal,
+              xbar: xbarVal,
+              ybar: ybarVal,
+            };
+          })
+          .filter(function (row) { return !!row; });
+      })
+      .catch(function () {
+        candidateSections = FALLBACK_ANGLE_SECTIONS.slice();
+      })
+      .finally(function () {
+        if (typeof done === "function") done();
+      });
+  }
+
   var currentStagShapeFilter = "all";
+  var currentStagTypeFilter = "all";
 
   function sectionFamily(sec) {
     if (sec && sec.family) return sec.family;
@@ -432,6 +602,174 @@
     if (/^W\d/.test(n)) return "W";
     if (n.indexOf("L") === 0) return "ANGLE";
     return "OTHER";
+  }
+
+  function nsTypeOfSection(sec) {
+    if (sec && sec.type) {
+      return String(sec.type).toUpperCase().trim();
+    }
+    var n = (sec && sec.name ? String(sec.name) : "").toUpperCase();
+    if (n.indexOf("2L") === 0) return "2L";
+    if (n.indexOf("L") === 0) return "L";
+    if (n.indexOf("HSS") === 0) return "HSS";
+    if (/^W\d/.test(n)) return "W";
+    return "OTHER";
+  }
+
+  function nsFamilyFromType(typeVal) {
+    var t = String(typeVal || "").toUpperCase().trim();
+    if (!t) return "OTHER";
+    if (t === "L" || t === "2L") return "ANGLE";
+    if (t === "W" || t === "S" || t === "M" || t === "HP") return "W";
+    if (t === "C" || t === "MC") return "CHANNEL";
+    if (t === "WT" || t === "ST" || t === "MT") return "TEE";
+    if (t.indexOf("HSS") === 0) return "HSS";
+    if (t === "PIPE") return "PIPE";
+    return "OTHER";
+  }
+
+  function hydrateNsMasterOptionsFromAiscDataset(done) {
+    fetch("data/aisc-sections.json")
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("bad response")); })
+      .then(function (payload) {
+        var rows = (payload && payload.sections) || [];
+        if (!rows.length) return;
+        var famSeen = { all: true };
+        var typeSeen = { all: true };
+        var famOut = ["all"];
+        var typeOut = ["all"];
+        rows.forEach(function (row) {
+          var type = String(row && row.type || "").toUpperCase().trim();
+          if (type && !typeSeen[type]) {
+            typeSeen[type] = true;
+            typeOut.push(type);
+          }
+          var fam = nsFamilyFromType(type);
+          if (fam && !famSeen[fam]) {
+            famSeen[fam] = true;
+            famOut.push(fam);
+          }
+        });
+        nsMasterTypeOptions = typeOut;
+        nsMasterShapeOptions = famOut;
+      })
+      .catch(function () {})
+      .finally(function () {
+        if (typeof done === "function") done();
+      });
+  }
+
+  function nsShapeOptionsFromData() {
+    var seen = {};
+    var out = ["all"];
+    candidateSections.forEach(function (s) {
+      var fam = sectionFamily(s);
+      if (!fam || seen[fam]) return;
+      seen[fam] = true;
+      out.push(fam);
+    });
+    return out;
+  }
+
+  function nsTypeOptionsFromData() {
+    var seen = {};
+    var out = ["all"];
+    candidateSections.forEach(function (s) {
+      var typ = nsTypeOfSection(s);
+      if (!typ || seen[typ]) return;
+      seen[typ] = true;
+      out.push(typ);
+    });
+    return out;
+  }
+
+  function nsFilteredSections() {
+    return candidateSections.filter(function (s) {
+      var fam = sectionFamily(s);
+      var typ = nsTypeOfSection(s);
+      var okShape = currentNsShapeFilter === "all" || fam === currentNsShapeFilter;
+      var okType = currentNsTypeFilter === "all" || typ === currentNsTypeFilter;
+      return okShape && okType;
+    });
+  }
+
+  function renderNonStaggeredSelector() {
+    if (!shapeSelect || !candidateSections.length) return;
+
+    if (nsShapeIcons) {
+      var shapeLabels = { all: "All", ANGLE: "L / ∠", W: "W", HSS: "HSS", OTHER: "Other" };
+      var shapeButtons = nsMasterShapeOptions.map(function (id) {
+        return { id: id, label: shapeLabels[id] || id };
+      });
+      if (!shapeButtons.some(function (b) { return b.id === currentNsShapeFilter; })) {
+        currentNsShapeFilter = "all";
+      }
+      nsShapeIcons.innerHTML = "";
+      shapeButtons.forEach(function (item) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ns-chip-btn" + (currentNsShapeFilter === item.id ? " is-active" : "");
+        b.textContent = item.label;
+        b.addEventListener("click", function () {
+          currentNsShapeFilter = item.id;
+          renderNonStaggeredSelector();
+          recomputeAll();
+        });
+        nsShapeIcons.appendChild(b);
+      });
+    }
+
+    if (nsTypeChips) {
+      var types = nsMasterTypeOptions.slice();
+      if (!types.some(function (t) { return t === currentNsTypeFilter; })) {
+        currentNsTypeFilter = "all";
+      }
+      nsTypeChips.innerHTML = "";
+      types.forEach(function (t) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ns-chip-btn" + (currentNsTypeFilter === t ? " is-active" : "");
+        b.textContent = t === "all" ? "All" : t;
+        b.addEventListener("click", function () {
+          currentNsTypeFilter = t;
+          renderNonStaggeredSelector();
+          recomputeAll();
+        });
+        nsTypeChips.appendChild(b);
+      });
+    }
+
+    var list = nsFilteredSections();
+    // Strict UX guard: never show an empty AISC_Manual_Label list.
+    // If a chosen shape/type combo has no rows in the current non-staggered dataset,
+    // fall back to the full non-staggered section list instead of rendering blank.
+    if (!list.length) list = candidateSections.slice();
+    var preferred = shapeSelect.value || (list[0] && list[0].name) || "";
+    shapeSelect.innerHTML = "";
+    list.forEach(function (s) {
+      var o = document.createElement("option");
+      o.value = s.name;
+      o.textContent = s.name;
+      shapeSelect.appendChild(o);
+    });
+    var pick = preferred && list.some(function (s) { return s.name === preferred; }) ? preferred : (list[0] ? list[0].name : "");
+    if (pick) shapeSelect.value = pick;
+
+    if (nsAiscGrid) {
+      nsAiscGrid.innerHTML = "";
+      list.forEach(function (s) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ns-aisc-btn" + (s.name === shapeSelect.value ? " is-active" : "");
+        b.textContent = s.name;
+        b.addEventListener("click", function () {
+          shapeSelect.value = s.name;
+          renderNonStaggeredSelector();
+          recomputeAll();
+        });
+        nsAiscGrid.appendChild(b);
+      });
+    }
   }
 
   function isStaggeredAnalysisActive() {
@@ -461,7 +799,8 @@
 
   function activePlateLengthIn(defaultLen) {
     if (isStaggeredAnalysisActive() && analysisStagPlateLengthIn) {
-      return num(analysisStagPlateLengthIn.value, defaultLen);
+      var linkedLen = num(lengthFt && lengthFt.value, 0) * 12;
+      return linkedLen > 0 ? linkedLen : defaultLen;
     }
     return plateLengthIn ? num(plateLengthIn.value, defaultLen) : defaultLen;
   }
@@ -473,13 +812,61 @@
     return plateThickness ? num(plateThickness.value, 0) : 0;
   }
 
+  /** `S -Tension Analysis` plate gross: W50 = X41×X45 (length × thickness). Else section Ag (P29). */
+  function activeGrossAreaForStaggerExcel() {
+    var s = shapeData();
+    var tP = activePlateThicknessIn();
+    var lenP = activePlateLengthIn(0);
+    if (tP > 0 && lenP > 0) return tP * lenP;
+    return num(s.Ag, 0);
+  }
+
+  /**
+   * Sheet2 connection U for Analysis stagger path (`XLOOKUP` N9:N11 → O9:O11).
+   * Differs from Design sheet `TENSION_CONNECTION_U` (N3:N5).
+   */
+  var STAG_ANALYSIS_CONNECTION_U = {
+    FLANGE: 0.896,
+    WEB: 0.896,
+    "FLANGES & WEB": 1,
+  };
+  var STAG_ANALYSIS_CASE2 = 0.896;
+
+  function stagAnalysisConnU() {
+    var key = mapUiConnectionToExcelKey(connectionSelect && connectionSelect.value);
+    var u = STAG_ANALYSIS_CONNECTION_U[key];
+    return u != null ? u : STAG_ANALYSIS_CONNECTION_U.WEB;
+  }
+
+  /** Sheet2 T3/T2 via `IF(K51=3,T3,T2)` on S -Tension Analysis. */
+  function stagAnalysisCase8U() {
+    var nf = Math.max(1, Math.round(num(fastenersPerLine.value, 3)));
+    return nf === 3 ? 0.6 : 0.8;
+  }
+
+  function governingUStaggerAnalysis() {
+    return Math.max(stagAnalysisConnU(), STAG_ANALYSIS_CASE2, stagAnalysisCase8U());
+  }
+
+  /**
+   * `NS -Tension Analysis` fracture demand area uses AM16 = AM13×Q48 where Q48 =
+   * XLOOKUP(connection, Sheet2!N9:N11, O9:O11). For angles, O9/O10 both evaluate to
+   * MAX(N53, R53) with N53 = Case 2 chain (Sheet2 T4) and R53 = IF(K51=3,T3,T2).
+   * FLANGES & WEB maps to O11 = 1.
+   */
+  function nsFractureEffectiveFactor(case2, case8) {
+    if (!connectionSelect || connectionSelect.value === "FLANGE_WEB") return 1;
+    return Math.max(case2, case8);
+  }
+
   function updateStagFilterButtonVisibility() {
-    var fams = ["ANGLE", "HSS", "W"];
+    var fams = nsMasterShapeOptions && nsMasterShapeOptions.length ? nsMasterShapeOptions.slice() : ["all", "ANGLE", "HSS", "W"];
     fams.forEach(function (fam) {
+      if (fam === "all") return;
       var count = candidateSections.filter(function (s) {
         return sectionFamily(s) === fam;
       }).length;
-      var btn = root.querySelector('[data-stag-shape-filter="' + fam + '"]');
+      var btn = root.querySelector('#analysisCalcStag [data-stag-shape-filter="' + fam + '"]');
       if (btn) btn.style.display = count ? "" : "none";
     });
   }
@@ -487,11 +874,16 @@
   function rebuildStagShapeOptions(opts) {
     opts = opts || {};
     if (!shapeSelectStag) return;
-    var filter = currentStagShapeFilter || "all";
+    var shapeFilter = currentStagShapeFilter || "all";
+    var typeFilter = currentStagTypeFilter || "all";
     var list = candidateSections.filter(function (s) {
       var fam = sectionFamily(s);
-      return filter === "all" || fam === filter;
+      var typ = nsTypeOfSection(s);
+      var okShape = shapeFilter === "all" || fam === shapeFilter;
+      var okType = typeFilter === "all" || typ === typeFilter;
+      return okShape && okType;
     });
+    if (!list.length) list = candidateSections.slice();
     var preferred = opts.prefer;
     if (preferred == null || preferred === "") {
       preferred = (shapeSelectStag && shapeSelectStag.value) || (shapeSelect && shapeSelect.value) || "";
@@ -508,25 +900,36 @@
       shapeSelectStag.value = pick;
       if (shapeSelect) shapeSelect.value = pick;
     }
+
+    if (stagAiscGrid) {
+      stagAiscGrid.innerHTML = "";
+      list.forEach(function (s) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ns-aisc-btn" + (s.name === shapeSelectStag.value ? " is-active" : "");
+        b.textContent = s.name;
+        b.addEventListener("click", function () {
+          shapeSelectStag.value = s.name;
+          if (shapeSelect) shapeSelect.value = s.name;
+          rebuildStagShapeOptions({ prefer: s.name });
+          recomputeAll();
+        });
+        stagAiscGrid.appendChild(b);
+      });
+    }
   }
 
   function renderStagTypeChips() {
-    var host = byId("stagSectionTypeChips");
+    var host = stagTypeChips;
     if (!host) return;
     host.innerHTML = "";
-    var seen = {};
-    candidateSections.forEach(function (s) {
-      var fam = sectionFamily(s);
-      if (fam === "OTHER") return;
-      seen[fam] = true;
-    });
-    var labels = { ANGLE: "L / ∠", HSS: "HSS", W: "W" };
-    Object.keys(seen).forEach(function (fam) {
+    var types = nsMasterTypeOptions && nsMasterTypeOptions.length ? nsMasterTypeOptions.slice() : ["all"];
+    types.forEach(function (typ) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "stag-type-chip";
-      b.setAttribute("data-stag-shape-filter", fam);
-      b.textContent = labels[fam] || fam;
+      b.className = "ns-chip-btn" + (currentStagTypeFilter === typ ? " is-active" : "");
+      b.setAttribute("data-stag-type-filter", typ);
+      b.textContent = typ === "all" ? "All" : typ;
       host.appendChild(b);
     });
   }
@@ -534,7 +937,7 @@
   function setStagShapeFilter(next, opts) {
     opts = opts || {};
     currentStagShapeFilter = next || "all";
-    root.querySelectorAll(".stag-shape-btn[data-stag-shape-filter], .stag-type-chip[data-stag-shape-filter]").forEach(function (el) {
+    root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-shape-filter]").forEach(function (el) {
       var f = el.getAttribute("data-stag-shape-filter");
       var on = f === currentStagShapeFilter || (currentStagShapeFilter === "all" && f === "all");
       el.classList.toggle("is-active", on);
@@ -545,14 +948,46 @@
     if (!opts.skipRecompute) recomputeAll();
   }
 
+  function setStagTypeFilter(next, opts) {
+    opts = opts || {};
+    currentStagTypeFilter = next || "all";
+    root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-type-filter]").forEach(function (el) {
+      var t = el.getAttribute("data-stag-type-filter");
+      var on = t === currentStagTypeFilter || (currentStagTypeFilter === "all" && t === "all");
+      el.classList.toggle("is-active", on);
+    });
+    var preserve =
+      shapeSelectStag && shapeSelectStag.value ? shapeSelectStag.value : shapeSelect && shapeSelect.value;
+    rebuildStagShapeOptions({ prefer: preserve });
+    if (!opts.skipRecompute) recomputeAll();
+  }
+
   function initStagSectionUi() {
     if (!shapeSelectStag) return;
+    if (stagShapeIcons) {
+      var shapeLabels = { all: "All", ANGLE: "L / ∠", W: "W", HSS: "HSS", OTHER: "Other" };
+      stagShapeIcons.innerHTML = "";
+      nsMasterShapeOptions.forEach(function (id) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ns-chip-btn";
+        b.setAttribute("data-stag-shape-filter", id);
+        b.textContent = shapeLabels[id] || id;
+        stagShapeIcons.appendChild(b);
+      });
+    }
     updateStagFilterButtonVisibility();
     renderStagTypeChips();
-    root.querySelectorAll(".stag-shape-btn[data-stag-shape-filter], .stag-type-chip[data-stag-shape-filter]").forEach(function (btn) {
+    root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-shape-filter]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var f = btn.getAttribute("data-stag-shape-filter") || "all";
         setStagShapeFilter(f, { skipRecompute: false });
+      });
+    });
+    root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-type-filter]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var t = btn.getAttribute("data-stag-type-filter") || "all";
+        setStagTypeFilter(t, { skipRecompute: false });
       });
     });
     shapeSelectStag.addEventListener("change", function () {
@@ -564,9 +999,14 @@
       recomputeAll();
     });
     currentStagShapeFilter = "all";
-    root.querySelectorAll(".stag-shape-btn[data-stag-shape-filter], .stag-type-chip[data-stag-shape-filter]").forEach(function (el) {
+    currentStagTypeFilter = "all";
+    root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-shape-filter]").forEach(function (el) {
       var f = el.getAttribute("data-stag-shape-filter");
       el.classList.toggle("is-active", f === "all");
+    });
+    root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-type-filter]").forEach(function (el) {
+      var t = el.getAttribute("data-stag-type-filter");
+      el.classList.toggle("is-active", t === "all");
     });
     rebuildStagShapeOptions({ prefer: shapeSelect && shapeSelect.value });
   }
@@ -607,16 +1047,164 @@
   }
 
   function calcU() {
-    var conn = connectionSelect.value;
-    var nFast = num(fastenersPerLine.value, 0);
-    var u = 1;
-    if (conn === "FLANGE_WEB") {
-      u = 1;
-    } else {
-      u = nFast >= 4 ? 0.8 : 0.6;
-    }
+    var key = mapUiConnectionToExcelKey(connectionSelect && connectionSelect.value);
+    var u = TENSION_CONNECTION_U[key];
+    if (u == null) u = TENSION_CONNECTION_U.WEB;
     uOut.value = fmt(u, 2);
     return u;
+  }
+
+  /** Mirrors Tension Design sheet inputs used by `Tension(Capacity and Demand )` columns Q,R,S. */
+  function getTensionCapacityDemandInputs() {
+    var fy = num(fyInput.value, 0);
+    var fu = num(fuInput.value, 0);
+    var dl = num(dlInput.value, 0);
+    var ll = num(llInput.value, 0);
+    var method = methodSelect.value;
+    var u = num(uOut.value, 0);
+    if (!Number.isFinite(u) || u <= 0) u = calcU();
+    var gov;
+    if (method === "LRFD") {
+      gov = Math.max(1.2 * dl + 1.6 * ll, 1.4 * dl);
+    } else {
+      gov = dl + ll;
+    }
+    var lenFt = num(lengthFt.value, 0);
+    var rReq = lenFt * 12 / 300;
+    var anReq;
+    if (method === "LRFD") {
+      anReq = fu > 0 && u > 0 ? gov / (0.75 * fu * u) : NaN;
+    } else {
+      anReq = fu > 0 && u > 0 ? (gov * 2) / (fu * u) : NaN;
+    }
+    var boltDia = num(boltDiaOut.value, 0);
+    if (!Number.isFinite(boltDia) || boltDia <= 0) boltDia = calcBoltDiameter();
+    var nGage = Math.max(1, num(gageLines.value, 1));
+    return {
+      fy: fy,
+      fu: fu,
+      method: method,
+      u: u,
+      gov: gov,
+      rReq: rReq,
+      anReq: anReq,
+      boltDia: boltDia,
+      nGage: nGage,
+    };
+  }
+
+  /** Row i (0-based, first Excel data row) uses Design sheet cell P(38+i); only P38 and P48 are populated in the workbook. */
+  function excelSlendernessNumeratorRow(rowIndex0, rReq, anReq) {
+    var pRow = 38 + rowIndex0;
+    if (pRow === 38) return rReq;
+    if (pRow === 48) return anReq;
+    return 0;
+  }
+
+  function fmtCdDecimal(n) {
+    if (!Number.isFinite(n)) return "--";
+    var s = (Math.round(n * 1e6) / 1e6).toFixed(6).replace(/\.?0+$/, "");
+    return s === "" ? "0" : s;
+  }
+
+  function fmtCdNumberLoose(n) {
+    if (!Number.isFinite(n)) return "--";
+    if (Math.abs(n - Math.round(n)) < 1e-7) return String(Math.round(n));
+    return fmtCdDecimal(n);
+  }
+
+  function bindCdSheetScrollSync() {
+    if (cdSheetScrollSynced) return;
+    var host = byId("tensionViewAnalysisNon");
+    if (!host) return;
+    var frames = host.querySelectorAll(".cd-sheet-grid .cd-sheet-frame");
+    if (frames.length < 2) return;
+    var left = frames[0];
+    var right = frames[1];
+    var syncing = false;
+    left.addEventListener("scroll", function () {
+      if (syncing) return;
+      syncing = true;
+      right.scrollTop = left.scrollTop;
+      syncing = false;
+    });
+    right.addEventListener("scroll", function () {
+      if (syncing) return;
+      syncing = true;
+      left.scrollTop = right.scrollTop;
+      syncing = false;
+    });
+    cdSheetScrollSynced = true;
+  }
+
+  function renderCapacityDemandSpreadsheet() {
+    if (!cdCapacityTbody || !cdDemandTbody) return;
+    var ins = getTensionCapacityDemandInputs();
+    cdCapacityTbody.innerHTML = "";
+    cdDemandTbody.innerHTML = "";
+    if (!candidateSections.length) return;
+
+    var fragCap = document.createDocumentFragment();
+    var fragDem = document.createDocumentFragment();
+
+    candidateSections.forEach(function (s, i) {
+      var trC = document.createElement("tr");
+      var rmin = s.rmin != null ? s.rmin : Math.min(s.rx, s.ry);
+      var w = s.weightLbFt;
+      trC.innerHTML =
+        "<td class=\"cd-left\">" +
+        s.name +
+        "</td>" +
+        "<td class=\"cd-num\">" +
+        fmtCdNumberLoose(s.Ag) +
+        "</td>" +
+        "<td class=\"cd-num\">" +
+        (w != null && Number.isFinite(w) ? fmtCdNumberLoose(w) : "--") +
+        "</td>" +
+        "<td class=\"cd-num\">" +
+        fmtCdNumberLoose(s.t) +
+        "</td>" +
+        "<td class=\"cd-num\">" +
+        fmtCdNumberLoose(s.rx) +
+        "</td>" +
+        "<td class=\"cd-num\">" +
+        fmtCdNumberLoose(s.ry) +
+        "</td>" +
+        "<td class=\"cd-num\">" +
+        fmtCdNumberLoose(rmin) +
+        "</td>";
+      fragCap.appendChild(trC);
+
+      var ahole = ins.nGage * ins.boltDia * s.t;
+      var rDemand = ahole + ins.anReq;
+      var slip = excelSlendernessNumeratorRow(i, ins.rReq, ins.anReq);
+      var okArea = Number.isFinite(ins.anReq) && rDemand < s.Ag;
+      var okSl = Number.isFinite(slip) && slip < rmin;
+      var safe = okArea && okSl;
+
+      var trD = document.createElement("tr");
+      var tdA = document.createElement("td");
+      tdA.className = "cd-left";
+      tdA.textContent = s.name;
+      var tdNet = document.createElement("td");
+      tdNet.className = "cd-num";
+      tdNet.textContent = Number.isFinite(ahole) ? fmtCdDecimal(ahole) : "--";
+      var tdAg = document.createElement("td");
+      tdAg.className = "cd-num";
+      tdAg.textContent = Number.isFinite(ins.anReq) ? fmtCdDecimal(rDemand) : "--";
+      var tdRm = document.createElement("td");
+      tdRm.textContent = Number.isFinite(ins.anReq) ? (safe ? "SAFE" : "UNSAFE") : "—";
+      tdRm.className = Number.isFinite(ins.anReq) ? (safe ? "cd-remark-safe" : "cd-remark-unsafe") : "cd-remark-unknown";
+      trD.appendChild(tdA);
+      trD.appendChild(tdNet);
+      trD.appendChild(tdAg);
+      trD.appendChild(tdRm);
+      fragDem.appendChild(trD);
+    });
+
+    cdCapacityTbody.appendChild(fragCap);
+    cdDemandTbody.appendChild(fragDem);
+    bindCdSheetScrollSync();
   }
 
   function mirrorDesignToAnalysis() {
@@ -653,6 +1241,7 @@
     var dl = num(dlInput.value, 0);
     var ll = num(llInput.value, 0);
     var method = methodSelect.value;
+    var u = calcU();
     var tLoad1;
     var tLoad2;
     var gov;
@@ -664,69 +1253,110 @@
       tLoad1 = 1.2 * dl + 1.6 * ll;
       tLoad2 = 1.4 * dl;
       gov = Math.max(tLoad1, tLoad2);
-      agYieldOut.value = fmt(gov / (0.9 * fy), 4);
-      anFractureOut.value = fmt(gov / (0.75 * fu), 4);
-      agFractureOut.value = fmt(gov / (0.75 * fy), 4);
     } else {
-      demandEq1Label.textContent = "Ta = DL + LL";
+      demandEq1Label.textContent = "Ta=DL+LL";
       demandEq2Label.textContent = "-";
       demandGovLabel.textContent = "Ta";
       tLoad1 = dl + ll;
       tLoad2 = 0;
       gov = tLoad1;
-      agYieldOut.value = fmt((gov * 1.67) / fy, 4);
-      anFractureOut.value = fmt((gov * 2.0) / fu, 4);
-      agFractureOut.value = fmt((gov * 2.0) / fy, 4);
     }
     demandEq1.value = fmt(tLoad1, 3);
     demandEq2.value = method === "LRFD" ? fmt(tLoad2, 3) : "-";
     demandGov.value = fmt(gov, 3);
 
-    var rMin = Math.max(0.3, Math.sqrt(num(agYieldOut.value, 0)) / 6);
-    minROut.value = fmt(rMin, 4);
+    var lenFt = num(lengthFt.value, 0);
+    var rReq = lenFt * 12 / 300;
+    minROut.value = fmt(rReq, 4);
 
-    var reqAg = Math.max(num(agYieldOut.value, 0), num(agFractureOut.value, 0));
-    var picked = candidateSections
-      .filter(function (s) { return s.Ag >= reqAg; })
-      .sort(function (a, b) { return a.Ag - b.Ag; })[0];
-    if (!picked) picked = candidateSections[candidateSections.length - 1];
-    safeSectionOut.textContent = picked.name;
-    safeAgOut.value = fmt(picked.Ag, 3);
-    safeRemarkOut.value = picked.Ag >= reqAg ? "SAFE" : "NOT SAFE";
-    if (safeRemarkOut && safeRemarkOut.classList) {
-      var isSafe = safeRemarkOut.value === "SAFE";
-      safeRemarkOut.classList.toggle("is-safe", isSafe);
-      safeRemarkOut.classList.toggle("is-unsafe", !isSafe);
+    var agYieldDisplay;
+    var anFracture;
+    if (method === "LRFD") {
+      agYieldDisplay = fy > 0 ? gov / (0.9 * fy) : NaN;
+      anFracture = fu > 0 && u > 0 ? gov / (0.75 * fu * u) : NaN;
+    } else {
+      agYieldDisplay = fu > 0 && u > 0 ? (gov * 1.67 * u) / fu : NaN;
+      anFracture = fu > 0 && u > 0 ? (gov * 2) / (fu * u) : NaN;
     }
-    // #region agent log
-    dbg("post-fix", "H_non_comp", "tension-page-ui.js:calcDemandAndAreas", "Non-staggered demand/required-area consistency", {
+    agYieldOut.value = Number.isFinite(agYieldDisplay) ? fmt(agYieldDisplay, 4) : "--";
+    anFractureOut.value = Number.isFinite(anFracture) ? fmt(anFracture, 4) : "--";
+    var agFractureDisplay = Number.isFinite(anFracture) ? anFracture / 0.85 : NaN;
+    agFractureOut.value = Number.isFinite(agFractureDisplay) ? fmt(agFractureDisplay, 4) : "--";
+
+    var boltDia = num(boltDiaOut.value, 0);
+    if (!Number.isFinite(boltDia) || boltDia <= 0) boltDia = calcBoltDiameter();
+    var nGage = Math.max(1, num(gageLines.value, 1));
+    var anReq = anFracture;
+
+    function rowSafe(s) {
+      if (!Number.isFinite(anReq) || !Number.isFinite(rReq) || !s) return false;
+      var ahole = nGage * boltDia * s.t;
+      var bigR = ahole + anReq;
+      var rmin = s.rmin != null ? s.rmin : Math.min(s.rx, s.ry);
+      return bigR < s.Ag && rReq < rmin;
+    }
+
+    var minAg = null;
+    for (var si = 0; si < candidateSections.length; si++) {
+      if (!rowSafe(candidateSections[si])) continue;
+      var ag = candidateSections[si].Ag;
+      if (minAg === null || ag < minAg) minAg = ag;
+    }
+
+    if (minAg === null || !candidateSections.length) {
+      if (safeSectionOut) safeSectionOut.textContent = "--";
+      safeAgOut.value = "--";
+      safeRemarkOut.value = "NO SAFE SECTION";
+      if (safeRemarkOut && safeRemarkOut.classList) {
+        safeRemarkOut.classList.toggle("is-safe", false);
+        safeRemarkOut.classList.toggle("is-unsafe", true);
+      }
+      dbg("post-fix", "H_non_comp", "tension-page-ui.js:calcDemandAndAreas", "Design demand / Excel tension capacity scan", {
+        method: method,
+        gov: gov,
+        u: u,
+        rReq: rReq,
+        anReq: anReq,
+        pick: null,
+      });
+      return { gov: gov, reqAg: NaN };
+    }
+
+    var picked = candidateSections.find(function (s) {
+      return rowSafe(s) && Math.abs(s.Ag - minAg) < 1e-4;
+    });
+
+    safeSectionOut.textContent = picked.name;
+    safeAgOut.value = fmt(picked.Ag, 2);
+    safeRemarkOut.value = "SAFE";
+    if (safeRemarkOut && safeRemarkOut.classList) {
+      safeRemarkOut.classList.toggle("is-safe", true);
+      safeRemarkOut.classList.toggle("is-unsafe", false);
+    }
+    dbg("post-fix", "H_non_comp", "tension-page-ui.js:calcDemandAndAreas", "Design demand / Excel tension capacity scan", {
       method: method,
       dl: dl,
       ll: ll,
-      tLoad1: tLoad1,
-      tLoad2: tLoad2,
       gov: gov,
-      demandEqOk: method === "LRFD" ? Math.abs(gov - Math.max(1.2 * dl + 1.6 * ll, 1.4 * dl)) < 1e-9 : Math.abs(gov - (dl + ll)) < 1e-9,
-      reqAg: reqAg,
-      pickedSection: picked ? picked.name : null,
-      pickedAg: picked ? picked.Ag : null,
-      sectionMeetsReq: picked ? picked.Ag >= reqAg : null
+      u: u,
+      rReq: rReq,
+      anReq: anReq,
+      minSafeAg: minAg,
+      pickedSection: picked.name,
+      pickedAg: picked.Ag,
     });
-    // #endregion
 
-    return { gov: gov, reqAg: reqAg };
+    return { gov: gov, reqAg: minAg };
   }
 
   function populateShapes() {
-    if (!shapeSelect) return;
+    if (!shapeSelect || !candidateSections.length) return;
+    currentNsShapeFilter = "all";
+    currentNsTypeFilter = "all";
     shapeSelect.innerHTML = "";
-    candidateSections.forEach(function (s) {
-      var o = document.createElement("option");
-      o.value = s.name;
-      o.textContent = s.name;
-      shapeSelect.appendChild(o);
-    });
-    shapeSelect.value = candidateSections[0].name;
+    var first = candidateSections[0] ? candidateSections[0].name : "";
+    if (first) shapeSelect.value = first;
+    renderNonStaggeredSelector();
     rebuildStagShapeOptions({ prefer: shapeSelect.value });
   }
 
@@ -763,15 +1393,16 @@
     var plateLen = activePlateLengthIn(lengthIn);
     lengthInOut.value = fmt(plateLen, 3);
     var tPlate = activePlateThicknessIn();
-    var agPlate = tPlate > 0 ? tPlate * Math.max(1, plateLen / 12) : 0;
+    /** `NS -Tension Analysis` / `S -Tension Analysis`: W50 = X41×X45 (plate length × thickness). */
+    var agPlate = tPlate > 0 && plateLen > 0 ? tPlate * plateLen : 0;
     plateAg.value = fmt(agPlate, 3);
-    if (analysisStagPlateLengthIn && plateLengthIn && !isStaggeredAnalysisActive()) {
-      analysisStagPlateLengthIn.value = plateLengthIn.value;
+    if (analysisStagPlateLengthIn) {
+      analysisStagPlateLengthIn.value = fmt(lengthIn, 3);
     }
     if (analysisStagPlateThickness && plateThickness && !isStaggeredAnalysisActive()) {
       analysisStagPlateThickness.value = plateThickness.value;
     }
-    if (analysisStagPlateAg) analysisStagPlateAg.value = plateAg.value;
+    if (analysisStagPlateAg) analysisStagPlateAg.value = fmt(agPlate, 3);
     if (analysisStagLengthIn) analysisStagLengthIn.value = lengthInOut.value;
     // #region agent log
     dbg("post-fix", "H_plate", "tension-page-ui.js:calcNonStaggered", "Staggered plate card values", {
@@ -784,26 +1415,50 @@
 
     var case1 = 1;
     var lc = effectiveLcIn();
-    var case2 = Math.max(0, 1 - s.xbar / lc);
-    var case8 = calcU();
-    var uGov = connectionSelect.value === "FLANGE_WEB" ? 1 : Math.max(case2, case8);
+    var case2;
+    var case8;
+    var uGov;
+    if (isStaggeredAnalysisActive()) {
+      case2 = STAG_ANALYSIS_CASE2;
+      case8 = stagAnalysisCase8U();
+      uGov = governingUStaggerAnalysis();
+    } else {
+      case2 = Math.max(0, 1 - s.xbar / lc);
+      case8 = stagAnalysisCase8U();
+      uGov = connectionSelect.value === "FLANGE_WEB" ? 1 : Math.max(case2, case8);
+    }
     case1Out.value = fmt(case1, 3);
-    case2Out.value = fmt(case2, 3);
-    case8Out.value = fmt(case8, 3);
-    uGovOut.value = fmt(uGov, 3);
-    if (analysisStagCase1) analysisStagCase1.value = fmt(case1, 3);
-    if (analysisStagCase2) analysisStagCase2.value = fmt(case2, 3);
-    if (analysisStagCase8) analysisStagCase8.value = fmt(case8, 3);
-    if (analysisStagUGov) analysisStagUGov.value = fmt(uGov, 3);
+    case2Out.value = fmt(case2, 4);
+    case8Out.value = fmt(case8, 4);
+    uGovOut.value = fmt(uGov, 4);
+    if (analysisStagCase1) analysisStagCase1.value = fmt(case1, 4);
+    if (analysisStagCase2) analysisStagCase2.value = fmt(case2, 4);
+    if (analysisStagCase8) analysisStagCase8.value = fmt(case8, 4);
+    if (analysisStagUGov) analysisStagUGov.value = fmt(uGov, 4);
 
     var fy = num(fyInput.value, 0);
     var fu = num(fuInput.value, 0);
     var stressFactor = num(stressType.value, 1);
-    var agUse = agPlate > 0 ? agPlate : s.Ag;
+    var agUse = isStaggeredAnalysisActive()
+      ? activeGrossAreaForStaggerExcel()
+      : agPlate > 0
+        ? agPlate
+        : s.Ag;
     var dh = num(calcBoltDiameter(), 0);
-    var nHolesNet = Math.max(1, num(gageLines.value, 1)); // simple default per guide: gage lines influence net path
-    var anUse = Math.max(0.0001, agUse - nHolesNet * dh * s.t);
-    var aeUse = Math.max(0.0001, uGov * anUse);
+    var nHolesNet = Math.max(1, num(gageLines.value, 1));
+    var anUse;
+    var aeUse;
+    if (isStaggeredAnalysisActive()) {
+      var critNetStag = criticalAn ? num(criticalAn.value, NaN) : NaN;
+      var uConnFrac = stagAnalysisConnU();
+      var bc15Excel = Number.isFinite(critNetStag) ? critNetStag * uConnFrac : NaN;
+      anUse = Number.isFinite(critNetStag) ? Math.max(1e-6, critNetStag) : 0.0001;
+      aeUse = Number.isFinite(bc15Excel) ? Math.max(1e-6, bc15Excel) : 0.0001;
+    } else {
+      anUse = Math.max(0.0001, agUse - nHolesNet * dh * s.t);
+      var q48Ns = nsFractureEffectiveFactor(case2, case8);
+      aeUse = Math.max(0.0001, anUse * q48Ns);
+    }
 
     if (analysisNetAn) analysisNetAn.value = fmt(anUse, 3);
     if (analysisAe) analysisAe.value = fmt(aeUse, 3);
@@ -815,11 +1470,22 @@
     var omegaY = 1.67;
     var omegaR = 2.0;
     var yieldCap = method === "LRFD" ? phiY * fy * agUse : (fy * agUse) / omegaY;
-    var fracCap = method === "LRFD" ? phiR * fu * aeUse * stressFactor : (fu * aeUse * stressFactor) / omegaR;
+    /** NS fracture strength AI25 uses Fu×AM16 only — no tension stress-type multiplier on fracture. */
+    var fracCapStress = isStaggeredAnalysisActive() ? stressFactor : 1;
+    var fracCap =
+      method === "LRFD"
+        ? phiR * fu * aeUse * fracCapStress
+        : (fu * aeUse * fracCapStress) / omegaR;
     var critAnForStag = criticalAn ? num(criticalAn.value, NaN) : NaN;
-    var aeStaggeredDemand = Number.isFinite(critAnForStag) ? uGov * Math.max(0.0001, critAnForStag) : aeUse;
+    var uConnStag = stagAnalysisConnU();
+    var aeStaggeredDemand = Number.isFinite(critAnForStag)
+      ? Math.max(1e-6, critAnForStag * uConnStag)
+      : aeUse;
     if (analysisStagAeDemand) analysisStagAeDemand.value = fmt(aeStaggeredDemand, 3);
-    var fracCapStagPanel = method === "LRFD" ? phiR * fu * aeStaggeredDemand * stressFactor : (fu * aeStaggeredDemand * stressFactor) / omegaR;
+    var fracCapStagPanel =
+      method === "LRFD"
+        ? phiR * fu * aeStaggeredDemand
+        : (fu * aeStaggeredDemand) / omegaR;
     if (analysisYieldLabel) analysisYieldLabel.textContent = method === "LRFD" ? "Tu" : "Ta";
     if (analysisFracLabel) analysisFracLabel.textContent = method === "LRFD" ? "Tu" : "Ta";
     if (analysisYieldCap) analysisYieldCap.value = fmt(yieldCap, 3);
@@ -843,11 +1509,11 @@
     if (analysisStagDemand2) analysisStagDemand2.value = analysisDemand2 ? analysisDemand2.value : "-";
     if (analysisStagDemandGov) analysisStagDemandGov.value = analysisDemandGov ? analysisDemandGov.value : fmt(demand, 3);
 
-    // Block shear (simplified, educational)
+    // Block shear — non-stagger: legacy rn1/rn2 path; stagger: `S -Tension Analysis` AQ50 / AS52
     var lt = analysisBsLt ? num(analysisBsLt.value, 0) : 0;
     var lv = analysisBsLv ? num(analysisBsLv.value, 0) : 0;
-    var nt = analysisBsNt ? Math.max(0, Math.round(num(analysisBsNt.value, 0))) : 0;
-    var nv = analysisBsNv ? Math.max(0, Math.round(num(analysisBsNv.value, 0))) : 0;
+    var nt = analysisBsNt ? Math.max(0, num(analysisBsNt.value, 0)) : 0;
+    var nv = analysisBsNv ? Math.max(0, num(analysisBsNv.value, 0)) : 0;
     var tUse = s.t;
     var agt = Math.max(0, lt * tUse);
     var avg = Math.max(0, lv * tUse);
@@ -858,32 +1524,78 @@
     if (analysisBsAnt) analysisBsAnt.value = fmt(ant, 3);
     if (analysisBsAvn) analysisBsAvn.value = fmt(avn, 3);
     if (analysisStagBsLt) analysisStagBsLt.value = fmt(lt, 3);
-    if (analysisStagBsNt) analysisStagBsNt.value = String(nt);
+    if (analysisStagBsNt) analysisStagBsNt.value = Number.isInteger(nt) ? String(nt) : fmt(nt, 4).replace(/\.?0+$/, "");
     if (analysisStagBsLv) analysisStagBsLv.value = fmt(lv, 3);
-    if (analysisStagBsNv) analysisStagBsNv.value = String(nv);
+    if (analysisStagBsNv)
+      analysisStagBsNv.value = Number.isInteger(nv) ? String(nv) : fmt(nv, 4).replace(/\.?0+$/, "");
     if (analysisStagBsAgt) analysisStagBsAgt.value = fmt(agt, 3);
     if (analysisStagBsAnt) analysisStagBsAnt.value = fmt(ant, 3);
     if (analysisStagBsAvg) analysisStagBsAvg.value = fmt(avg, 3);
     if (analysisStagBsAvn) analysisStagBsAvn.value = fmt(avn, 3);
 
-    var ubs = 1.0;
-    // AISC block shear nominal strengths (simplified)
-    var rn1 = 0.6 * fu * avn + ubs * fu * ant;
-    var rn2 = 0.6 * fy * avg + ubs * fu * ant;
-    var rn = Math.min(rn1, rn2);
     var phiBs = 0.75;
     var omegaBs = 2.0;
-    var bsCap = method === "LRFD" ? phiBs * rn : rn / omegaBs;
+    var bsCap;
+    var bsFt = NaN;
+    var bsF1v = NaN;
+    var bsF2v = NaN;
+    var bsTn = NaN;
+    var bsLrfd = NaN;
+    var bsAsd = NaN;
+    if (isStaggeredAnalysisActive()) {
+      var aq40 = avg;
+      var aq46 = Math.max(1e-6, aq40 - nv * dh * tUse);
+      var aw50 = 0.6 * fu * aq46;
+      var bc50Bs = 0.6 * fy * aq40;
+      var tensCoeff = num(stressType.value, 1);
+      var ax43 = tensCoeff * agt * fu;
+      var aq50 = Math.min(aw50, bc50Bs) + ax43;
+      bsFt = ax43;
+      bsF1v = aw50;
+      bsF2v = bc50Bs;
+      bsTn = aq50;
+      bsLrfd = phiBs * aq50;
+      bsAsd = aq50 / omegaBs;
+      bsCap = method === "LRFD" ? bsLrfd : bsAsd;
+    } else {
+      var tensCoeffNs = num(stressType.value, 1);
+      /** `NS -Tension Analysis` AC50 = MIN(AH50, AN50) + AI43 (tension rupture uses gross Agt×Fu×coeff). */
+      var ah50Ns = 0.6 * fu * avn;
+      var an50Ns = 0.6 * fy * avg;
+      var ai43Ns = tensCoeffNs * agt * fu;
+      var ac50Ns = Math.min(ah50Ns, an50Ns) + ai43Ns;
+      bsFt = ai43Ns;
+      bsF1v = ah50Ns;
+      bsF2v = an50Ns;
+      bsTn = ac50Ns;
+      bsLrfd = phiBs * ac50Ns;
+      bsAsd = ac50Ns / omegaBs;
+      bsCap = method === "LRFD" ? bsLrfd : bsAsd;
+    }
     if (analysisBlockShearCap) analysisBlockShearCap.value = fmt(bsCap, 3);
     if (analysisStagBlockShearCap) analysisStagBlockShearCap.value = fmt(bsCap, 3);
+    if (analysisStagBsFt) analysisStagBsFt.value = fmt(bsFt, 3);
+    if (analysisStagBsF1v) analysisStagBsF1v.value = fmt(bsF1v, 3);
+    if (analysisStagBsF2v) analysisStagBsF2v.value = fmt(bsF2v, 3);
+    if (analysisStagBsTn) analysisStagBsTn.value = fmt(bsTn, 3);
+    if (analysisStagBsLrfdTu) analysisStagBsLrfdTu.value = fmt(bsLrfd, 3);
+    if (analysisStagBsAsdTa) analysisStagBsAsdTa.value = fmt(bsAsd, 3);
     if (analysisStagStressType && stressType) {
-      analysisStagStressType.value = stressType.options[stressType.selectedIndex].text;
+      analysisStagStressType.value = stressType.value;
     }
 
     var govCap = Math.min(yieldCap, fracCap, bsCap);
     var isSafe = govCap >= demand && demand > 0;
     if (analysisGoverningDisplay) analysisGoverningDisplay.textContent = fmt(govCap, 3) + " kips";
-    if (analysisSafetyStatus) analysisSafetyStatus.textContent = demand === 0 ? "--" : (isSafe ? "SAFE" : "UNSAFE");
+    if (analysisSafetyStatus) {
+      analysisSafetyStatus.textContent = demand === 0 ? "--" : isSafe ? "SAFE!" : "UNSAFE";
+      if (demand === 0) {
+        analysisSafetyStatus.classList.remove("is-safe", "is-unsafe");
+      } else {
+        analysisSafetyStatus.classList.toggle("is-safe", isSafe);
+        analysisSafetyStatus.classList.toggle("is-unsafe", !isSafe);
+      }
+    }
 
     // Staggered governing uses same fracture basis as the panel (fracCapStagPanel / aeStaggeredDemand).
     var govCapStag = Math.min(yieldCap, fracCapStagPanel, bsCap);
@@ -904,7 +1616,7 @@
       plateLen: plateLen,
       plateThickness: tPlate,
       plateAg: agPlate,
-      plateLogicOk: tPlate > 0 ? Math.abs(agPlate - (tPlate * Math.max(1, plateLen / 12))) < 1e-9 : agPlate === 0,
+      plateLogicOk: tPlate > 0 ? Math.abs(agPlate - tPlate * plateLen) < 1e-6 : agPlate === 0,
       case1: case1,
       case2: case2,
       case8: case8,
@@ -925,31 +1637,66 @@
     // #endregion
   }
 
+  /**
+   * `Tension(Capacity…)` / `S -Tension Analysis` stagger paths AC51, AC53, AC55 → AH52 = MIN(...).
+   * See workbook formulas on `S -Tension Analysis` (LET/XLOOKUP alongside `Tension-pivot`).
+   */
   function calcStaggered() {
     var s = shapeData();
-    var ag = num(s.Ag, s.Ag);
+    var activeAg = activeGrossAreaForStaggerExcel();
     var dHole = num(calcBoltDiameter(), 0);
-    var g1Val = num(g1.value, 0);
-    var g2Val = num(g2.value, 0);
-    var sg1Val = num(sg1.value, 0);
     var t = num(s.t, s.t);
+    var sg1Val = num(sg1.value, 0);
+    var g1Val = num(g1.value, 0);
+    var g2Raw = g2 ? g2.value : "";
+    var g2Blank =
+      g2Raw === "" || g2Raw === null || (typeof g2Raw === "string" && String(g2Raw).trim() === "");
+    var g2Val = g2Blank ? 0 : num(g2.value, 0);
 
-    var base = Math.max(0, ag - dHole * t * Math.max(1, num(gageLines.value, 1)));
-    var p1 = base + (g2Val === 0 ? 0 : (sg1Val * sg1Val) / Math.max(1, 4 * g1Val));
-    var p2 = base + (sg1Val * sg1Val) / Math.max(1, 4 * Math.max(0.0001, g1Val + g2Val));
-    var p3 = base + (sg1Val * sg1Val) / Math.max(1, 4 * Math.max(0.0001, g1Val - g2Val || g1Val));
-    var crit = Math.min(p1, p2, p3);
-    path1.value = fmt(p1, 4);
-    path2.value = fmt(p2, 4);
-    path3.value = fmt(p3, 4);
-    criticalAn.value = fmt(crit, 4);
-    if (analysisStagCriticalAn) analysisStagCriticalAn.value = fmt(crit, 4);
-    var lcStag = effectiveLcIn();
-    var case2Stag = Math.max(0, 1 - s.xbar / lcStag);
-    var case8Stag = calcU();
-    var uStag =
-      connectionSelect && connectionSelect.value === "FLANGE_WEB" ? 1 : Math.max(case2Stag, case8Stag);
-    if (analysisStagAe) analysisStagAe.value = fmt(Math.max(0.0001, uStag * crit), 4);
+    var ac51 = NaN;
+    if (Number.isFinite(activeAg) && dHole > 0 && t > 0) {
+      ac51 = g2Blank ? activeAg - 1 * dHole * t : activeAg - 2 * dHole * t;
+    }
+
+    var ac53 = NaN;
+    if (Number.isFinite(activeAg) && dHole > 0 && t > 0 && g1Val > 0) {
+      ac53 = activeAg - 2 * dHole * t + (sg1Val * sg1Val * t) / (4 * g1Val);
+    }
+
+    var ac55 = NaN;
+    if (
+      Number.isFinite(activeAg) &&
+      dHole > 0 &&
+      t > 0 &&
+      g1Val > 0 &&
+      g2Val > 0 &&
+      !g2Blank
+    ) {
+      ac55 =
+        activeAg -
+        3 * dHole * t +
+        (sg1Val * sg1Val * t) / (4 * g1Val) +
+        (sg1Val * sg1Val * t) / (4 * g2Val);
+    }
+
+    var candidates = [ac51, ac53, ac55].filter(function (x) {
+      return Number.isFinite(x);
+    });
+    var crit = candidates.length ? Math.min.apply(null, candidates) : NaN;
+
+    if (path1) path1.value = Number.isFinite(ac51) ? fmt(ac51, 4) : "--";
+    if (path2) path2.value = Number.isFinite(ac53) ? fmt(ac53, 4) : "--";
+    if (path3) path3.value = Number.isFinite(ac55) ? fmt(ac55, 4) : "--";
+    if (criticalAn) criticalAn.value = Number.isFinite(crit) ? fmt(crit, 4) : "--";
+    if (analysisStagCriticalAn)
+      analysisStagCriticalAn.value = Number.isFinite(crit) ? fmt(crit, 4) : "--";
+
+    var uConn = stagAnalysisConnU();
+    if (analysisStagAe && Number.isFinite(crit)) {
+      analysisStagAe.value = fmt(Math.max(1e-6, crit * uConn), 4);
+    } else if (analysisStagAe) {
+      analysisStagAe.value = "--";
+    }
   }
 
   function renderConnectionImage() {
@@ -971,6 +1718,12 @@
   }
 
   function recomputeAll() {
+    if (tensionNonStagConnectionSelect && connectionSelect) {
+      tensionNonStagConnectionSelect.value = connectionSelect.value;
+    }
+    if (tensionStagConnectionSelect && connectionSelect) {
+      tensionStagConnectionSelect.value = connectionSelect.value;
+    }
     syncSteelFields();
     calcBoltDiameter();
     calcU();
@@ -979,6 +1732,10 @@
     renderConnectionImage();
     calcStaggered();
     calcNonStaggered();
+    renderCapacityDemandSpreadsheet();
+    enforceRequestedVisualLocks();
+    enforceNonStaggeredFieldModes();
+    enforceStaggeredFieldModes();
     // #region agent log
     dbg("post-fix", "H5", "tension-page-ui.js:recomputeAll", "Post-fix recompute heartbeat", {
       activeTopView: (function () {
@@ -991,19 +1748,20 @@
       })()
     });
     var stag = byId("analysisCalcStag");
-    if (stag && stag.classList.contains("is-active") && window.requestAnimationFrame) {
+    if (ENABLE_TENSION_DEBUG_TELEMETRY && stag && stag.classList.contains("is-active") && window.requestAnimationFrame) {
       window.requestAnimationFrame(function () {
         logStaggeredLayoutSnapshot("post-fix");
       });
     }
     var non = byId("analysisCalcNon");
-    if (non && non.classList.contains("is-active") && window.requestAnimationFrame) {
+    if (ENABLE_TENSION_DEBUG_TELEMETRY && non && non.classList.contains("is-active") && window.requestAnimationFrame) {
       window.requestAnimationFrame(function () {
         logNonStaggeredLayoutSnapshot("post-fix");
       });
     }
     // #region agent log
     (function () {
+      if (!ENABLE_TENSION_DEBUG_TELEMETRY) return;
       var activeTop = root.querySelector(".tension-tab.is-active");
       if (!activeTop || activeTop.getAttribute("data-tension-view") !== "design") return;
       var panel = byId("tensionSection");
@@ -1061,6 +1819,7 @@
 
   // #region agent log
   function logStaggeredLayoutSnapshot(runId) {
+    if (!ENABLE_TENSION_DEBUG_TELEMETRY) return;
     var stagRoot = byId("analysisCalcStag");
     // #region agent log
     var yfMiniProbe = stagRoot ? stagRoot.querySelector(".analysis-stag-center .analysis-mini-grid") : null;
@@ -1315,6 +2074,7 @@
 
   // #region agent log
   function logNonStaggeredLayoutSnapshot(runId) {
+    if (!ENABLE_TENSION_DEBUG_TELEMETRY) return;
     var nonRoot = byId("analysisCalcNon");
     if (!nonRoot || !nonRoot.classList.contains("is-active")) return;
     function rect(el) {
@@ -1378,6 +2138,170 @@
     });
     var selected = window.Born2BeSteel.getSelectedGrade && window.Born2BeSteel.getSelectedGrade();
     steelSelect.value = selected ? selected.astm : grades[0].astm;
+    if (analysisSteelMirror && analysisSteelMirror.tagName === "SELECT") {
+      analysisSteelMirror.innerHTML = "";
+      grades.forEach(function (g) {
+        var o2 = document.createElement("option");
+        o2.value = g.astm;
+        o2.textContent = g.astm;
+        analysisSteelMirror.appendChild(o2);
+      });
+      analysisSteelMirror.value = steelSelect.value;
+    }
+    if (analysisStagSteelMirror && analysisStagSteelMirror.tagName === "SELECT") {
+      analysisStagSteelMirror.innerHTML = "";
+      grades.forEach(function (g) {
+        var o3 = document.createElement("option");
+        o3.value = g.astm;
+        o3.textContent = g.astm;
+        analysisStagSteelMirror.appendChild(o3);
+      });
+      analysisStagSteelMirror.value = steelSelect.value;
+    }
+  }
+
+  function wireNonStaggeredInputMirrors() {
+    if (analysisMethodMirror && methodSelect) {
+      analysisMethodMirror.addEventListener("change", function () {
+        methodSelect.value = analysisMethodMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisSteelMirror && steelSelect) {
+      analysisSteelMirror.addEventListener("change", function () {
+        steelSelect.value = analysisSteelMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisDlMirror && dlInput) {
+      analysisDlMirror.addEventListener("input", function () {
+        dlInput.value = analysisDlMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisLlMirror && llInput) {
+      analysisLlMirror.addEventListener("input", function () {
+        llInput.value = analysisLlMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisLenMirror && lengthFt) {
+      analysisLenMirror.addEventListener("input", function () {
+        lengthFt.value = analysisLenMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisNomDiaMirror && nominalDia) {
+      analysisNomDiaMirror.addEventListener("input", function () {
+        nominalDia.value = analysisNomDiaMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisBoltTypeMirror && boltType) {
+      analysisBoltTypeMirror.addEventListener("change", function () {
+        boltType.value = analysisBoltTypeMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisFastMirror && fastenersPerLine) {
+      analysisFastMirror.addEventListener("input", function () {
+        fastenersPerLine.value = analysisFastMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisGageMirror && gageLines) {
+      analysisGageMirror.addEventListener("input", function () {
+        gageLines.value = analysisGageMirror.value;
+        recomputeAll();
+      });
+    }
+  }
+
+  function wireStaggeredInputMirrors() {
+    if (analysisStagMethodMirror && methodSelect) {
+      analysisStagMethodMirror.addEventListener("change", function () {
+        methodSelect.value = analysisStagMethodMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagSteelMirror && steelSelect) {
+      analysisStagSteelMirror.addEventListener("change", function () {
+        steelSelect.value = analysisStagSteelMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagDlMirror && dlInput) {
+      analysisStagDlMirror.addEventListener("input", function () {
+        dlInput.value = analysisStagDlMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagLlMirror && llInput) {
+      analysisStagLlMirror.addEventListener("input", function () {
+        llInput.value = analysisStagLlMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagLenMirror && lengthFt) {
+      analysisStagLenMirror.addEventListener("input", function () {
+        lengthFt.value = analysisStagLenMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagNomDiaMirror && nominalDia) {
+      analysisStagNomDiaMirror.addEventListener("input", function () {
+        nominalDia.value = analysisStagNomDiaMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagBoltTypeMirror && boltType) {
+      analysisStagBoltTypeMirror.addEventListener("change", function () {
+        boltType.value = analysisStagBoltTypeMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagFastMirror && fastenersPerLine) {
+      analysisStagFastMirror.addEventListener("input", function () {
+        fastenersPerLine.value = analysisStagFastMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagGageMirror && gageLines) {
+      analysisStagGageMirror.addEventListener("input", function () {
+        gageLines.value = analysisStagGageMirror.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagBsLt && analysisBsLt) {
+      analysisStagBsLt.addEventListener("input", function () {
+        analysisBsLt.value = analysisStagBsLt.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagBsNt && analysisBsNt) {
+      analysisStagBsNt.addEventListener("input", function () {
+        analysisBsNt.value = analysisStagBsNt.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagBsLv && analysisBsLv) {
+      analysisStagBsLv.addEventListener("input", function () {
+        analysisBsLv.value = analysisStagBsLv.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagBsNv && analysisBsNv) {
+      analysisStagBsNv.addEventListener("input", function () {
+        analysisBsNv.value = analysisStagBsNv.value;
+        recomputeAll();
+      });
+    }
+    if (analysisStagStressType && stressType) {
+      analysisStagStressType.addEventListener("change", function () {
+        stressType.value = analysisStagStressType.value;
+        recomputeAll();
+      });
+    }
   }
 
   [
@@ -1411,8 +2335,22 @@
     el.addEventListener("change", recomputeAll);
   });
 
+  if (tensionNonStagConnectionSelect && connectionSelect) {
+    tensionNonStagConnectionSelect.addEventListener("change", function () {
+      connectionSelect.value = tensionNonStagConnectionSelect.value;
+      recomputeAll();
+    });
+  }
+  if (tensionStagConnectionSelect && connectionSelect) {
+    tensionStagConnectionSelect.addEventListener("change", function () {
+      connectionSelect.value = tensionStagConnectionSelect.value;
+      recomputeAll();
+    });
+  }
+
   if (shapeSelect) {
     function onPrimaryShapeChange() {
+      renderNonStaggeredSelector();
       rebuildStagShapeOptions({ prefer: shapeSelect.value });
       recomputeAll();
     }
@@ -1421,15 +2359,26 @@
   }
 
   initSteelOptions();
-  populateShapes();
-  initStagSectionUi();
+  wireNonStaggeredInputMirrors();
+  wireStaggeredInputMirrors();
+  enforceRequestedVisualLocks();
+  enforceNonStaggeredFieldModes();
+  enforceStaggeredFieldModes();
   setupTabAccessibility();
   wireArrowKeyNav(Array.prototype.slice.call(viewButtons));
   wireArrowKeyNav(Array.prototype.slice.call(analysisModeButtons));
-  setView("design");
-  setAnalysisMode("non");
-  recomputeAll();
-  enforceAnalysisScrollLayout();
+
+  loadTensionCatalog(function () {
+    hydrateNsMasterOptionsFromAiscDataset(function () {
+      populateShapes();
+      initStagSectionUi();
+      setView("design");
+      setAnalysisMode("non");
+      recomputeAll();
+      enforceAnalysisScrollLayout();
+    });
+  });
+
   window.addEventListener("resize", enforceAnalysisScrollLayout);
 })();
 

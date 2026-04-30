@@ -2,39 +2,30 @@
 (function () {
   "use strict";
 
-  var steelGrades = [
-    { astm: "A36", fy: 36, fu: 58, notes: "General structural shapes, plates, bars", imgGroup: "carbon" },
-    { astm: "A992", fy: 50, fu: 65, notes: "W-shapes, seismic & wide-flange", imgGroup: "wshape" },
-    { astm: "A572 Gr.42", fy: 42, fu: 60, notes: "High-strength low-alloy", imgGroup: "plate" },
-    { astm: "A572 Gr.50", fy: 50, fu: 65, notes: "Common for beams & columns", imgGroup: "beam" },
-    { astm: "A572 Gr.55", fy: 55, fu: 70, notes: "Higher strength", imgGroup: "heavy" },
-    { astm: "A572 Gr.60", fy: 60, fu: 75, notes: "Bridge & building", imgGroup: "bridge" },
-    { astm: "A572 Gr.65", fy: 65, fu: 80, notes: "Special high-strength", imgGroup: "heavy" },
-    { astm: "A53 Gr.B", fy: 35, fu: 60, notes: "Pipe, circular sections", imgGroup: "pipe" },
-    { astm: "A500 Gr.B", fy: 42, fu: 58, notes: "Cold-formed HSS", imgGroup: "hss" },
-    { astm: "A500 Gr.C", fy: 46, fu: 62, notes: "HSS, improved toughness", imgGroup: "hss" },
-    { astm: "A501 Gr.A", fy: 36, fu: 58, notes: "Hot-formed carbon steel pipe", imgGroup: "pipe" },
-    { astm: "A501 Gr.B", fy: 50, fu: 70, notes: "Higher strength pipe", imgGroup: "pipe" },
-    { astm: "A529 Gr.50", fy: 50, fu: 65, notes: "Structural plates & angles", imgGroup: "angle" },
-    { astm: "A529 Gr.55", fy: 55, fu: 70, notes: "High strength angles", imgGroup: "angle" },
-    { astm: "A1043 36", fy: 36, fu: 58, notes: "Low yield-to-tensile ratio", imgGroup: "seismic" },
-    { astm: "A1043 50", fy: 50, fu: 65, notes: "Seismic applications", imgGroup: "seismic" },
-    { astm: "A1085 Gr.A", fy: 50, fu: 65, notes: "Acceptable for Round HSS · Rectangular HSS", imgGroup: "hss_modern" },
-    { astm: "A1065 Gr.50", fy: 50, fu: 60, notes: "Cold-formed HSS", imgGroup: "hss" },
-    { astm: "A709 Gr.50", fy: 50, fu: 65, notes: "Bridge steel", imgGroup: "bridge" },
-    { astm: "A709 50W", fy: 50, fu: 70, notes: "Weathering steel for bridges", imgGroup: "weather" },
-    { astm: "A588", fy: 50, fu: 70, notes: "Weathering steel (Corten)", imgGroup: "weather" },
-    { astm: "A847", fy: 50, fu: 70, notes: "Cold-formed weathering", imgGroup: "weather" },
-    { astm: "A913 Gr.50", fy: 50, fu: 65, notes: "Quenched & tempered shapes", imgGroup: "heavy" },
-    { astm: "A913 Gr.60", fy: 60, fu: 75, notes: "High strength shapes", imgGroup: "heavy" },
-    { astm: "A913 Gr.65", fy: 65, fu: 80, notes: "Extra high strength", imgGroup: "heavy" },
-    { astm: "A913 Gr.70", fy: 70, fu: 90, notes: "Ultra-high strength", imgGroup: "heavy" },
-    { astm: "A618 Gr.I,II", fy: 50, fu: 70, notes: "Hot-formed HSS", imgGroup: "hss" },
-    { astm: "A618 Gr.III", fy: 50, fu: 65, notes: "Hot-formed HSS", imgGroup: "hss" },
-  ];
-  steelGrades.sort(function (a, b) {
-    return a.astm.localeCompare(b.astm);
-  });
+  /** Populated from SteelGradesService (embed → optional fetch). Same array exposed as Born2BeSteel.steelGrades. */
+  var steelGrades = [];
+  /** Initial selection aligned with workbook emphasis on Steel Grade sheet (see Excel layout). */
+  var DEFAULT_STEEL_GRADE_ASTM = "A709 36";
+
+  function syncSteelGradesFromService() {
+    var svc = typeof window !== "undefined" ? window.SteelGradesService : null;
+    if (!svc || typeof svc.getGrades !== "function") {
+      steelGrades.length = 0;
+      var p = typeof window !== "undefined" ? window.__STEEL_GRADES_PAYLOAD__ : null;
+      if (p && p.grades && p.grades.length) {
+        Array.prototype.push.apply(steelGrades, p.grades);
+      }
+      return;
+    }
+    var next = svc.getGrades();
+    steelGrades.length = 0;
+    if (next && next.length) {
+      Array.prototype.push.apply(steelGrades, next);
+    }
+  }
+
+  syncSteelGradesFromService();
+  /** Grade-data listeners registered after DOM init (see end of file) so table/select/card refresh run. */
 
   var currentGrade = null;
 
@@ -96,40 +87,70 @@
     );
   }
 
+  /** PNG keys use legacy naming; Excel uses spaced "Gr. B" etc. */
   var materialImageByGrade = {
     A36: "assets/steel-grade/A36-material-card.png",
     "A1043 36": "assets/steel-grade/A1043-36-material-card.png",
     "A1043 50": "assets/steel-grade/A1043-50-material-card.png",
     "A1085 Gr.A": "assets/steel-grade/A1085-GrA-material-card.png",
+    "A1085 Gr. A": "assets/steel-grade/A1085-GrA-material-card.png",
     "A501 Gr.A": "assets/steel-grade/A501-GrA-material-card.png",
+    "A501 Gr. A": "assets/steel-grade/A501-GrA-material-card.png",
     "A501 Gr.B": "assets/steel-grade/A501-GrB-material-card.png",
+    "A501 Gr. B": "assets/steel-grade/A501-GrB-material-card.png",
     "A53 Gr.B": "assets/steel-grade/A53-GrB-material-card.png",
+    "A53 Gr. B": "assets/steel-grade/A53-GrB-material-card.png",
     "A500 Gr.B": "assets/steel-grade/A500-GrB-material-card.png",
+    "A500 Gr. B": "assets/steel-grade/A500-GrB-material-card.png",
     "A500 Gr.C": "assets/steel-grade/A500-GrC-material-card.png",
+    "A500 Gr. C": "assets/steel-grade/A500-GrC-material-card.png",
     "A529 Gr.50": "assets/steel-grade/A529-Gr50-material-card.png",
+    "A529 Gr. 50": "assets/steel-grade/A529-Gr50-material-card.png",
     "A529 Gr.55": "assets/steel-grade/A529-Gr55-material-card.png",
+    "A529 Gr. 55": "assets/steel-grade/A529-Gr55-material-card.png",
     A588: "assets/steel-grade/A588-material-card.png",
     "A618 Gr.I,II": "assets/steel-grade/A618-GrI-II-material-card.png",
+    "A618 Gr. I, II": "assets/steel-grade/A618-GrI-II-material-card.png",
     "A618 Gr.III": "assets/steel-grade/A618-GrIII-material-card.png",
+    "A618 Gr. III": "assets/steel-grade/A618-GrIII-material-card.png",
     "A709 Gr.36": "assets/steel-grade/A709-Gr36-material-card.png",
+    "A709 36": "assets/steel-grade/A709-Gr36-material-card.png",
     A847: "assets/steel-grade/A847-material-card.png",
     A992: "assets/steel-grade/A992-material-card.png",
     "A1065 Gr.50": "assets/steel-grade/A1065-Gr50-material-card.png",
+    "A1065 Gr. 50": "assets/steel-grade/A1065-Gr50-material-card.png",
     "A709 Gr.50": "assets/steel-grade/A709-Gr50-material-card.png",
+    "A709 50": "assets/steel-grade/A709-Gr50-material-card.png",
+    "A709 50S": "assets/steel-grade/A709-Gr50-material-card.png",
     "A709 50W": "assets/steel-grade/A709-50W-material-card.png",
     "A572 Gr.42": "assets/steel-grade/A572-Gr42-material-card.png",
+    "A572 Gr. 42": "assets/steel-grade/A572-Gr42-material-card.png",
     "A572 Gr.50": "assets/steel-grade/A572-Gr50-material-card.png",
+    "A572 Gr. 50": "assets/steel-grade/A572-Gr50-material-card.png",
     "A572 Gr.55": "assets/steel-grade/A572-Gr55-material-card.png",
+    "A572 Gr. 55": "assets/steel-grade/A572-Gr55-material-card.png",
     "A572 Gr.60": "assets/steel-grade/A572-Gr60-material-card.png",
+    "A572 Gr. 60": "assets/steel-grade/A572-Gr60-material-card.png",
     "A572 Gr.65": "assets/steel-grade/A572-Gr65-material-card.png",
+    "A572 Gr. 65": "assets/steel-grade/A572-Gr65-material-card.png",
     "A913 Gr.50": "assets/steel-grade/A913-Gr50-material-card.png",
+    "A913 50": "assets/steel-grade/A913-Gr50-material-card.png",
     "A913 Gr.60": "assets/steel-grade/A913-Gr60-material-card.png",
+    "A913 60": "assets/steel-grade/A913-Gr60-material-card.png",
     "A913 Gr.65": "assets/steel-grade/A913-Gr65-material-card.png",
+    "A913 65": "assets/steel-grade/A913-Gr65-material-card.png",
     "A913 Gr.70": "assets/steel-grade/A913-Gr70-material-card.png",
+    "A913 70": "assets/steel-grade/A913-Gr70-material-card.png",
   };
 
+  function resolveMaterialImagePath(astm) {
+    if (!astm) return null;
+    if (materialImageByGrade[astm]) return materialImageByGrade[astm];
+    return null;
+  }
+
   function renderMaterialVisual(grade) {
-    var imagePath = materialImageByGrade[grade.astm];
+    var imagePath = resolveMaterialImagePath(grade.astm);
     if (imagePath) {
       return (
         '<img src="' +
@@ -143,7 +164,7 @@
   }
 
   function hasMaterialImage(astm) {
-    return !!materialImageByGrade[astm];
+    return !!resolveMaterialImagePath(astm);
   }
 
   function formatAstmTitle(astm) {
@@ -202,202 +223,149 @@
     if (/A500|A501|A1085|A618/i.test(astm)) {
       return "HSS/Pipe family: prioritize wall slenderness checks, connection detailing, and local buckling limits for LRFD design.";
     }
-    if (/A572|A992|A913|A709|A529|A36|A588|A847/i.test(astm)) {
-      return "Shape/plate family: use Fy and Fu for preliminary strength, then verify member stability, compactness, and connection behavior.";
-    }
-    return "Use this selected ASTM grade for preliminary material properties; verify project-specific requirements before final design.";
+    return "";
   }
 
   var tbody = document.getElementById("tableBody");
   var selectEl = document.getElementById("astmSelector");
+  var astmDropdownBtn = document.getElementById("astmDropdownBtn");
+  var astmDropdownPanel = document.getElementById("astmDropdownPanel");
+  var astmDropdownList = document.getElementById("astmDropdownList");
+  var astmDropdownLabel = document.getElementById("astmDropdownBtnLabel");
+  var astmDropdownLayoutSpacer = document.getElementById("astmDropdownLayoutSpacer");
+  var astmSelectorShell = document.getElementById("steelGradeSelectorTop");
   var searchInput = document.getElementById("gradeSearchInput");
+  var activeBadgeEl = document.getElementById("activeBadge");
   var fyFilterGrid = document.getElementById("fyFilterGrid");
   var fuFilterGrid = document.getElementById("fuFilterGrid");
   var fyFilterClear = document.getElementById("fyFilterClear");
   var fuFilterClear = document.getElementById("fuFilterClear");
+  /** Single-select Fy/Fu stress chips (null = no filter). */
   var selectedFy = null;
   var selectedFu = null;
-  if (!tbody || !selectEl) return;
+  if (!tbody || !selectEl || !astmDropdownBtn || !astmDropdownPanel || !astmDropdownList) return;
+  // Use custom ASTM dropdown UI while keeping native select as data source.
+  selectEl.tabIndex = -1;
+  selectEl.setAttribute("aria-hidden", "true");
+
+  function isAstmDropdownOpen() {
+    return astmDropdownPanel && !astmDropdownPanel.hidden;
+  }
+
+  function getAstmDropdownRoot() {
+    return astmDropdownBtn && astmDropdownBtn.closest ? astmDropdownBtn.closest(".astm-dropdown-root") : null;
+  }
+
+  function clearAstmDropdownLayoutReserve() {
+    if (astmDropdownLayoutSpacer) astmDropdownLayoutSpacer.style.height = "0px";
+    if (astmSelectorShell) {
+      astmSelectorShell.style.marginBottom = "";
+      astmSelectorShell.classList.remove("astm-dropdown-open");
+    }
+    var root = getAstmDropdownRoot();
+    if (root) root.classList.remove("astm-is-open");
+  }
+
+  function positionAstmDropdownList() {
+    if (!astmDropdownBtn || !astmDropdownList || !astmDropdownPanel || astmDropdownPanel.hidden) return;
+    var rect = astmDropdownBtn.getBoundingClientRect();
+    var spaceBelow = window.innerHeight - rect.bottom - 10;
+    var maxH = Math.min(280, window.innerHeight * 0.4, Math.max(96, spaceBelow));
+    astmDropdownList.style.maxHeight = maxH + "px";
+    if (astmDropdownLayoutSpacer) astmDropdownLayoutSpacer.style.height = "0px";
+    if (astmSelectorShell) astmSelectorShell.style.marginBottom = "";
+  }
+
+  function syncAstmDropdownPanelWidth() {
+    if (!astmDropdownPanel || astmDropdownPanel.hidden || !astmDropdownBtn || !astmDropdownList) return;
+    astmDropdownPanel.style.width = "";
+    var btnW = astmDropdownBtn.offsetWidth;
+    var widest = 0;
+    astmDropdownList.querySelectorAll(".astm-dropdown-option").forEach(function (li) {
+      widest = Math.max(widest, li.scrollWidth);
+    });
+    var desired = Math.max(btnW, widest + 28);
+    var root = getAstmDropdownRoot();
+    var shellRect = astmSelectorShell ? astmSelectorShell.getBoundingClientRect() : null;
+    var rootRect = root ? root.getBoundingClientRect() : null;
+    var available = shellRect && rootRect ? Math.max(btnW, shellRect.right - rootRect.left - 8) : desired;
+    astmDropdownPanel.style.width = Math.min(desired, available) + "px";
+  }
+
+  function closeAstmDropdown() {
+    if (!astmDropdownList || !astmDropdownBtn || !astmDropdownPanel) return;
+    astmDropdownPanel.hidden = true;
+    astmDropdownPanel.style.width = "";
+    astmDropdownBtn.setAttribute("aria-expanded", "false");
+    astmDropdownList.style.maxHeight = "";
+    clearAstmDropdownLayoutReserve();
+    window.removeEventListener("resize", positionAstmDropdownList);
+    window.removeEventListener("resize", syncAstmDropdownPanelWidth);
+  }
+
+  function openAstmDropdown() {
+    astmDropdownPanel.hidden = false;
+    astmDropdownBtn.setAttribute("aria-expanded", "true");
+    if (astmSelectorShell) astmSelectorShell.classList.add("astm-dropdown-open");
+    var root = getAstmDropdownRoot();
+    if (root) root.classList.add("astm-is-open");
+    syncAstmDropdownPanelWidth();
+    positionAstmDropdownList();
+    window.addEventListener("resize", positionAstmDropdownList);
+    window.addEventListener("resize", syncAstmDropdownPanelWidth);
+  }
+
+  function syncAstmDropdownUi() {
+    if (astmDropdownLabel) astmDropdownLabel.textContent = selectEl.value || "—";
+    if (astmDropdownList) {
+      astmDropdownList.querySelectorAll('[role="option"]').forEach(function (li) {
+        var v = li.getAttribute("data-value");
+        var sel = v === selectEl.value;
+        li.classList.toggle("is-selected", sel);
+        li.setAttribute("aria-selected", sel ? "true" : "false");
+      });
+    }
+  }
+
+  function normalizeAstmKey(s) {
+    return String(s || "")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+  function findGrade(astmName) {
+    var key = normalizeAstmKey(astmName);
+    return steelGrades.find(function (g) {
+      return normalizeAstmKey(g.astm) === key;
+    });
+  }
 
   function renderAstmSelectorOptions() {
     selectEl.innerHTML = "";
+    astmDropdownList.innerHTML = "";
     steelGrades.forEach(function (grade) {
       var opt = document.createElement("option");
       opt.value = grade.astm;
       opt.textContent = grade.astm;
       selectEl.appendChild(opt);
-    });
-  }
-
-  // #region agent log
-  function sendDebugLog(hypothesisId, location, message, data) {
-    fetch("http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "858e61",
-      },
-      body: JSON.stringify({
-        sessionId: "858e61",
-        runId: "initial",
-        hypothesisId: hypothesisId,
-        location: location,
-        message: message,
-        data: data || {},
-        timestamp: Date.now(),
-      }),
-    }).catch(function () {});
-  }
-
-  // Capture which exact resource URL triggers the 404.
-  if (typeof window !== "undefined" && window.addEventListener) {
-    window.addEventListener(
-      "error",
-      function (evt) {
-        var target = evt && evt.target ? evt.target : null;
-        var url =
-          target && (target.src || target.href)
-            ? String(target.src || target.href)
-            : null;
-        if (url) {
-          sendDebugLog("H404", "main.js:resource-error", "Resource load error", {
-            url: url,
-            tagName: target && target.tagName ? String(target.tagName) : null,
-          });
-        }
-      },
-      true
-    );
-  }
-
-  // Capture 404s from fetch() calls (API/static endpoints).
-  if (typeof window !== "undefined" && window.fetch && !window.__steelFetchWrapped) {
-    window.__steelFetchWrapped = true;
-    var __steelOrigFetch = window.fetch.bind(window);
-    window.fetch = function (input, init) {
-      var url = null;
-      try {
-        url = typeof input === "string" ? input : input && input.url ? String(input.url) : null;
-      } catch (e) {
-        url = null;
-      }
-      var method = init && init.method ? String(init.method) : "GET";
-      return __steelOrigFetch(input, init).then(function (res) {
-        if (res && res.status === 404) {
-          sendDebugLog("H404F", "main.js:fetch-wrap", "fetch() returned 404", {
-            url: url,
-            method: method,
-            status: res.status,
-            statusText: res.statusText,
-          });
-        }
-        return res;
+      var li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.setAttribute("data-value", grade.astm);
+      li.className = "astm-dropdown-option";
+      li.textContent = grade.astm;
+      li.tabIndex = -1;
+      li.addEventListener("mousedown", function (e) {
+        e.preventDefault();
       });
-    };
-  }
-
-  // Capture 404s from XMLHttpRequest() calls.
-  if (typeof window !== "undefined" && window.XMLHttpRequest && !window.__steelXhrWrapped) {
-    window.__steelXhrWrapped = true;
-    var __steelOrigXhrOpen = window.XMLHttpRequest.prototype.open;
-    var __steelOrigXhrSend = window.XMLHttpRequest.prototype.send;
-    window.XMLHttpRequest.prototype.open = function (method, url) {
-      try {
-        this.__steelMethod = method ? String(method) : "GET";
-        this.__steelUrl = url ? String(url) : null;
-      } catch (e) {}
-      return __steelOrigXhrOpen.apply(this, arguments);
-    };
-    window.XMLHttpRequest.prototype.send = function () {
-      var xhr = this;
-      var done = function () {
-        try {
-          if (xhr && xhr.status === 404) {
-            sendDebugLog("H404X", "main.js:xhr-wrap", "XMLHttpRequest returned 404", {
-              url: xhr.responseURL || xhr.__steelUrl || null,
-              method: xhr.__steelMethod || "GET",
-              status: xhr.status,
-              statusText: xhr.statusText,
-            });
-          }
-        } catch (e) {}
-      };
-      try {
-        xhr.addEventListener("loadend", done);
-      } catch (e) {}
-      return __steelOrigXhrSend.apply(this, arguments);
-    };
-  }
-
-  function logSteelLayout(source) {
-    var rightPanel = document.querySelector(".right-panel");
-    var guidePanel = document.getElementById("guidePanel");
-    var centerPanel = document.querySelector(".dashboard-main .center-panel");
-    var tableWrap = document.querySelector(".steel-table-wrapper");
-    var selectorTop = document.querySelector(".selector-top");
-    var materialImage = document.querySelector(".material-card-pro.is-photo-card .mat-visual-wrap img");
-    var rightStyle = rightPanel ? window.getComputedStyle(rightPanel) : null;
-    var guideStyle = guidePanel ? window.getComputedStyle(guidePanel) : null;
-    var centerStyle = centerPanel ? window.getComputedStyle(centerPanel) : null;
-    var tableStyle = tableWrap ? window.getComputedStyle(tableWrap) : null;
-    var selectorStyle = selectorTop ? window.getComputedStyle(selectorTop) : null;
-    var imageStyle = materialImage ? window.getComputedStyle(materialImage) : null;
-
-    sendDebugLog("H1-H4", "main.js:logSteelLayout", "Computed steel layout snapshot", {
-      source: source,
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-      media: {
-        maxWidth1400: window.matchMedia("(max-width: 1400px)").matches,
-        maxWidth1250: window.matchMedia("(max-width: 1250px)").matches,
-        maxHeight860: window.matchMedia("(max-height: 860px)").matches,
-        maxHeight760: window.matchMedia("(max-height: 760px)").matches,
-      },
-      rightPanel: rightStyle
-        ? {
-            display: rightStyle.display,
-            width: rightStyle.width,
-            flexBasis: rightStyle.flexBasis,
-            minWidth: rightStyle.minWidth,
-            maxWidth: rightStyle.maxWidth,
-          }
-        : null,
-      guidePanel: guideStyle
-        ? {
-            display: guideStyle.display,
-            width: guideStyle.width,
-            flexBasis: guideStyle.flexBasis,
-            minWidth: guideStyle.minWidth,
-            maxWidth: guideStyle.maxWidth,
-          }
-        : null,
-      centerPanel: centerStyle
-        ? {
-            width: centerStyle.width,
-            maxWidth: centerStyle.maxWidth,
-          }
-        : null,
-      selectorTop: selectorStyle
-        ? {
-            padding: selectorStyle.padding,
-            fontSize: selectorStyle.fontSize,
-          }
-        : null,
-      tableWrap: tableStyle
-        ? {
-            height: tableStyle.height,
-            maxHeight: tableStyle.maxHeight,
-            minHeight: tableStyle.minHeight,
-          }
-        : null,
-      materialImage: imageStyle
-        ? {
-            width: imageStyle.width,
-            maxHeight: imageStyle.maxHeight,
-          }
-        : null,
+      li.addEventListener("click", function () {
+        selectEl.value = grade.astm;
+        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+        closeAstmDropdown();
+      });
+      astmDropdownList.appendChild(li);
     });
+    syncAstmDropdownUi();
+    if (isAstmDropdownOpen()) syncAstmDropdownPanelWidth();
   }
-  // #endregion
 
   function renderTableAndDropdown(list) {
     var data = list || steelGrades;
@@ -444,17 +412,49 @@
   }
 
   function buildStressFilters() {
-    var fyValues = Array.from(new Set(steelGrades.map(function (g) { return g.fy; }))).sort(function (a, b) { return a - b; });
-    var fuValues = Array.from(new Set(steelGrades.map(function (g) { return g.fu; }))).sort(function (a, b) { return a - b; });
+    var fyValues = Array.from(
+      new Set(
+        steelGrades
+          .map(function (g) {
+            return Number(g.fy);
+          })
+          .filter(function (n) {
+            return Number.isFinite(n);
+          })
+      )
+    ).sort(function (a, b) {
+      return a - b;
+    });
+    var fuValues = Array.from(
+      new Set(
+        steelGrades
+          .map(function (g) {
+            return Number(g.fu);
+          })
+          .filter(function (n) {
+            return Number.isFinite(n);
+          })
+      )
+    ).sort(function (a, b) {
+      return a - b;
+    });
     var fyEnabledByFu = new Set(
       steelGrades
-        .filter(function (g) { return selectedFu === null || g.fu === selectedFu; })
-        .map(function (g) { return g.fy; })
+        .filter(function (g) {
+          var fuN = Number(g.fu);
+          return selectedFu === null || (Number.isFinite(fuN) && fuN === selectedFu);
+        })
+        .map(function (g) { return Number(g.fy); })
+        .filter(function (n) { return Number.isFinite(n); })
     );
     var fuEnabledByFy = new Set(
       steelGrades
-        .filter(function (g) { return selectedFy === null || g.fy === selectedFy; })
-        .map(function (g) { return g.fu; })
+        .filter(function (g) {
+          var fyN = Number(g.fy);
+          return selectedFy === null || (Number.isFinite(fyN) && fyN === selectedFy);
+        })
+        .map(function (g) { return Number(g.fu); })
+        .filter(function (n) { return Number.isFinite(n); })
     );
     renderStressFilterGrid(fyFilterGrid, fyValues, selectedFy, fyEnabledByFu, function (value) {
       selectedFy = value;
@@ -473,11 +473,14 @@
   function applyTableFilters() {
     var keyword = searchInput ? String(searchInput.value || "").trim().toLowerCase() : "";
     var filtered = steelGrades.filter(function (g) {
-      var matchesSearch = !keyword ||
+      var fyN = Number(g.fy);
+      var fuN = Number(g.fu);
+      var matchesSearch =
+        !keyword ||
         g.astm.toLowerCase().indexOf(keyword) !== -1 ||
         ("astm " + g.astm.toLowerCase()).indexOf(keyword) !== -1;
-      var matchesFy = selectedFy === null || g.fy === selectedFy;
-      var matchesFu = selectedFu === null || g.fu === selectedFu;
+      var matchesFy = selectedFy === null || (Number.isFinite(fyN) && fyN === selectedFy);
+      var matchesFu = selectedFu === null || (Number.isFinite(fuN) && fuN === selectedFu);
       return matchesSearch && matchesFy && matchesFu;
     });
     renderTableAndDropdown(filtered);
@@ -485,14 +488,20 @@
     // when user types an ASTM keyword, show the first matching material card automatically.
     if (keyword && filtered.length) {
       setActiveMaterial(filtered[0].astm);
+    } else if (!keyword && selectEl && selectEl.value && findGrade(selectEl.value)) {
+      setActiveMaterial(selectEl.value);
     }
   }
 
   function setActiveMaterial(astmName) {
-    var grade = steelGrades.find(function (g) {
-      return g.astm === astmName;
-    });
-    if (!grade) return;
+    var grade = findGrade(astmName);
+    if (!grade) {
+      if (activeBadgeEl) {
+        activeBadgeEl.textContent = "Not found";
+        activeBadgeEl.classList.remove("is-active-grade");
+      }
+      return;
+    }
     currentGrade = grade;
 
     var fullNameEl = document.getElementById("selectedMatFullName");
@@ -500,29 +509,60 @@
 
     var fyEl = document.getElementById("displayFy");
     var fuEl = document.getElementById("displayFu");
-    if (fyEl) fyEl.textContent = "Fy: " + grade.fy + " ksi";
-    if (fuEl) fuEl.textContent = "Fu: " + grade.fu + " ksi";
+    if (fyEl) {
+      fyEl.innerHTML =
+        '<span class="chem-italic">F</span><sub>y</sub>: ' +
+        grade.fy +
+        " ksi";
+    }
+    if (fuEl) {
+      fuEl.innerHTML =
+        '<span class="chem-italic">F</span><sub>u</sub>: ' +
+        grade.fu +
+        " ksi";
+    }
 
     var extra = document.getElementById("specificNote");
     if (extra) extra.textContent = getExtraNote(grade.astm);
     var academic = document.getElementById("academicBottomNote");
     if (academic) academic.textContent = getAcademicNote(grade.astm);
     var shortGuide = document.getElementById("guideShortNote");
-    if (shortGuide) shortGuide.textContent = getShortGuideNote(grade.astm);
+    if (shortGuide) {
+      var shortGuideText = String(getShortGuideNote(grade.astm) || "").trim();
+      shortGuide.textContent = shortGuideText;
+      shortGuide.hidden = !shortGuideText;
+    }
 
     var ul = document.getElementById("usageNoteList");
     if (ul) {
       ul.innerHTML = "";
-      notesToBullets(grade.notes).forEach(function (line) {
-        var li = document.createElement("li");
-        li.textContent = line;
-        ul.appendChild(li);
-      });
+      notesToBullets(grade.notes || "")
+        .filter(function (line) {
+          return String(line || "").trim().length > 0;
+        })
+        .forEach(function (line) {
+          var li = document.createElement("li");
+          li.textContent = line;
+          ul.appendChild(li);
+        });
     }
 
     var vis = document.getElementById("matVisualWrap");
     if (vis) {
       vis.innerHTML = renderMaterialVisual(grade);
+      var img = vis.querySelector("img");
+      if (img) {
+        img.addEventListener(
+          "error",
+          function onImgErr() {
+            img.removeEventListener("error", onImgErr);
+            vis.innerHTML = buildMaterialSvg(grade.astm, shapeCategory(grade.astm));
+            var cardEl = document.getElementById("materialCardPro");
+            if (cardEl) cardEl.classList.remove("is-photo-card");
+          },
+          false
+        );
+      }
     }
     var card = document.getElementById("materialCardPro");
     if (card) {
@@ -534,9 +574,12 @@
       else row.classList.remove("active-row");
     });
     if (selectEl.value !== grade.astm) selectEl.value = grade.astm;
-    // #region agent log
-    logSteelLayout("setActiveMaterial:" + grade.astm);
-    // #endregion
+    syncAstmDropdownUi();
+    if (activeBadgeEl) {
+      activeBadgeEl.textContent = "Active";
+      activeBadgeEl.classList.add("is-active-grade");
+      activeBadgeEl.title = "Selected: " + grade.astm + " (Fy = " + grade.fy + " ksi, Fu = " + grade.fu + " ksi)";
+    }
   }
 
   var sections = [
@@ -576,267 +619,7 @@
       dashboardMain.classList.toggle("overview-active", sectionId === "overviewSection");
       dashboardMain.classList.toggle("section-props-active", sectionId === "sectionPropsSection");
       dashboardMain.classList.toggle("tension-rod-active", sectionId === "tensionRodSection");
-      // #region agent log
-      (function logLeftNavFit() {
-        var leftNav = document.querySelector(".left-nav");
-        if (!leftNav || !window || !window.fetch) return;
-        function rect(el) {
-          if (!el || !el.getBoundingClientRect) return null;
-          var r = el.getBoundingClientRect();
-          return { h: Math.round(r.height), top: Math.round(r.top), bottom: Math.round(r.bottom) };
-        }
-        fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "99e7ea" },
-          body: JSON.stringify({
-            sessionId: "99e7ea",
-            runId: "post-fix",
-            hypothesisId: "H_navfit",
-            location: "js/main.js:activateSection",
-            message: "Left nav fit snapshot",
-            data: {
-              sectionId: sectionId,
-              noCard: !!dashboardMain.classList.contains("no-card"),
-              viewportH: window.innerHeight,
-              centerScrollTop: document.querySelector(".center-panel") ? document.querySelector(".center-panel").scrollTop : null,
-              centerClientH: document.querySelector(".center-panel") ? document.querySelector(".center-panel").clientHeight : null,
-              centerScrollH: document.querySelector(".center-panel") ? document.querySelector(".center-panel").scrollHeight : null,
-              activeClientH: activePanel ? activePanel.clientHeight : null,
-              activeScrollH: activePanel ? activePanel.scrollHeight : null,
-              dashboardRect: rect(dashboardMain),
-              leftNavRect: rect(leftNav)
-            },
-            timestamp: Date.now()
-          })
-        }).catch(function () {});
-      })();
-      // #endregion
     }
-    // #region agent log
-    (function logThreePageStyleSnapshot() {
-      if (sectionId !== "tensionRodSection" && sectionId !== "bendingSection" && sectionId !== "shearSection") return;
-      if (!activePanel || !window.getComputedStyle) return;
-      var card = activePanel.querySelector(".tension-card");
-      var cardHead = card ? card.querySelector("h4") : null;
-      var guide = activePanel.querySelector(".tension-guide");
-      var primary = activePanel.querySelector(".tension-primary-btn");
-      var safeName = activePanel.querySelector(".safe-name");
-      function css(el) {
-        if (!el) return null;
-        var c = window.getComputedStyle(el);
-        return {
-          background: c.backgroundColor,
-          border: c.border,
-          borderRadius: c.borderRadius,
-          boxShadow: c.boxShadow,
-          color: c.color
-        };
-      }
-      fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "9c1ad2" },
-        body: JSON.stringify({
-          sessionId: "9c1ad2",
-          runId: "pre-strip",
-          hypothesisId: "H_TRI_STYLE",
-          location: "js/main.js:activateSection",
-          message: "Three-page computed style snapshot",
-          data: {
-            sectionId: sectionId,
-            card: css(card),
-            cardHeader: css(cardHead),
-            userGuide: css(guide),
-            primaryButton: css(primary),
-            safeName: css(safeName)
-          },
-          timestamp: Date.now()
-        })
-      }).catch(function () {});
-    })();
-    // #endregion
-
-    // #region agent log
-    (function logTensionRodFitSnapshot() {
-      if (sectionId !== "tensionRodSection") return;
-      if (!activePanel || !window || !window.fetch) return;
-      function rect(el) {
-        if (!el || !el.getBoundingClientRect) return null;
-        var r = el.getBoundingClientRect();
-        return { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right), w: Math.round(r.width), h: Math.round(r.height) };
-      }
-      function sig(el) {
-        if (!el) return null;
-        return {
-          id: el.id || null,
-          className: el.className || null,
-          rect: rect(el),
-          clientH: el.clientHeight,
-          scrollH: el.scrollHeight,
-          clientW: el.clientWidth,
-          scrollW: el.scrollWidth
-        };
-      }
-      function css(el, keys) {
-        if (!el || !window.getComputedStyle) return null;
-        var c = window.getComputedStyle(el);
-        var out = {};
-        (keys || []).forEach(function (k) { out[k] = c[k]; });
-        return out;
-      }
-      var center = document.querySelector(".center-panel");
-      var shell = activePanel.querySelector(".tension-shell");
-      var form = document.getElementById("formTensionRod");
-      var trodShell = activePanel.querySelector(".trod-shell");
-      var top = activePanel.querySelector(".trod-top");
-      var main = activePanel.querySelector(".trod-main");
-      var grid = activePanel.querySelector(".trod-grid");
-      var bottom = activePanel.querySelector(".trod-bottom");
-      var diagrams = activePanel.querySelector(".trod-diagrams");
-      var actions = activePanel.querySelector(".trod-actions");
-      var methodBadge = activePanel.querySelector(".trod-method-badge");
-      var finalValue = activePanel.querySelector(".trod-final-value");
-
-      function send() {
-        fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b85dfb" },
-          body: JSON.stringify({
-            sessionId: "b85dfb",
-            runId: "pre-fix",
-            hypothesisId: "H_TR_FIT",
-            location: "js/main.js:activateSection:logTensionRodFitSnapshot",
-            message: "Tension Rod no-scroll fit snapshot",
-            data: {
-              viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 },
-              center: sig(center),
-              panel: sig(activePanel),
-              shell: sig(shell),
-              form: sig(form),
-              trodShell: sig(trodShell),
-              top: sig(top),
-              main: sig(main),
-              grid: sig(grid),
-              bottom: sig(bottom),
-              diagrams: sig(diagrams),
-              actions: sig(actions),
-              keyRects: { methodBadge: rect(methodBadge), finalValue: rect(finalValue) },
-              overflowFlags: {
-                centerY: center ? center.scrollHeight > center.clientHeight + 1 : null,
-                panelY: activePanel ? activePanel.scrollHeight > activePanel.clientHeight + 1 : null,
-                trodShellY: trodShell ? trodShell.scrollHeight > trodShell.clientHeight + 1 : null
-              },
-              styles: {
-                center: css(center, ["overflowY", "height", "minHeight", "paddingTop", "paddingBottom"]),
-                panel: css(activePanel, ["overflowY", "height", "minHeight", "paddingTop", "paddingBottom"]),
-                trodShell: css(trodShell, ["overflow", "gridTemplateRows", "gap", "padding"]),
-                grid: css(grid, ["gridTemplateColumns", "gap"]),
-                bottom: css(bottom, ["gridTemplateRows", "gap"])
-              }
-            },
-            timestamp: Date.now()
-          })
-        }).catch(function () {});
-      }
-      if (window.requestAnimationFrame) window.requestAnimationFrame(send);
-      else send();
-    })();
-    // #endregion
-    // #region agent log
-    if (showCard) logSteelLayout("activateSection:steelGradeSection");
-    // #endregion
-
-    // #region agent log
-    // Height diagnostics for full-height pages (Section Props + calculation shells)
-    (function logSectionHeights() {
-      if (!activePanel || !window || !window.fetch) return;
-      var center = document.querySelector(".center-panel");
-      function rect(el) {
-        if (!el || !el.getBoundingClientRect) return null;
-        var r = el.getBoundingClientRect();
-        return { w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top), bottom: Math.round(r.bottom) };
-      }
-      function px(n) { return Math.round(Number(n) || 0); }
-      function compute() {
-        var shell =
-          activePanel.querySelector(".section-props-dashboard") ||
-          activePanel.querySelector(".tension-shell") ||
-          null;
-        var c = center ? window.getComputedStyle(center) : null;
-        var p = activePanel ? window.getComputedStyle(activePanel) : null;
-        var s = shell ? window.getComputedStyle(shell) : null;
-        var viewportH = window.innerHeight || 0;
-        var activeBottom = activePanel ? activePanel.getBoundingClientRect().bottom : null;
-        var gapToViewport = activeBottom == null ? null : px(viewportH - activeBottom);
-        fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fdf447'},body:JSON.stringify({sessionId:'fdf447',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_FULL_HEIGHT',location:'js/main.js:activateSection:logSectionHeights',message:'Section height snapshot',data:{sectionId:sectionId,viewportH:viewportH,centerRect:rect(center),activePanelRect:rect(activePanel),shellClass:shell?(shell.className||null):null,shellRect:rect(shell),gapToViewport:gapToViewport,styles:{center:{display:c?c.display:null,flex:c?c.flex:null,minHeight:c?c.minHeight:null,height:c?c.height:null},panel:{display:p?p.display:null,flex:p?p.flex:null,minHeight:p?p.minHeight:null,height:p?p.height:null},shell:{display:s?s.display:null,flex:s?s.flex:null,minHeight:s?s.minHeight:null,height:s?s.height:null}}},timestamp:Date.now()})}).catch(()=>{});
-      }
-      if (window.requestAnimationFrame) window.requestAnimationFrame(compute);
-      else compute();
-    })();
-    // #endregion
-
-    // #region agent log
-    (function logOverviewTabFooterLike() {
-      if (sectionId !== "overviewSection") return;
-      try {
-        var quickNav = document.getElementById("overviewQuickNav");
-        var pill = document.querySelector("#overviewSection .ov-hero .retro-pill");
-        var tabs = quickNav ? quickNav.querySelector(".ov-bottom-tabs") : null;
-        function rect(el) {
-          if (!el || !el.getBoundingClientRect) return null;
-          var r = el.getBoundingClientRect();
-          return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height), w: Math.round(r.width) };
-        }
-        function css(el) {
-          if (!el || !window.getComputedStyle) return null;
-          var c = window.getComputedStyle(el);
-          return {
-            display: c.display,
-            position: c.position,
-            marginTop: c.marginTop,
-            padding: c.padding,
-            background: c.backgroundColor,
-            boxShadow: c.boxShadow,
-            borderRadius: c.borderRadius,
-          };
-        }
-        function parentSig(el) {
-          if (!el || !el.parentElement) return null;
-          var p = el.parentElement;
-          return { id: p.id || null, className: p.className || null, tag: p.tagName || null };
-        }
-        fetch("http://127.0.0.1:7885/ingest/0499c47d-70cd-429d-a2ae-82b51e1ec3cb", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "014694" },
-          body: JSON.stringify({
-            sessionId: "014694",
-            runId: "pre-fix",
-            hypothesisId: "H_OV_FOOTERBOX",
-            location: "js/main.js:activateSection:logOverviewTabFooterLike",
-            message: "Overview tabs placement vs pill",
-            data: {
-              viewport: { w: window.innerWidth, h: window.innerHeight },
-              pill: pill ? { rect: rect(pill), css: css(pill), parent: parentSig(pill) } : null,
-              quickNav: quickNav
-                ? {
-                    rect: rect(quickNav),
-                    css: css(quickNav),
-                    parent: parentSig(quickNav),
-                    hasBrand: !!quickNav.querySelector(".ov-bottom-brand"),
-                    tabsRect: rect(tabs),
-                    tabsCss: css(tabs),
-                  }
-                : null,
-              deltaTop_px:
-                quickNav && pill
-                  ? Math.round(quickNav.getBoundingClientRect().top - pill.getBoundingClientRect().bottom)
-                  : null,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(function () {});
-      } catch (e) {}
-    })();
-    // #endregion
   }
 
   navItems.forEach(function (item) {
@@ -904,19 +687,48 @@
     while (target && target.tagName !== "TR") target = target.parentElement;
     if (target && target.cells && target.cells[0]) {
       var astmRow = target.cells[0].textContent;
-      var rows = document.querySelectorAll("#steelGradeTable tbody tr");
-      rows.forEach(function (row) {
-        if (row.cells[0].textContent === astmRow) row.classList.add("active-row");
-        else row.classList.remove("active-row");
-      });
+      if (searchInput) searchInput.value = "";
+      setActiveMaterial(astmRow);
+      applyTableFilters();
     }
   });
   selectEl.addEventListener("change", function (e) {
     if (!e.target.value) return;
+    if (searchInput) searchInput.value = "";
+    syncAstmDropdownUi();
     setActiveMaterial(e.target.value);
     if (!document.getElementById("steelGradeSection").classList.contains("active-panel")) {
       history.pushState(null, "", "#steelGradeSection");
       activateSection("steelGradeSection");
+    }
+  });
+
+  astmDropdownBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (isAstmDropdownOpen()) closeAstmDropdown();
+    else openAstmDropdown();
+  });
+
+  astmDropdownList.addEventListener("click", function (e) {
+    e.stopPropagation();
+  });
+
+  document.addEventListener("click", function () {
+    closeAstmDropdown();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (!e || e.key !== "Escape") return;
+    if (!isAstmDropdownOpen()) return;
+    closeAstmDropdown();
+    astmDropdownBtn.focus();
+  });
+
+  astmDropdownBtn.addEventListener("keydown", function (e) {
+    if (!e) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!isAstmDropdownOpen()) openAstmDropdown();
     }
   });
 
@@ -943,15 +755,38 @@
   renderAstmSelectorOptions();
   buildStressFilters();
   renderTableAndDropdown();
-  setActiveMaterial("A1085 Gr.A");
-  // #region agent log
-  window.addEventListener("load", function () {
-    logSteelLayout("windowLoad");
-  });
-  window.addEventListener("resize", function () {
-    logSteelLayout("windowResize");
-  });
-  // #endregion
+  (function pickInitialGrade() {
+    var pick =
+      findGrade(DEFAULT_STEEL_GRADE_ASTM) ||
+      (steelGrades.length ? steelGrades[0] : null);
+    if (pick) setActiveMaterial(pick.astm);
+  })();
+
+  function refreshSteelGradesUi() {
+    syncSteelGradesFromService();
+    var keep =
+      (currentGrade && currentGrade.astm) ||
+      (selectEl && selectEl.value ? String(selectEl.value).trim() : "");
+    renderAstmSelectorOptions();
+    if (keep && findGrade(keep)) selectEl.value = keep;
+    else if (steelGrades.length) selectEl.value = steelGrades[0].astm;
+    syncAstmDropdownUi();
+    buildStressFilters();
+    applyTableFilters();
+    if (!steelGrades.length) return;
+    if (!(selectEl.value && findGrade(selectEl.value))) {
+      var preferred =
+        findGrade(DEFAULT_STEEL_GRADE_ASTM) || steelGrades[0];
+      if (preferred) setActiveMaterial(preferred.astm);
+    }
+  }
+
+  if (typeof window !== "undefined" && window.SteelGradesService && window.SteelGradesService.onUpdate) {
+    window.SteelGradesService.onUpdate(refreshSteelGradesUi);
+  }
+  if (typeof window !== "undefined" && window.SteelGradesService && window.SteelGradesService.ensureLoaded) {
+    window.SteelGradesService.ensureLoaded().then(refreshSteelGradesUi).catch(function () {});
+  }
 
   window.Born2BeSteel = {
     steelGrades: steelGrades,

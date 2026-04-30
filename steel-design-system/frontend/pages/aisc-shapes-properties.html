@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AISC Shapes Properties — BORN2BE STEEL</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #e9f3fb;
+      --card: #ffffff;
+      --ink: #082f44;
+      --sub: #335a72;
+      --line: #c6d9e8;
+      --head: #d3e8f7;
+      --btn: #0c4f70;
+      --btn2: #2c7da0;
+    }
+    * { box-sizing: border-box; }
+    html {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 100%;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #d7e9f6 0%, var(--bg) 40%, #f3f9fd 100%);
+    }
+    .app {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-header {
+      background: linear-gradient(180deg, #1a2433 0%, #0f1720 100%);
+      border-bottom: 1px solid #2a3d52;
+      padding: 4px 10px 5px;
+      color: #d8e9f4;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .bu-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(144, 189, 216, 0.35);
+      border-radius: 999px;
+      padding: 3px 10px 3px 4px;
+    }
+    .bu-logo-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid #8ac4e3;
+      display: grid;
+      place-items: center;
+    }
+    .bu-logo-img { width: 86%; height: 86%; object-fit: contain; }
+    .bu-text { display: flex; flex-direction: column; line-height: 1.08; }
+    .assoc-main { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+    .assoc-sub { font-size: 0.58rem; color: #b8d0df; }
+    .header-badge {
+      background: linear-gradient(180deg, #eef2f6 0%, #d4dbe3 38%, #b8c2ce 100%);
+      color: #1a2332;
+      font-size: 0.62rem;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 5px 10px;
+      border: 1px solid rgba(30, 40, 55, 0.35);
+      white-space: nowrap;
+    }
+    .header-divider {
+      width: 100%;
+      height: 1px;
+      margin: 4px 0 4px;
+      background: linear-gradient(90deg, rgba(193,229,245,0) 0%, rgba(193,229,245,0.2) 45%, rgba(193,229,245,0.85) 100%);
+    }
+    .header-links {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .header-link {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.56rem;
+      border: 1px solid rgba(203, 213, 225, 0.38);
+      border-radius: 999px;
+      padding: 2px 8px;
+      letter-spacing: 0.02em;
+    }
+    .header-link:hover { color: #e7f5ff; border-color: rgba(167, 206, 226, 0.75); }
+    .dashboard-main {
+      flex: 1;
+      display: block;
+      min-height: 0;
+    }
+    .center-panel {
+      padding: 12px;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+    }
+    .wrap {
+      width: 100%;
+      margin: 0;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(5, 30, 50, 0.08);
+    }
+    .top {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.2px;
+      flex: 1 1 auto;
+    }
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--btn);
+      cursor: pointer;
+    }
+    .btn.secondary { background: var(--btn2); }
+    .filters {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1.25fr auto;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-height: 36px;
+      font-size: 0.84rem;
+      color: #12384f;
+      background: #fbfeff;
+    }
+    .meta {
+      font-size: 0.8rem;
+      color: var(--sub);
+      margin: 4px 0 10px;
+      font-weight: 600;
+    }
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: auto;
+      max-height: 72vh;
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 0.82rem;
+    }
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e3eef6;
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--head);
+      text-align: left;
+      font-size: 0.78rem;
+      letter-spacing: 0.25px;
+      text-transform: uppercase;
+    }
+    tbody tr:nth-child(even) td { background: #f8fcff; }
+    tbody tr:hover td { background: #edf7ff; cursor: pointer; }
+    @media (max-width: 900px) {
+      .filters { grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="page-header">
+      <div class="header-inner">
+        <div class="bu-section">
+          <span class="bu-logo-wrap">
+            <img class="bu-logo-img" src="../assets/branding/bu-logo-separated.png" alt="Bicol University seal">
+          </span>
+          <div class="bu-text">
+            <span class="assoc-main">In association with</span>
+            <span class="assoc-sub">Bicol University, College of Engineering</span>
+          </div>
+        </div>
+        <div class="header-badge">Structural steel reference · AISC 360-22 LRFD</div>
+      </div>
+      <div class="header-divider" aria-hidden="true"></div>
+      <div class="header-links">
+        <a class="header-link" href="../index.html#overviewSection">Academic reference</a>
+        <a class="header-link" href="../index.html#steelGradeSection">AISC 360-22 design</a>
+        <a class="header-link" href="../index.html#steelGradeSection">Steel grade database</a>
+      </div>
+    </header>
+
+    <div class="dashboard-main">
+      <main class="center-panel">
+        <section class="wrap">
+          <div class="top">
+            <h1>AISC Shapes Properties Database</h1>
+            <button id="backBtn" class="btn" type="button">SECTION PROPERTIES DASHBOARD</button>
+          </div>
+
+    <div class="filters">
+      <input id="dbSearch" type="search" placeholder="Filter designation (e.g., C3x3.5, W14x132)">
+      <select id="shapeFilter"><option value="">Shapes</option></select>
+      <select id="typeFilter"><option value="">Type</option></select>
+      <input id="labelFilter" type="search" placeholder="AISC_Manual_Label">
+      <button id="resetBtn" class="btn secondary" type="button">RESET</button>
+    </div>
+
+    <div class="meta" id="resultCount">0 results</div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Shapes</th>
+                  <th>Type</th>
+                  <th>AISC_Manual_Label</th>
+                  <th>Weight</th>
+                  <th>A</th>
+                  <th>d</th>
+                  <th>bf</th>
+                </tr>
+              </thead>
+              <tbody id="dbBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/aisc-shapes-properties-page.js"></script>
+</body>
+</html>

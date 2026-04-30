@@ -16,6 +16,7 @@
   var dbBackdrop = dbPanel ? dbPanel.querySelector("[data-close-db]") : null;
   var dbSearch = document.getElementById("aiscDbSearchInput");
   var dbBody = document.getElementById("aiscDbTableBody");
+  var dbTable = document.getElementById("aiscDbTable");
   var chipWrap = document.getElementById("aiscShapeFilterChips");
   var dbFilterShape = document.getElementById("spDbFilterShape");
   var dbFilterType = document.getElementById("spDbFilterType");
@@ -27,75 +28,10 @@
 
   if (!form || !secSel || !searchInput || !dbPanel || !dbBody || !chipWrap) return;
 
-  // #region agent log
-  (function logLayoutSnapshot() {
-    function rect(el) {
-      if (!el || !el.getBoundingClientRect) return null;
-      var r = el.getBoundingClientRect();
-      return {
-        x: Math.round(r.x),
-        y: Math.round(r.y),
-        w: Math.round(r.width),
-        h: Math.round(r.height),
-        top: Math.round(r.top),
-        left: Math.round(r.left),
-        right: Math.round(r.right),
-        bottom: Math.round(r.bottom),
-      };
-    }
-    function overlap(a, b) {
-      if (!a || !b) return false;
-      return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
-    }
-    function send(data) {
-      fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_LAYOUT',location:'section-properties-ui.js:layoutSnapshot',message:'Props layout snapshot',data:data,timestamp:Date.now()})}).catch(()=>{});
-    }
-
-    var props = document.getElementById("sectionPropsSection");
-    var dash = props ? props.querySelector(".section-props-dashboard") : null;
-    var hero = props ? props.querySelector(".sp-hero") : null;
-    var main = props ? props.querySelector(".sp-main-card") : null;
-    var guide = props ? props.querySelector(".sp-guide-card") : null;
-    var fields = props ? props.querySelector(".sp-fields") : null;
-    var mainImg = document.getElementById("sectionPropsMainImage");
-    var guideImg = document.getElementById("sectionPropsGuideImage");
-    var userGuideImg = document.getElementById("sectionPropsUserGuideImage");
-
-    // delay one frame to measure after layout
-    if (window.requestAnimationFrame) {
-      window.requestAnimationFrame(function () {
-        var rHero = rect(hero);
-        var rMain = rect(main);
-        var rGuide = rect(guide);
-        var rFields = rect(fields);
-        var rDash = rect(dash);
-        send({
-          viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 },
-          dash: rDash,
-          hero: rHero,
-          main: rMain,
-          guide: rGuide,
-          fields: rFields,
-          imgs: {
-            userGuide: rect(userGuideImg),
-            main: rect(mainImg),
-            guideTop: rect(guideImg),
-          },
-          overlaps: {
-            hero_main: overlap(rHero, rMain),
-            main_guide: overlap(rMain, rGuide),
-            hero_guide: overlap(rHero, rGuide),
-            guide_fields: overlap(rGuide, rFields),
-          },
-          horizontalOverflow: dash ? (dash.scrollWidth > dash.clientWidth) : null,
-        });
-      });
-    }
-  })();
-  // #endregion
-
   var sectionRows = [];
   var selectedShapePrefix = "";
+  var dbSortKey = "designation";
+  var dbSortDir = "asc";
 
   var fieldMap = {
     weightPlf: document.getElementById("spW"),
@@ -110,8 +46,21 @@
     rx: document.getElementById("spRx"),
     ry: document.getElementById("spRy"),
     Sx: document.getElementById("spSx"),
+    Sy: document.getElementById("spSy"),
     Zx: document.getElementById("spZx"),
+    Zy: document.getElementById("spZy"),
   };
+  var spComputedHeader = document.getElementById("spComputedHeader");
+  var spTwComp = document.getElementById("spTwComp");
+  var spBfComp = document.getElementById("spBfComp");
+  var spTfComp = document.getElementById("spTfComp");
+
+  function computedTitleFromDesignation(des) {
+    var u = String(des || "").trim().toUpperCase();
+    var ix = u.indexOf("X");
+    if (ix > 0) return u.substring(0, ix);
+    return u || "—";
+  }
 
   function prefixOf(designation) {
     var m = String(designation || "").toUpperCase().match(/^[A-Z0-9]+/);
@@ -203,14 +152,15 @@
   function imageForShape(designation) {
     var raw = String(designation || "").toUpperCase().trim();
     var p = prefixOf(raw);
-    if (p === "W" || p === "S" || p === "HP" || p === "M") return "assets/section-properties/w-shape.png";
-    if (p === "C" || p === "MC") return "assets/section-properties/c-shape.png";
-    if (p === "2L") return "assets/section-properties/double-angle-shape.png";
-    if (p === "L") return "assets/section-properties/l-shape.png";
-    if (/^HSS/.test(raw)) return "assets/section-properties/hss-shape.png";
-    if (/^PIPE/.test(raw)) return "assets/section-properties/pipe-shape.png";
-    if (/^WT|^MT|^ST/.test(raw)) return "assets/section-properties/tee-shape.png";
-    return "assets/section-properties/section-main.png";
+    if (p === "W") return "assets/section-properties/Untitled ONE (8.5 x 13 in) (33).png";
+    if (p === "S" || p === "HP" || p === "M") return "assets/section-properties/Untitled EIGHT (8.5 x 13 in) (32).png";
+    if (p === "C" || p === "MC") return "assets/section-properties/Untitled THREE(8.5 x 13 in) (33).png";
+    if (p === "2L") return "assets/section-properties/Untitled SEVEN (8.5 x 13 in) (32).png";
+    if (p === "L") return "assets/section-properties/Untitled TWO (8.5 x 13 in) (30).png";
+    if (/^HSS/.test(raw)) return "assets/section-properties/Untitled FIVE (8.5 x 13 in) (33).png";
+    if (/^PIPE/.test(raw)) return "assets/section-properties/Untitled NINE (8.5 x 13 in) (32).png";
+    if (/^WT|^MT|^ST/.test(raw)) return "assets/section-properties/Untitled FOUR (8.5 x 13 in) (34).png";
+    return "assets/section-properties/Untitled SIX (8.5 x 13 in) (34).png";
   }
 
   function normalizeDesignationKey(value) {
@@ -222,31 +172,52 @@
   }
 
   function findSectionRow(query) {
-    var q = normalizeDesignationKey(query);
+    var qRaw = String(query || "").trim();
+    var q = normalizeDesignationKey(qRaw);
     if (!q) return null;
 
-    // 1) Exact normalized match (e.g., W14x99 / w14X99 / W14 x 99)
-    var exact = sectionRows.find(function (row) {
-      return normalizeDesignationKey(row.designation) === q;
-    });
-    if (exact) return exact;
+    var scored = sectionRows
+      .map(function (row) {
+        var designation = String(row && row.designation || "");
+        var manual = manualLabelOfRow(row);
+        var type = String(typeOfRow(row) || "");
 
-    // 2) Starts-with match for quick user input
-    var startsWith = sectionRows.find(function (row) {
-      return normalizeDesignationKey(row.designation).indexOf(q) === 0;
-    });
-    if (startsWith) return startsWith;
+        var dNorm = normalizeDesignationKey(designation);
+        var mNorm = normalizeDesignationKey(manual);
+        var tNorm = normalizeDesignationKey(type);
 
-    // 3) Contains match as last fallback
-    return sectionRows.find(function (row) {
-      return normalizeDesignationKey(row.designation).indexOf(q) !== -1;
-    }) || null;
+        var score = -1;
+        if (dNorm === q) score = 1000; // exact section designation
+        else if (mNorm === q) score = 920; // exact manual label
+        else if (dNorm.indexOf(q) === 0) score = 820; // designation prefix (e.g., W10)
+        else if (mNorm.indexOf(q) === 0) score = 780; // manual label prefix
+        else if (tNorm === q) score = 720; // exact type (W/C/L/HSS/...)
+        else if (dNorm.indexOf(q) !== -1) score = 620; // designation contains
+        else if (mNorm.indexOf(q) !== -1) score = 560; // manual label contains
+        else if (tNorm.indexOf(q) === 0) score = 500; // type prefix
+
+        return { row: row, score: score };
+      })
+      .filter(function (x) {
+        return x.score >= 0;
+      })
+      .sort(function (a, b) {
+        if (b.score !== a.score) return b.score - a.score;
+        var da = String(a.row && a.row.designation || "");
+        var db = String(b.row && b.row.designation || "");
+        return da.localeCompare(db, undefined, { numeric: true, sensitivity: "base" });
+      });
+
+    return scored.length ? scored[0].row : null;
   }
 
-  function applySectionRow(row) {
+  function applySectionRow(row, opts) {
     if (!row) return;
+    var options = opts || {};
     secSel.value = row.designation || "";
-    searchInput.value = row.designation || "";
+    if (searchInput && !options.preserveSearchText) {
+      searchInput.value = row.designation || "";
+    }
 
     setTextInput(fieldMap.weightPlf, row.weightPlf);
     setTextInput(fieldMap.Ag, row.Ag);
@@ -261,6 +232,16 @@
     setTextInput(fieldMap.ry, row.ry);
     setTextInput(fieldMap.Sx, row.Sx);
     setTextInput(fieldMap.Zx, row.Zx);
+    setTextInput(fieldMap.Sy, row.Sy);
+    setTextInput(fieldMap.Zy, row.Zy);
+
+    setTextInput(spTwComp, row.tw);
+    setTextInput(spBfComp, row.bf);
+    setTextInput(spTfComp, row.tf);
+
+    if (spComputedHeader) {
+      spComputedHeader.textContent = computedTitleFromDesignation(row.designation);
+    }
 
     if (selectedDesignation) {
       selectedDesignation.textContent = row.designation || "—";
@@ -272,16 +253,13 @@
       selectedMeta.textContent = "Weight " + w + " lb/ft · Area " + a + " in² · d " + d + " in";
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_SUMMARY',location:'section-properties-ui.js:applySectionRow',message:'Applied section row to UI',data:{designation:row.designation||null,weightPlf:row.weightPlf||null,Ag:row.Ag||null,d:row.d||null},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-
     if (mainImage && mainImage.dataset.dynamic === "true") {
       mainImage.src = imageForShape(row.designation);
     }
   }
 
   function fillDbTable(rows) {
+    rows = sortDbRows(rows);
     dbBody.innerHTML = "";
     if (dbCount) {
       dbCount.textContent = rows.length + " result" + (rows.length === 1 ? "" : "s");
@@ -310,6 +288,74 @@
       });
       dbBody.appendChild(tr);
     });
+  }
+
+  function sortDbRows(rows) {
+    if (!rows || !rows.length || !dbSortKey || !dbSortDir) return rows || [];
+    var dir = dbSortDir === "desc" ? -1 : 1;
+    return rows.slice().sort(function (a, b) {
+      var av;
+      var bv;
+      if (dbSortKey === "type") {
+        av = typeOfRow(a);
+        bv = typeOfRow(b);
+      } else if (dbSortKey === "manualLabel") {
+        av = manualLabelOfRow(a);
+        bv = manualLabelOfRow(b);
+      } else if (dbSortKey === "weightPlf" || dbSortKey === "Ag" || dbSortKey === "d" || dbSortKey === "bf") {
+        av = Number(a && a[dbSortKey]);
+        bv = Number(b && b[dbSortKey]);
+        var aNum = Number.isFinite(av) ? av : -Infinity;
+        var bNum = Number.isFinite(bv) ? bv : -Infinity;
+        return (aNum - bNum) * dir;
+      } else {
+        av = a && a.designation;
+        bv = b && b.designation;
+      }
+      return String(av || "").localeCompare(String(bv || ""), undefined, { numeric: true, sensitivity: "base" }) * dir;
+    });
+  }
+
+  function updateDbHeaderSortUi() {
+    if (!dbTable) return;
+    var ths = dbTable.querySelectorAll("thead th");
+    ths.forEach(function (th) {
+      var key = th.getAttribute("data-sort-key");
+      if (!key) return;
+      var isActive = key === dbSortKey;
+      th.classList.toggle("is-sorted", isActive);
+      th.classList.toggle("is-sorted-desc", isActive && dbSortDir === "desc");
+      th.setAttribute("aria-sort", isActive ? (dbSortDir === "desc" ? "descending" : "ascending") : "none");
+    });
+  }
+
+  function initDbSortHeaders() {
+    if (!dbTable) return;
+    var ths = dbTable.querySelectorAll("thead th");
+    var keyMap = ["designation", "type", "manualLabel", "weightPlf", "Ag", "d", "bf"];
+    ths.forEach(function (th, idx) {
+      var key = keyMap[idx] || "";
+      if (!key) return;
+      th.setAttribute("data-sort-key", key);
+      th.setAttribute("role", "button");
+      th.setAttribute("tabindex", "0");
+      th.addEventListener("click", function () {
+        if (dbSortKey === key) dbSortDir = dbSortDir === "asc" ? "desc" : "asc";
+        else {
+          dbSortKey = key;
+          dbSortDir = "asc";
+        }
+        updateDbHeaderSortUi();
+        fillDbTable(activeRows());
+      });
+      th.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          th.click();
+        }
+      });
+    });
+    updateDbHeaderSortUi();
   }
 
   function activeRows() {
@@ -354,30 +400,25 @@
 
   function loadOne(designation) {
     if (!designation) return;
-    API.getSection(designation)
-      .then(function (payload) {
-        var row = payload && payload.section ? payload.section : payload;
-        if (row && row.designation) {
-          applySectionRow(row); // full-detail payload from API
-          return;
-        }
-        // fallback to local list row only when API payload is empty
-        var fallback = findSectionRow(designation);
-        if (fallback) {
-          applySectionRow(fallback);
-          return;
-        }
-        if (selectedMeta) selectedMeta.textContent = "No matching section found for " + designation;
-      })
-      .catch(function () {
-        // network/error fallback: try local cache by normalized designation
-        var fallback = findSectionRow(designation);
-        if (fallback) {
-          applySectionRow(fallback);
-          return;
-        }
-        if (selectedMeta) selectedMeta.textContent = "No matching section found for " + designation;
-      });
+    var q = String(designation || "").trim();
+    var qNorm = normalizeDesignationKey(q);
+    var exact = sectionRows.find(function (row) {
+      return normalizeDesignationKey(row && row.designation) === qNorm;
+    });
+    var local = exact || findSectionRow(q);
+    if (local) {
+      applySectionRow(local);
+      return;
+    }
+    if (searchInput && typeof searchInput.setCustomValidity === "function") {
+      searchInput.setCustomValidity("No matching section found in the Excel catalog.");
+      if (typeof searchInput.reportValidity === "function") {
+        searchInput.reportValidity();
+      }
+      window.setTimeout(function () {
+        searchInput.setCustomValidity("");
+      }, 1200);
+    }
   }
 
   if (openDbBtn) {
@@ -386,32 +427,15 @@
       dbPanel.classList.add("is-open");
       document.body.style.overflow = "hidden";
       fillDbTable(activeRows());
-
-      // #region agent log
-      fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_DB_OVERLAY',location:'section-properties-ui.js:openDb',message:'Opened DB overlay',data:{savedScrollY:window.__spScrollY,isOpen:dbPanel.classList.contains('is-open'),bodyOverflow:document.body.style.overflow||null},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
     });
   }
   if (backBtn) {
     backBtn.addEventListener("click", function () {
       var saved = typeof window.__spScrollY === "number" ? window.__spScrollY : null;
-      var before = window.scrollY || 0;
       dbPanel.classList.remove("is-open");
       document.body.style.overflow = "";
       if (saved !== null) {
         window.scrollTo(0, saved);
-      }
-
-      // #region agent log
-      fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_DB_OVERLAY',location:'section-properties-ui.js:closeDb',message:'Closed DB overlay (before restore check)',data:{savedScrollY:saved,beforeCloseScrollY:before,isOpen:dbPanel.classList.contains('is-open'),bodyOverflow:document.body.style.overflow||null},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-
-      if (window.requestAnimationFrame) {
-        window.requestAnimationFrame(function () {
-          // #region agent log
-          fetch('http://127.0.0.1:7611/ingest/6a837e42-6b94-4ac8-9453-30078a74f4d8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'978dc8'},body:JSON.stringify({sessionId:'978dc8',runId:window.__steelRunId||'pre-fix',hypothesisId:'H_DB_OVERLAY',location:'section-properties-ui.js:closeDb:raf',message:'Closed DB overlay (after restore check)',data:{afterCloseScrollY:window.scrollY||0,savedScrollY:saved},timestamp:Date.now()})}).catch(()=>{});
-          // #endregion
-        });
       }
     });
   }
@@ -456,7 +480,7 @@
       var keyword = String(searchInput.value || "").trim();
       if (!keyword) return;
       var firstMatch = findSectionRow(keyword);
-      if (firstMatch) applySectionRow(firstMatch);
+      if (firstMatch) applySectionRow(firstMatch, { preserveSearchText: true });
     });
     searchInput.addEventListener("change", function () {
       var exact = String(searchInput.value || "").trim();
@@ -481,28 +505,56 @@
     });
   }
 
-  API.listSections()
-    .then(function (data) {
-      sectionRows = sortByDesignation(data.sections || []);
-      secSel.innerHTML = '<option value="">--</option>';
-      sectionRows.forEach(function (s) {
-        var opt = document.createElement("option");
-        opt.value = s.designation;
-        opt.textContent = s.designation;
-        secSel.appendChild(opt);
-      });
-      var prefixes = Array.from(new Set(sectionRows.map(function (s) {
-        return normalizePrefix(prefixOf(s.designation));
-      }))).filter(Boolean).sort();
-      var types = Array.from(new Set(sectionRows.map(function (s) {
-        return normalizePrefix(typeOfRow(s));
-      }))).filter(Boolean).sort();
-      buildSelectOptions(dbFilterShape, prefixes, "Shapes");
-      buildSelectOptions(dbFilterType, types, "Type");
-      renderShapeChips();
-      fillDbTable(activeRows());
-      if (sectionRows.length) loadOne(sectionRows[0].designation);
+  function finishSectionCatalogInit() {
+    if (typeof window !== "undefined") {
+      window.__aiscSectionRows = sectionRows;
+    }
+    secSel.innerHTML = '<option value="">--</option>';
+    sectionRows.forEach(function (s) {
+      var opt = document.createElement("option");
+      opt.value = s.designation;
+      opt.textContent = s.designation;
+      secSel.appendChild(opt);
+    });
+    var prefixes = Array.from(new Set(sectionRows.map(function (s) {
+      return normalizePrefix(prefixOf(s.designation));
+    }))).filter(Boolean).sort();
+    var types = Array.from(new Set(sectionRows.map(function (s) {
+      return normalizePrefix(typeOfRow(s));
+    }))).filter(Boolean).sort();
+    buildSelectOptions(dbFilterShape, prefixes, "Shapes");
+    buildSelectOptions(dbFilterType, types, "Type");
+    initDbSortHeaders();
+    renderShapeChips();
+    fillDbTable(activeRows());
+    if (searchInput) {
+      searchInput.setAttribute(
+        "placeholder",
+        "Search shape (e.g., W14X132 or AISC manual label)"
+      );
+    }
+    var pick =
+      findSectionRow("W10X112") ||
+      findSectionRow("W10") ||
+      (sectionRows.length ? sectionRows[0] : null);
+    if (pick) loadOne(pick.designation);
+  }
+
+  fetch("data/aisc-sections.json")
+    .then(function (r) {
+      if (!r.ok) throw new Error("missing catalog");
+      return r.json();
     })
-    .catch(function () {});
+    .then(function (payload) {
+      sectionRows = sortByDesignation(payload.sections || []);
+      finishSectionCatalogInit();
+    })
+    .catch(function () {
+      sectionRows = [];
+      finishSectionCatalogInit();
+      if (searchInput && typeof searchInput.setCustomValidity === "function") {
+        searchInput.setCustomValidity("Excel section catalog failed to load.");
+      }
+    });
 })();
 

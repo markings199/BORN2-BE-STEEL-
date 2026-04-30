@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capacity Analysis — BORN2BE STEEL</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #e9f3fb;
+      --card: #ffffff;
+      --ink: #082f44;
+      --sub: #335a72;
+      --line: #c6d9e8;
+      --head: #d3e8f7;
+      --btn: #0c4f70;
+      --btn2: #2c7da0;
+    }
+    * { box-sizing: border-box; }
+    html {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 100%;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #d7e9f6 0%, var(--bg) 40%, #f3f9fd 100%);
+    }
+    .app {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-header {
+      background: linear-gradient(180deg, #1a2433 0%, #0f1720 100%);
+      border-bottom: 1px solid #2a3d52;
+      padding: 4px 10px 5px;
+      color: #d8e9f4;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .bu-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(144, 189, 216, 0.35);
+      border-radius: 999px;
+      padding: 3px 10px 3px 4px;
+    }
+    .bu-logo-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid #8ac4e3;
+      display: grid;
+      place-items: center;
+    }
+    .bu-logo-img { width: 86%; height: 86%; object-fit: contain; }
+    .bu-text { display: flex; flex-direction: column; line-height: 1.08; }
+    .assoc-main { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+    .assoc-sub { font-size: 0.58rem; color: #b8d0df; }
+    .header-badge {
+      background: linear-gradient(180deg, #eef2f6 0%, #d4dbe3 38%, #b8c2ce 100%);
+      color: #1a2332;
+      font-size: 0.62rem;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 5px 10px;
+      border: 1px solid rgba(30, 40, 55, 0.35);
+      white-space: nowrap;
+    }
+    .header-divider {
+      width: 100%;
+      height: 1px;
+      margin: 4px 0 4px;
+      background: linear-gradient(90deg, rgba(193,229,245,0) 0%, rgba(193,229,245,0.2) 45%, rgba(193,229,245,0.85) 100%);
+    }
+    .header-links {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .header-link {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.56rem;
+      border: 1px solid rgba(203, 213, 225, 0.38);
+      border-radius: 999px;
+      padding: 2px 8px;
+      letter-spacing: 0.02em;
+    }
+    .header-link:hover { color: #e7f5ff; border-color: rgba(167, 206, 226, 0.75); }
+    .dashboard-main {
+      flex: 1;
+      display: block;
+      min-height: 0;
+    }
+    .center-panel {
+      padding: 12px;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+    }
+    .wrap {
+      width: 100%;
+      margin: 0;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(5, 30, 50, 0.08);
+    }
+    .top {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0.2px;
+      flex: 1 1 auto;
+    }
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--btn);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    .btn.secondary { background: var(--btn2); }
+    .filters {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1.25fr auto;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-height: 36px;
+      font-size: 0.84rem;
+      color: #12384f;
+      background: #fbfeff;
+    }
+    .meta {
+      font-size: 0.8rem;
+      color: var(--sub);
+      margin: 4px 0 10px;
+      font-weight: 600;
+    }
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: auto;
+      max-height: 72vh;
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1200px;
+      font-size: 0.82rem;
+    }
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e3eef6;
+      white-space: nowrap;
+      text-align: center;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--head);
+      font-size: 0.78rem;
+      letter-spacing: 0.25px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    th:first-child, td:first-child {
+      text-align: left;
+      font-weight: 700;
+    }
+    tbody tr:nth-child(even) td { background: #f8fcff; }
+    tbody tr:hover td { background: #edf7ff; }
+    .capacity-row-group td {
+      background: #f3e7c7 !important;
+      color: #1a3a4f;
+      font-weight: 900;
+      text-align: left !important;
+    }
+    .capacity-remark.is-safe { background: #1f8f3a; color: #fff; font-weight: 800; }
+    .capacity-remark.is-unsafe { background: #b83a3a; color: #fff; font-weight: 800; }
+    .capacity-key-value { font-weight: 900; color: #0f3347; }
+    .capdb-col-key { background: #d9eef7 !important; }
+
+    /* Keep functionality hooks but hide them from UI */
+    .is-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    @media (max-width: 900px) {
+      .filters { grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="page-header">
+      <div class="header-inner">
+        <div class="bu-section">
+          <span class="bu-logo-wrap">
+            <img class="bu-logo-img" src="../assets/branding/bu-logo-separated.png" alt="Bicol University seal">
+          </span>
+          <div class="bu-text">
+            <span class="assoc-main">In association with</span>
+            <span class="assoc-sub">Bicol University, College of Engineering</span>
+          </div>
+        </div>
+        <div class="header-badge">Structural steel reference · AISC 360-22 LRFD</div>
+      </div>
+      <div class="header-divider" aria-hidden="true"></div>
+      <div class="header-links">
+        <a class="header-link" href="../index.html#overviewSection">Academic reference</a>
+        <a class="header-link" href="../index.html#steelGradeSection">AISC 360-22 design</a>
+        <a class="header-link" href="../index.html#steelGradeSection">Steel grade database</a>
+      </div>
+    </header>
+
+    <div class="dashboard-main">
+      <main class="center-panel">
+        <section class="wrap" aria-label="Capacity analysis table">
+          <div class="top">
+            <h1>Capacity Analysis Database</h1>
+            <a class="btn" href="../index.html#compressionSection">COMPRESSION DASHBOARD</a>
+          </div>
+
+          <div class="filters" aria-label="Filters">
+            <input id="capacitySearch" type="search" placeholder="Filter designation (e.g., W44X368)">
+            <select id="capacityGroup" aria-label="Shapes">
+              <option value="all">Shapes</option>
+              <option value="all">All</option>
+            </select>
+            <select id="capacityType" aria-label="Type">
+              <option value="">Type</option>
+            </select>
+            <input id="capacityLabelFilter" type="search" placeholder="AISC_Manual_Label">
+            <button id="capacityResetBtn" class="btn secondary" type="button">RESET</button>
+          </div>
+
+          <div class="meta" id="capacityResultCount" aria-live="polite">0 results</div>
+
+          <!-- Functional hooks required by compression-capacity-page.js (hidden) -->
+          <label class="is-hidden" aria-hidden="true">
+            <input id="capacitySafeOnly" type="checkbox">
+          </label>
+          <div class="is-hidden" aria-hidden="true">
+            <strong id="capacityMetricRows">–</strong>
+            <strong id="capacityMetricSafe">–</strong>
+          </div>
+
+          <div class="table-wrap" role="region" aria-label="Capacity analysis results table" tabindex="0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Section</th>
+                  <th>W</th>
+                  <th>Ag</th>
+                  <th>rx</th>
+                  <th>ry</th>
+                  <th>bf/2tf</th>
+                  <th>λr (F)</th>
+                  <th>Flange</th>
+                  <th>h/tw</th>
+                  <th>λr (W)</th>
+                  <th>Web</th>
+                  <th>Final</th>
+                  <th>KLx/rx</th>
+                  <th>KLy/ry</th>
+                  <th>KL/r</th>
+                  <th>Fe</th>
+                  <th>Fcr</th>
+                  <th>Pn</th>
+                  <th class="capdb-col-key">Pu</th>
+                  <th>Remark</th>
+                  <th>Pa</th>
+                  <th>Remark</th>
+                </tr>
+              </thead>
+              <tbody id="capacityTbody">
+                <tr><td colspan="22">Loading data…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+</div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/compression-capacity-page.js"></script>
+</body>
+</html>
+

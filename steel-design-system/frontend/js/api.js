@@ -60,5 +60,39 @@
         "/api/steel/sections/" + encodeURIComponent(designation)
       );
     },
+
+    /** ASTM grades from Excel export (static JSON / embed); same shape as legacy mocks. */
+    listSteelGrades: function () {
+      var S = global.SteelGradesService;
+      if (!S || typeof S.ensureLoaded !== "function") {
+        return Promise.resolve({ grades: [] });
+      }
+      return S.ensureLoaded().then(function (list) {
+        var out = (list || []).map(function (g) {
+          return {
+            astm: String(g.astm || "").trim(),
+            fy: Number(g.fy),
+            fu: Number(g.fu),
+          };
+        }).filter(function (g) {
+          return g.astm && Number.isFinite(g.fy) && Number.isFinite(g.fu);
+        });
+        return { grades: out };
+      });
+    },
+
+    /** Compression capacity database rows (prefer backend route, fallback to static JSON export). */
+    listCompressionCapacity: function () {
+      var self = this;
+      return self.get("/api/steel/compression-capacity").catch(function () {
+        return fetch("/data/compression-capacity.json", {
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+        }).then(function (r) {
+          if (!r.ok) throw new Error(r.statusText || String(r.status));
+          return r.json();
+        });
+      });
+    },
   };
 })(typeof window !== "undefined" ? window : this);
