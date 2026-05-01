@@ -3989,12 +3989,17 @@
     }
     #compressionSection .compression-given-value-row {
       display: grid;
-      grid-template-columns: 1fr auto;
+      /* Reserve unit column even when empty so Steel Grade aligns with Fy/DL/LL/E control widths */
+      grid-template-columns: minmax(0, 1fr) minmax(2.85rem, 3.35rem);
       align-items: center;
-      gap: 0.24rem;
+      column-gap: 0.34rem;
     }
     #compressionSection .compression-given-value-row input,
     #compressionSection .compression-given-value-row select {
+      grid-column: 1;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       height: 1.34rem !important;
       border-radius: 4px !important;
       border: 1px solid #7ea6b9 !important; /* ensure full box line visible */
@@ -4002,6 +4007,10 @@
       font-size: 1rem !important;
       font-weight: 900;
       padding: 0 0.34rem;
+    }
+    #compressionSection .compression-given-value-row .compression-given-unit {
+      grid-column: 2;
+      justify-self: start;
     }
 
     /* Compression Design: no extra scrolling; keep compact */
@@ -4093,19 +4102,23 @@
     }
     #compressionSection .compression-mini-row {
       display: grid;
-      grid-template-columns: minmax(90px, 1fr) minmax(56px, 72px) 34px;
+      grid-template-columns: minmax(0, 1fr) minmax(4.75rem, 6rem) minmax(2rem, 2.75rem);
       align-items: center;
-      gap: 0.32rem;
+      column-gap: 0.34rem;
       margin-bottom: 0.16rem;
       font-size: 0.68rem;
       font-weight: 800;
       color: #153c52;
     }
     #compressionSection .compression-mini-row input {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       height: 1.22rem;
       font-size: 0.72rem;
       text-align: center;
       font-weight: 900;
+      font-variant-numeric: tabular-nums;
     }
     #compressionSection .compression-check-block + .compression-check-block {
       border-top: 1px solid #d4e5f0;
@@ -4330,12 +4343,240 @@
       overflow: visible;
     }
     #compressionSection .compression-analysis-view .compression-analysis-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.44rem;
+      min-width: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-columns {
       display: grid;
       grid-template-columns: minmax(280px, 300px) minmax(0, 1fr) minmax(300px, 320px);
       gap: 0.44rem;
-      /* allow columns to match tallest column so we can fill bottom space */
       align-items: stretch;
       min-width: 0;
+    }
+    /* Analysis Calculator — USER GUIDE (workbook-style legend card) */
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide {
+      flex: 1 1 220px;
+      display: flex;
+      flex-direction: column;
+      align-self: stretch;
+      gap: 0;
+      border: 1px solid #a7c5d7;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f9feff 0%, #eef7fc 100%);
+      padding: 0.55rem 0.65rem 0.62rem;
+      box-sizing: border-box;
+      min-width: 0;
+      font-family: inherit;
+      color: #153c52;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-header {
+      margin: 0 0 0.5rem;
+      padding: 0.38rem 0.55rem;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #d4eaf8 0%, #c2e0f5 100%);
+      border: 1px solid #9fc9e8;
+      font-size: 0.74rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: #0f3555;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.2;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.72rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-item {
+      display: grid;
+      grid-template-columns: 14px minmax(0, 1fr);
+      gap: 0.42rem;
+      align-items: start;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-item .swatch {
+      width: 13px;
+      height: 13px;
+      border-radius: 4px;
+      border: 1px solid #5c6670;
+      flex-shrink: 0;
+      margin-top: 0.14rem;
+      box-sizing: border-box;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-item .swatch.yellow {
+      background: #e7cf77;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-item .swatch.green {
+      background: #9fd8c4;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-text {
+      display: block;
+      min-width: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-label {
+      display: block;
+      font-weight: 900;
+      font-size: 0.78rem;
+      color: #0f3555;
+      line-height: 1.25;
+      margin-bottom: 0.12rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-desc {
+      display: block;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: #153c52;
+      line-height: 1.38;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-ns-user-guide .ns-guide-desc sub {
+      font-size: 0.65em;
+      font-weight: 700;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-ns-user-guide {
+      flex: 1 1 auto;
+      width: 100%;
+      max-width: 100%;
+      margin-top: 0;
+      padding: 0.48rem 0.58rem 0.55rem;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing {
+      flex: 0 0 auto;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin-top: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 0;
+      margin: 0;
+      min-height: 0;
+      border: 1px solid #1e2a34;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-head {
+      background: #ffa08a;
+      border-bottom: 1px solid #1e2a34;
+      text-align: center;
+      padding: 0.28rem 0.55rem;
+      font-size: 0.82rem;
+      font-weight: 900;
+      color: #0a0a0a;
+      line-height: 1.25;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing .compression-governing-cap-head {
+      padding: 0.22rem 0.38rem;
+      font-size: 0.72rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-head-strong {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-head-rest {
+      font-weight: 900;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.38rem;
+      background: #ffffff;
+      padding: 0.46rem 0.55rem 0.42rem;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing .compression-governing-cap-body {
+      padding: 0.34rem 0.38rem 0.34rem;
+      gap: 0.28rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-main {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+      min-width: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing .compression-governing-cap-main {
+      gap: 0.42rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0.08rem;
+      flex: 0 0 auto;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-var {
+      font-size: 0.88rem;
+      font-weight: 900;
+      color: #0a0a0a;
+      line-height: 1.15;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing .compression-governing-cap-var {
+      font-size: 0.78rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-unit-sub {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: #0a0a0a;
+      line-height: 1.15;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing .compression-governing-cap-unit-sub {
+      font-size: 0.66rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-value {
+      flex: 0 1 auto;
+      min-width: 6.75rem;
+      max-width: 58%;
+      margin-left: auto;
+      box-sizing: border-box;
+      background: #ffc107;
+      border: 1px solid #1e2a34;
+      border-radius: 4px;
+      color: #0a0a0a;
+      font-size: 0.88rem;
+      font-weight: 800;
+      text-align: center;
+      padding: 0.3rem 0.5rem;
+      line-height: 1.2;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing .compression-governing-cap-value {
+      min-width: 5rem;
+      max-width: min(52%, 9.5rem);
+      font-size: 0.78rem;
+      padding: 0.24rem 0.38rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-status {
+      text-align: center;
+      font-size: 0.76rem;
+      font-weight: 950;
+      padding: 0.22rem 0.35rem;
+      border-radius: 6px;
+      border: 1px solid #5a7a62;
+      min-width: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-governing .compression-governing-cap-status {
+      font-size: 0.68rem;
+      padding: 0.18rem 0.28rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-status.is-safe {
+      background: #d6f5de;
+      color: #0b3d14;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-governing .compression-governing-cap-status.is-unsafe {
+      background: #ffd6d6;
+      color: #5a0a0a;
+    }
+    @media (max-width: 1100px) {
+      #compressionSection .compression-analysis-view .compression-analysis-columns {
+        grid-template-columns: 1fr;
+      }
     }
     #compressionSection .compression-analysis-view.is-active {
       overflow-x: hidden;
@@ -4368,11 +4609,6 @@
       letter-spacing: 0.01em;
       text-transform: uppercase;
       padding: 0.18rem 0.32rem;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-top-compact-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.24rem;
     }
     #compressionSection .compression-analysis-view .compression-analysis-top-compact .compression-mini-row {
       grid-template-columns: minmax(58px, 1fr) minmax(66px, 84px) 22px;
@@ -4412,8 +4648,42 @@
       height: auto !important;
       min-height: auto !important;
     }
-    #compressionSection .compression-analysis-view .compression-analysis-input .t-row {
+    /* Analysis left column: shared label | control | unit grid (Method, Grade, Fy/Fu/E, DL/LL) */
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(6.35rem, 7.75rem) minmax(2.9rem, 3.4rem);
+      column-gap: 0.38rem;
+      align-items: center;
+      margin-bottom: 0.12rem;
+    }
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row:last-child {
       margin-bottom: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row input,
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row select {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      justify-self: stretch;
+      box-sizing: border-box;
+    }
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row input[type="number"],
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row input[inputmode="decimal"] {
+      font-variant-numeric: tabular-nums;
+    }
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row > span:first-child {
+      text-align: left;
+      justify-self: stretch;
+      min-width: 0;
+      padding-right: 0.06rem;
+    }
+    #compressionSection .compression-analysis-view .compression-col-left > .tension-card .t-row .compression-given-unit {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #1f3340;
+      white-space: nowrap;
+      justify-self: start;
+      padding-left: 0.06rem;
     }
     /* Middle column: stable stack */
     #compressionSection .compression-analysis-view .compression-col-center {
@@ -4455,12 +4725,8 @@
 
     /* Analysis right column: occupy available vertical space cleanly */
     #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-compactness,
-    #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-stress,
-    #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-capacity {
+    #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-stress {
       min-height: clamp(110px, 16vh, 160px);
-    }
-    #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-capacity {
-      min-height: clamp(140px, 20vh, 200px);
     }
     #compressionSection .compression-analysis-view .compression-col-right .compression-mini-row {
       margin-bottom: 0.18rem;
@@ -4476,22 +4742,9 @@
 
     /* Right column: keep cards compact, distribute extra space by container */
     #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-compactness,
-    #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-stress,
-    #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-capacity {
+    #compressionSection .compression-analysis-view .compression-col-right > .compression-analysis-stress {
       flex: 0 0 auto;
       height: auto;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-input .t-row {
-      grid-template-columns: minmax(94px, 1fr) minmax(56px, 88px) auto;
-      gap: 0.24rem;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-input .t-row span {
-      text-align: left;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-input .t-row .compression-given-unit {
-      font-size: 0.72rem;
-      min-width: 24px;
-      color: #1f3340;
     }
     #compressionSection .compression-analysis-view .compression-col-left > .compression-card {
       padding: 0.28rem 0.42rem 0.34rem;
@@ -4553,39 +4806,88 @@
       object-position: center;
     }
 
-    /* Analysis right column: compactness in 2 columns */
-    #compressionSection .compression-analysis-view .compression-analysis-top-compact-grid {
+    /* Analysis: Check Compactness (same card chrome as other analysis panels) */
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-body {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.28rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0;
       align-items: start;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-check-block {
-      min-width: 0;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-mini-row {
-      grid-template-columns: 1fr 86px;
-      gap: 0.28rem;
-      margin-bottom: 0.14rem;
-      font-size: 0.7rem;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-mini-row span {
-      white-space: nowrap;
+      background: transparent;
+      padding: 0.02rem 0 0;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
-    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-mini-row input {
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-col {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
       min-width: 0;
+      padding: 0 0.22rem;
+      box-sizing: border-box;
+    }
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-compactness .compression-compactness-col {
+      padding: 0 0.16rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-col--web {
+      border-left: 1px solid #c5ced6;
+    }
+    /* Grid: labels stay visible; value column absorbs shrink so nothing clips */
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-equation {
+      display: grid;
+      grid-template-columns: auto auto minmax(0, 1fr);
+      align-items: center;
+      column-gap: 0.22rem;
+      row-gap: 0.12rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #153c52;
+      line-height: 1.25;
+      min-width: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-role {
+      font-weight: 900;
+      white-space: nowrap;
+      grid-column: 1;
+      grid-row: 1;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-lam {
+      font-weight: 800;
+      white-space: nowrap;
+      grid-column: 2;
+      grid-row: 1;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-val {
+      grid-column: 1 / -1;
+      grid-row: 2;
       width: 100%;
+      min-width: 0;
+      max-width: 100%;
       height: 1.28rem;
-      font-size: 0.78rem;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-align: center;
+      padding: 0.06rem 0.22rem;
+      border: 1px solid #7da79a !important;
+      border-radius: 5px;
+      background: #a8e2d3 !important;
+      color: #123247 !important;
+      box-sizing: border-box;
     }
-    #compressionSection .compression-analysis-view .compression-analysis-compactness {
-      padding-bottom: 0.46rem;
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-mini-label {
-      min-height: 1.22rem;
-      font-size: 0.66rem;
+    #compressionSection .compression-analysis-view .compression-analysis-compactness .compression-compactness-status {
+      margin-top: 0.32rem;
+      align-self: stretch;
+      width: 100%;
+      text-align: center;
+      border: 1px solid #a7c5d7;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 0.22rem 0.28rem;
+      font-weight: 900;
+      font-size: 0.6rem;
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      color: #11384f;
+      box-sizing: border-box;
+      min-width: 0;
     }
 
     /* Analysis: Governing Capacity user guide (small boxed legend) */
@@ -4647,184 +4949,221 @@
       flex-direction: column;
       min-height: clamp(160px, 24vh, 240px);
     }
-    /* Analysis: Section Selection panel (table-style selector) */
-    #compressionSection .compression-analysis-view .compressionA-section {
+    /* Analysis: Section Selection — tension Non-Staggered picker pattern */
+    #compressionSection .compression-analysis-view .ns-section-picker {
       display: grid;
+      grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.45fr);
       gap: 0.22rem;
+      margin-bottom: 0.2rem;
     }
-    #compressionSection .compression-analysis-view .compressionA-top {
-      display: none;
-    }
-    #compressionSection .compression-analysis-view .compressionA-props {
-      display: none;
-    }
-    #compressionSection .compression-analysis-view .compressionA-grid {
-      display: grid;
-      grid-template-columns: 132px 1fr;
-      gap: 0.28rem;
-      align-items: stretch;
-      min-width: 0;
-    }
-    #compressionSection .compression-analysis-view .compressionA-left,
-    #compressionSection .compression-analysis-view .compressionA-right {
-      min-width: 0;
-      display: grid;
-      gap: 0.22rem;
-      align-content: start;
-    }
-    #compressionSection .compression-analysis-view .compressionA-head {
-      border: 1px solid #c5dbe9;
+    #compressionSection .compression-analysis-view .ns-picker-col {
+      border: 1px solid #a8bfce;
       border-radius: 6px;
-      background: #ebf5fb;
+      background: #f5f9fc;
+      padding: 0.12rem;
+      min-width: 0;
+    }
+    #compressionSection .compression-analysis-view .ns-picker-head {
+      font-size: 0.68rem;
+      font-weight: 900;
+      color: #0f2f45;
+      margin-bottom: 0.08rem;
+      line-height: 1.1;
+    }
+    #compressionSection .compression-analysis-view .ns-shape-icons,
+    #compressionSection .compression-analysis-view .ns-type-chips {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.08rem;
+      margin-bottom: 0.12rem;
+    }
+    #compressionSection .compression-analysis-view .ns-type-chips {
+      max-height: 4.2rem;
+      overflow-y: auto;
+      padding-right: 0.04rem;
+    }
+    #compressionSection .compression-analysis-view .ns-chip-btn {
+      height: 1.16rem;
+      border: 1px solid #86aac0;
+      border-radius: 5px;
+      background: #ffffff;
+      color: #17384e;
       font-size: 0.64rem;
-      font-weight: 900;
-      color: #14384e;
-      text-transform: uppercase;
-      padding: 0.16rem 0.26rem;
-      text-align: center;
-      line-height: 1.05;
-      margin-bottom: 0.18rem;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 0;
     }
-    #compressionSection .compression-analysis-view .compressionA-shapes select.in-yellow {
-      width: 100%;
-      height: 1.34rem;
-      font-size: 0.76rem;
-      font-weight: 900;
-      text-align: center;
-      border-radius: 6px;
+    #compressionSection .compression-analysis-view .ns-chip-btn.is-active {
+      background: #8ec9e7;
+      border-color: #5f93b0;
     }
-    #compressionSection .compression-analysis-view .compressionA-type input.out-green {
-      width: 100%;
-      height: 1.34rem;
-      font-size: 0.76rem;
-      font-weight: 900;
-      text-align: center;
+    #compressionSection .compression-analysis-view .ns-picker-labels .ns-picker-head {
+      margin-bottom: 0.1rem;
+    }
+    #compressionSection .compression-analysis-view .ns-aisc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.08rem;
+      min-height: 7rem;
+      max-height: 7rem;
+      overflow-y: auto;
+      border: 1px solid #a8bfce;
       border-radius: 6px;
+      background: #f8fbfe;
+      padding: 0.08rem;
+    }
+    #compressionSection .compression-analysis-view .ns-aisc-btn {
+      height: 1.14rem;
+      border: 1px solid #b1bcc4;
+      border-radius: 4px;
+      background: #efefef;
+      color: #17384e;
+      font-size: 0.64rem;
+      font-weight: 700;
+      text-align: left;
+      padding: 0 0.22rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    #compressionSection .compression-analysis-view .ns-aisc-btn.is-active {
+      background: #8ec9e7;
+      border-color: #5f93b0;
+      color: #0f2f45;
+      font-weight: 900;
+    }
+    #compressionSection .compression-analysis-view .tension-prop-grid {
+      gap: 0.2rem 1rem;
+      margin-top: 0.12rem;
+      margin-bottom: 0.1rem;
+    }
+    /* Section Selection: two paired columns (Ag|ry, rx|λf, λw|designation) with aligned tracks */
+    #compressionSection .compression-analysis-view .compression-analysis-prop-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: clamp(0.38rem, 2.2vw, 0.72rem);
+      row-gap: 0.26rem;
+      align-items: stretch;
+      margin-top: 0.14rem;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-prop-grid .ns-prop-row {
+      /* Fixed label width so inputs line up across left/right columns */
+      grid-template-columns: minmax(5.35rem, 6rem) minmax(3rem, 1fr) minmax(1.6rem, auto) !important;
+      gap: 0.22rem 0.3rem !important;
+      align-items: center;
+      justify-items: stretch;
+      margin-bottom: 0 !important;
+      min-width: 0;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-prop-grid .ns-prop-row > span:first-child {
+      white-space: nowrap;
+      font-weight: 900;
+      color: #0f2f45;
+      font-size: 0.7rem;
+      justify-self: start;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-prop-grid .ns-prop-row .t-unit {
+      white-space: nowrap;
+      font-weight: 900;
+      color: #0f2f45;
+      font-size: 0.66rem;
+      text-align: left;
+      min-width: 1.5rem;
+      padding-right: 0;
+      justify-self: start;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-prop-grid .ns-prop-row input {
+      width: 100%;
+      max-width: none;
+      min-width: 0;
+      height: 1.35rem;
+      border-radius: 5px;
+      border: 1px solid #84a9be;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 0.04rem 0.22rem;
+      box-sizing: border-box;
+      justify-self: stretch;
     }
     #compressionSection .compression-analysis-view select.compression-ac-select {
       width: 100%;
+      min-width: 0;
       min-height: 1.28rem;
       max-width: 100%;
       box-sizing: border-box;
-      font-size: 0.68rem;
+      font-size: 0.64rem;
       font-weight: 800;
       border-radius: 4px;
-      padding: 0.08rem 0.2rem;
+      padding: 0.06rem 0.28rem 0.06rem 0.22rem;
+      line-height: 1.15;
     }
-    #compressionSection .compression-analysis-view .compressionA-list {
-      border: 1px solid #c5dbe9;
-      border-radius: 8px;
-      background: #ffffff;
-      padding: 0.12rem;
-      height: 86px;
-      overflow: auto;
-      display: grid;
-      gap: 0.14rem;
-    }
-    #compressionSection .compression-analysis-view .compressionA-list-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.18rem;
-      align-items: center;
-      cursor: default;
-      user-select: none;
-    }
-    #compressionSection .compression-analysis-view .compressionA-list-row span {
-      border: 1px solid #c5dbe9;
-      border-radius: 6px;
-      background: #ffffff;
-      min-height: 1.22rem;
+    /* Analysis: Critical Stress & Strength (same card chrome as other analysis panels) */
+    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-stress-body {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.72rem;
-      font-weight: 900;
-      color: #14384e;
-      padding: 0 0.2rem;
+      flex-direction: column;
+      gap: 0.28rem;
+      background: transparent;
+      padding: 0.02rem 0 0;
     }
-    #compressionSection .compression-analysis-view .compressionA-list-row.is-selected span {
-      background: #e9f6ff;
-      border-color: #a8ccdf;
+    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-stress-field {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.14rem;
+      min-width: 0;
+      width: 100%;
     }
-    #compressionSection .compression-analysis-view .compressionA-rpair {
-      border: 1px solid #c5dbe9;
-      border-radius: 8px;
-      background: #f8fdff;
-      padding: 0.18rem 0.22rem;
+    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-stress-field-title {
+      font-size: 0.64rem;
+      font-weight: 800;
+      color: #153c52;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+    }
+    /* Fixed columns so F_e / F_cr / P_n rows share one vertical alignment for inputs */
+    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-stress-field-row {
       display: grid;
-      gap: 0.16rem;
-      align-content: start;
-    }
-    #compressionSection .compression-analysis-view .compressionA-rrow {
-      display: grid;
-      grid-template-columns: 1fr 66px 26px;
-      gap: 0.18rem;
+      grid-template-columns: minmax(5.5rem, 6rem) minmax(3.75rem, 5.75rem) auto;
       align-items: center;
+      column-gap: 0.32rem;
+      row-gap: 0.1rem;
+      width: 100%;
+      min-width: 0;
     }
-    #compressionSection .compression-analysis-view .compressionA-rrow span {
-      font-size: 0.68rem;
-      font-weight: 900;
-      color: #12384d;
-      text-align: left;
+    #compressionSection .compression-analysis-view .compression-col-right .compression-analysis-stress .compression-stress-field-row {
+      grid-template-columns: minmax(5rem, 5.75rem) minmax(3.5rem, 5.25rem) auto;
+      column-gap: 0.26rem;
     }
-    #compressionSection .compression-analysis-view .compressionA-rrow input.out-green {
-      height: 1.22rem;
+    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-stress-field-var {
       font-size: 0.72rem;
+      font-weight: 800;
+      color: #11384f;
+      white-space: nowrap;
+      justify-self: start;
+    }
+    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-stress-field-val {
+      width: 100%;
+      min-width: 0;
+      max-width: 5.75rem;
+      height: 1.28rem;
+      margin: 0;
+      box-sizing: border-box;
+      border: 1px solid #7da79a !important;
+      border-radius: 5px;
+      background: #a8e2d3 !important;
+      color: #123247 !important;
+      font-size: 0.72rem;
+      font-weight: 800;
       text-align: center;
-      font-weight: 900;
+      padding: 0.06rem 0.22rem;
+      justify-self: start;
     }
-    #compressionSection .compression-analysis-view .compressionA-props {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.18rem 0.28rem;
-    }
-    #compressionSection .compression-analysis-view .compressionA-props .t-row {
-      margin-bottom: 0;
-      grid-template-columns: 1fr 92px auto;
-      gap: 0.18rem;
-      align-items: center;
-    }
-    #compressionSection .compression-analysis-view .compressionA-props .t-row span {
-      font-size: 0.66rem;
-      font-weight: 900;
-    }
-    #compressionSection .compression-analysis-view .compressionA-props .t-row input {
-      height: 1.22rem;
-      font-size: 0.72rem;
-      text-align: center;
-      font-weight: 900;
-    }
-    #compressionSection .compression-analysis-view .compressionA-left-props,
-    #compressionSection .compression-analysis-view .compressionA-right-props {
-      display: grid;
-      gap: 0.18rem;
-    }
-    #compressionSection .compression-analysis-view .compressionA-left-props .t-row,
-    #compressionSection .compression-analysis-view .compressionA-right-props .t-row {
-      margin-bottom: 0;
-      grid-template-columns: 1fr 92px auto;
-      gap: 0.18rem;
-      align-items: center;
-    }
-    #compressionSection .compression-analysis-view .compressionA-left-props .t-row span,
-    #compressionSection .compression-analysis-view .compressionA-right-props .t-row span {
-      font-size: 0.66rem;
-      font-weight: 900;
-    }
-    #compressionSection .compression-analysis-view .compressionA-left-props .t-row input,
-    #compressionSection .compression-analysis-view .compressionA-right-props .t-row input {
-      height: 1.22rem;
-      font-size: 0.72rem;
-      text-align: center;
-      font-weight: 900;
-    }
-    @media (max-width: 920px) {
-      #compressionSection .compression-analysis-view .compressionA-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-mini-row {
-      grid-template-columns: minmax(112px, 1fr) minmax(60px, 80px) 28px;
+    #compressionSection .compression-analysis-view .compression-analysis-stress .compression-stress-field-unit {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #173b51;
+      white-space: nowrap;
+      justify-self: start;
     }
     #compressionSection .compression-analysis-view .compression-analysis-capacity .safe-name {
       margin: 0.18rem 0 0.16rem;
@@ -4946,20 +5285,55 @@
       margin-bottom: 0.3rem;
     }
     #compressionSection .compression-design-view .compression-slender-card .compression-slen-govern {
-      grid-template-columns: 1fr 72px;
+      grid-template-columns: minmax(0, 1fr) minmax(5.15rem, 6rem);
+      column-gap: 0.38rem;
+      align-items: center;
     }
+    /* Match workbook-style footer: bold caption + mint computed field, black border */
     #compressionSection .compression-design-view .compression-slender-card .compression-slen-govern span.compression-slen-govern-caption {
-      border: none;
-      background: transparent;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
       justify-content: flex-start;
       text-align: left;
-      font-weight: 700;
-      padding-left: 0;
+      font-weight: 900;
+      font-size: 0.78rem;
+      color: #111111 !important;
+      padding: 0 0.15rem 0 0;
+      min-height: 0;
     }
-    #compressionSection .compression-design-view .compression-slender-card .compression-slen-govern #compressionKLGovValue {
-      background: #bfeedd;
-      border: 1px solid #9fd2be;
-      color: #12384d;
+    #compressionSection .compression-design-view .compression-slender-card .compression-slen-govern input.compression-kl-gov-ft {
+      -webkit-appearance: none;
+      appearance: none;
+      margin: 0;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      background: #ace6d3;
+      border: 1px solid #000000;
+      border-radius: 4px;
+      color: #111111;
+      font-weight: 900;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      padding: 0.1rem 0.28rem;
+      min-height: 1.4rem;
+      height: 1.4rem;
+      line-height: 1.15;
+      cursor: default;
+    }
+    #compressionSection .compression-design-view .compression-slender-card .compression-slen-govern input.compression-kl-gov-ft:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12);
+    }
+    /* No adequate section: keep two-column footer; caption may wrap */
+    #compressionSection .compression-design-view .compression-slender-card .compression-slen-govern.compression-slen-govern--na .compression-slen-govern-caption {
+      white-space: normal;
+      line-height: 1.25;
+      padding: 0.12rem 0.28rem 0.12rem 0;
+      justify-content: flex-start;
+      text-align: left;
     }
     #compressionSection .compression-slen-govern span {
       font-size: 0.68rem;
@@ -4995,30 +5369,37 @@
     #compressionSection .compression-analysis-view .compression-slender-card .compression-cell.is-empty {
       color: transparent;
     }
-    #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-govern {
-      grid-template-columns: 1fr 78px 78px;
+    #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-govern.compression-slen-govern--analysis {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(92px, 1fr) minmax(104px, 1.15fr);
+      gap: 0.32rem;
+      align-items: stretch;
+      margin-top: 0.22rem;
     }
-    #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-govern .compression-slen-govern-label {
+    #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-govern--analysis .compression-slen-govern-label {
       background: #d5eff8;
       border: 1px solid #c5dbe9;
-      border-radius: 5px;
-      min-height: 1.28rem;
-      height: 1.28rem;
+      border-radius: 6px;
+      min-height: 1.34rem;
+      height: auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.7rem;
+      text-align: center;
+      font-size: 0.68rem;
       font-weight: 900;
       color: #12384d;
-      padding: 0 0.2rem;
+      padding: 0.28rem 0.42rem;
+      line-height: 1.2;
+      white-space: normal;
     }
 
     /* Analysis-only: hard override for CSR component sizing (avoid global clamp overrides) */
     #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-head,
     #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-row {
-      /* Total = 432px (fits the card width) */
-      grid-template-columns: 36px 104px 40px 52px 52px 48px 56px !important;
-      gap: 0.14rem !important;
+      /* Condition wide enough for PINNED-PINNED; L (ft) and KL/r wide enough for formatted decimals */
+      grid-template-columns: 32px minmax(132px, 1.42fr) 34px minmax(5.5rem, 6.25rem) minmax(3rem, 3.5rem) minmax(2.65rem, 3rem) minmax(5rem, 5.75rem) !important;
+      gap: 0.18rem !important;
       margin-bottom: 0.12rem !important;
     }
     #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-head {
@@ -5042,6 +5423,15 @@
       font-size: 0.7rem !important;
       border-radius: 5px;
     }
+    #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-row input.in-yellow {
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      box-sizing: border-box;
+      padding-left: 0.2rem;
+      padding-right: 0.2rem;
+      font-variant-numeric: tabular-nums;
+    }
     #compressionSection .compression-analysis-view .compression-slender-card .compression-tag {
       padding: 0 0.18rem;
       line-height: 1.05;
@@ -5049,8 +5439,10 @@
     #compressionSection .compression-analysis-view .compression-slender-card .compression-cell {
       padding: 0 0.18rem;
     }
-    #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-govern {
-      margin-top: 0.14rem;
+    #compressionSection .compression-analysis-view .compression-slender-card .compression-slen-govern--analysis .compression-cell {
+      height: auto !important;
+      min-height: 1.34rem !important;
+      padding: 0.26rem 0.32rem !important;
     }
     #compressionSection .compression-analysis-view .compression-slender-card.compression-card {
       /* reclaim a bit of width for the table */
@@ -11613,13 +12005,17 @@
         font-size: 0.8rem !important;
       }
       #compressionSection:not(.is-analysis-tab) .compression-mini-row {
-        grid-template-columns: 1fr 72px auto !important;
-        gap: 0.16rem !important;
+        grid-template-columns: minmax(0, 1fr) minmax(4.85rem, 6.1rem) minmax(2.1rem, 2.65rem) !important;
+        column-gap: 0.32rem !important;
         font-size: 0.58rem !important;
       }
       #compressionSection:not(.is-analysis-tab) .compression-mini-row input {
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
         height: 1.36rem !important;
         font-size: 0.7rem !important;
+        font-variant-numeric: tabular-nums !important;
       }
       #compressionSection:not(.is-analysis-tab) .compression-mini-label {
         min-height: 1.36rem !important;
@@ -11673,9 +12069,10 @@
         text-align: center !important;
         text-align-last: center !important;
       }
-      #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-govern #compressionKLGovValue {
+      #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-govern input#compressionKLGovValue.compression-kl-gov-ft {
         justify-self: end !important;
-        width: 92px !important;
+        width: 100% !important;
+        max-width: 6rem !important;
       }
       #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-row > span {
         font-size: 0.7rem !important;
@@ -11688,24 +12085,33 @@
         font-size: 0.74rem !important;
       }
       #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-govern {
-        grid-template-columns: max-content 84px !important;
-        justify-content: start !important;
-        gap: 0.18rem !important;
+        grid-template-columns: minmax(0, 1fr) minmax(5.15rem, 6rem) !important;
+        justify-content: stretch !important;
+        column-gap: 0.34rem !important;
         margin-top: 0.1rem !important;
       }
       #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-govern .compression-slen-govern-caption {
-        font-size: 0.66rem !important;
-        font-weight: 800 !important;
-        white-space: nowrap !important;
-        line-height: 1.1 !important;
-      }
-      #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-govern #compressionKLGovValue {
-        width: 84px !important;
-        min-height: 1.24rem !important;
-        height: 1.24rem !important;
-        font-size: 0.72rem !important;
+        font-size: 0.74rem !important;
         font-weight: 900 !important;
-        border-radius: 0 !important;
+        color: #111111 !important;
+        white-space: nowrap !important;
+        line-height: 1.15 !important;
+      }
+      #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-govern input#compressionKLGovValue.compression-kl-gov-ft {
+        min-height: 1.38rem !important;
+        height: 1.38rem !important;
+        font-size: 0.76rem !important;
+        font-weight: 900 !important;
+        border-radius: 4px !important;
+        background: #ace6d3 !important;
+        border: 1px solid #000000 !important;
+        color: #111111 !important;
+      }
+      #compressionSection:not(.is-analysis-tab) .compression-slender-card .compression-slen-govern.compression-slen-govern--na .compression-slen-govern-caption {
+        white-space: normal !important;
+        line-height: 1.25 !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
       }
     }
 
@@ -11794,9 +12200,12 @@
         color: #143a57 !important;
       }
       #compressionSection:not(.is-analysis-tab) .compression-col-left > .compression-card:nth-child(2) .compression-given-value-row {
-        grid-template-columns: 1fr auto !important;
-        gap: 0.1rem !important;
+        grid-template-columns: minmax(0, 1fr) minmax(2.85rem, 3.35rem) !important;
+        column-gap: 0.34rem !important;
         align-items: center !important;
+      }
+      #compressionSection:not(.is-analysis-tab) .compression-col-left > .compression-card:nth-child(2) .compression-given-value-row input.out-green[readonly] {
+        cursor: not-allowed;
       }
       #compressionSection:not(.is-analysis-tab) .compression-col-left > .compression-card:nth-child(2) .compression-given-value-row input,
       #compressionSection:not(.is-analysis-tab) .compression-col-left > .compression-card:nth-child(2) .compression-given-value-row select {
@@ -12710,7 +13119,7 @@
                     <div class="compression-given-box">
                       <span class="compression-given-label">Yield Strength</span>
                       <div class="compression-given-value-row">
-                        <input id="compressionDesignFy" class="out-green" type="number" step="any" min="0" value="50" readonly>
+                        <input id="compressionDesignFy" class="out-green" type="number" step="any" min="0" value="50" readonly aria-label="Yield strength Fy from grade, ksi">
                         <span class="compression-given-unit">ksi</span>
                       </div>
                     </div>
@@ -12744,11 +13153,11 @@
                   <h4>User Guide</h4>
                   <div class="legend-item">
                     <span class="swatch yellow" aria-hidden="true"></span>
-                    <span><strong>Yellow Cells [ User Input ]:</strong><br>Enter your specific project parameters here.</span>
+                    <span><strong>Yellow:</strong><br>Your editable entries (loads, modulus, steel grade).</span>
                   </div>
                   <div class="legend-item">
                     <span class="swatch green" aria-hidden="true"></span>
-                    <span><strong>GREEN Cells [ User Input ]:</strong><br>Formula-driven calculations. Do not edit.</span>
+                    <span><strong>Green:</strong><br>F<sub>y</sub> from grade and computed results elsewhere (e.g. compactness). Do not edit.</span>
                   </div>
                 </div>
               </div>
@@ -12773,7 +13182,7 @@
                   <div class="compression-slen-row"><span>y₃</span><select id="compressionY3Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₃"></select><span id="compressionY3K" class="compression-cell">1</span><input id="compressionY3L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="8"><span id="compressionY3KL" class="compression-cell">8</span></div>
                   <div class="compression-slen-govern">
                     <span id="compressionKLGovCaption" class="compression-slen-govern-caption">Assuming Kly Governs</span>
-                    <span id="compressionKLGovValue" class="compression-cell">11.2000</span>
+                    <input id="compressionKLGovValue" type="text" class="compression-kl-gov-ft" readonly value="11.2000" aria-label="Governing KL, ft">
                   </div>
                   <div class="calc-result" id="resultCompression" style="display:none;white-space:pre-wrap;" aria-hidden="true"></div>
                 </div>
@@ -12788,27 +13197,27 @@
               <div class="compression-col compression-col-right">
                 <div class="tension-card compression-card compression-mini-stack">
                   <h4>Demand Analysis</h4>
-                  <div class="compression-mini-row"><span id="compressionDemandLabel1">1.2DL + 1.6LL</span><input id="compressionDemandCombo1" class="out-green" readonly value="620"><span>kips</span></div>
+                  <div class="compression-mini-row"><span id="compressionDemandLabel1">1.2DL+1.6LL</span><input id="compressionDemandCombo1" class="out-green" readonly value="620"><span>kips</span></div>
                   <div class="compression-mini-row"><span id="compressionDemandLabel2">1.4DL</span><input id="compressionDemandCombo2" class="out-green" readonly value="126"><span>kips</span></div>
-                  <div class="compression-mini-row"><span id="compressionDemandGovLabel">Tu</span><input id="compressionDemandGov" class="out-green" readonly value="620"><span>kips</span></div>
+                  <div class="compression-mini-row"><span id="compressionDemandGovLabel">Tu</span><input id="compressionDemandGov" class="out-green" readonly value="126"><span>kips</span></div>
                 </div>
                 <div class="tension-card compression-card compression-mini-stack">
                   <h4>Check Compactness</h4>
                   <div class="compression-check-block">
                     <div class="compression-mini-row"><span>Flange λ<sub>f</sub></span><input id="compressionDesignFlangeLambda" class="out-green" readonly value="8.12"><span></span></div>
                     <div class="compression-mini-row"><span>Flange λ<sub>r</sub></span><input id="compressionDesignFlangeLim" class="out-green" readonly value="13.4866"><span></span></div>
-                    <div id="compressionDesignFlangeClass" class="compression-mini-label compression-class-status is-compact"><em>Compact flange</em></div>
+                    <div id="compressionDesignFlangeClass" class="compression-mini-label compression-class-status is-compact"><em>COMPACT FLANGE</em></div>
                   </div>
                   <div class="compression-check-block">
                     <div class="compression-mini-row"><span>Web λ<sub>w</sub></span><input id="compressionDesignWebLambda" class="out-green" readonly value="25.9"><span></span></div>
                     <div class="compression-mini-row"><span>Web λ<sub>r</sub></span><input id="compressionDesignWebLim" class="out-green" readonly value="35.8840"><span></span></div>
-                    <div id="compressionDesignWebClass" class="compression-mini-label compression-class-status is-compact"><em>Compact web</em></div>
+                    <div id="compressionDesignWebClass" class="compression-mini-label compression-class-status is-compact"><em>COMPACT WEB</em></div>
                   </div>
                 </div>
                 <div class="tension-card safe-card compression-safe-card">
                   <h4>Lightest Adequate Section</h4>
                   <div class="safe-name" id="compressionSafeSection">W8X24</div>
-                  <span id="compressionSafeRemarkLabel" class="compression-safe-remark-label-paired">SAFE</span>
+                  <span id="compressionSafeRemarkLabel" class="compression-safe-remark-label-paired is-safe">SAFE</span>
                   <div class="compression-lightest-title">Lightest Section</div>
                 </div>
               </div>
@@ -12816,17 +13225,23 @@
 
               <div class="compression-analysis-view">
                 <div class="compression-analysis-grid">
+                <div class="compression-analysis-columns">
                 <div class="compression-col compression-col-left">
                   <div class="tension-card compression-card">
-                    <h4>Analysis Method</h4>
-                    <div class="compression-method-chip">LRFD</div>
+                    <h4>Design Method</h4>
+                    <div class="t-row"><span>Method</span><select id="compressionAMethod" class="in-yellow" aria-label="Compression analysis design method"><option value="LRFD" selected>LRFD</option><option value="ASD">ASD</option></select><span></span></div>
                   </div>
                   <div class="tension-card compression-card compression-analysis-input">
-                    <h4>Input Parameters</h4>
-                    <div class="t-row"><span>Grade:</span><input id="compressionAGrade" class="out-green" readonly value="A992"><span></span></div>
-                    <div class="t-row"><span>F<sub>y</sub>:</span><input id="compressionAFy" class="in-yellow" type="number" step="any" min="0.001" value="50"><span class="compression-given-unit">ksi</span></div>
-                    <div class="t-row"><span>F<sub>u</sub>:</span><input id="compressionAFu" class="out-green" readonly value="65"><span class="compression-given-unit">ksi</span></div>
-                    <div class="t-row"><span>Modulus (E):</span><input id="compressionAE" class="in-yellow" type="number" step="any" value="29000"><span class="compression-given-unit">ksi</span></div>
+                    <h4>Input parameters</h4>
+                    <div class="t-row"><span>Grade</span><select id="compressionAGrade" class="in-yellow" aria-label="Steel grade for analysis"></select><span></span></div>
+                    <div class="t-row"><span>F<sub>y</sub></span><input id="compressionAFy" class="out-green" type="text" inputmode="decimal" readonly value="50"><span class="compression-given-unit">ksi</span></div>
+                    <div class="t-row"><span>F<sub>u</sub></span><input id="compressionAFu" class="out-green" type="text" inputmode="decimal" readonly value="65"><span class="compression-given-unit">ksi</span></div>
+                    <div class="t-row"><span>Modulus of elasticity (E)</span><input id="compressionAE" class="in-yellow" type="number" step="any" min="0" value="29000" aria-label="Modulus of elasticity E in ksi"><span class="compression-given-unit">ksi</span></div>
+                  </div>
+                  <div class="tension-card compression-card compression-analysis-input compression-analysis-loads-card">
+                    <h4>Applied loads</h4>
+                    <div class="t-row"><span>Dead load, DL</span><input id="compressionADl" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="90"><span class="compression-given-unit">kips</span></div>
+                    <div class="t-row"><span>Live load, LL</span><input id="compressionALl" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="320"><span class="compression-given-unit">kips</span></div>
                   </div>
                   <div class="tension-card compression-card compression-analysis-type-card">
                     <h4>Compression Analysis Types</h4>
@@ -12839,39 +13254,27 @@
                 <div class="compression-col compression-col-center">
                   <div class="tension-card compression-card">
                     <h4>Section Selection</h4>
-                    <div class="compressionA-section">
-                      <div class="compressionA-grid">
-                        <div class="compressionA-left">
-                          <div class="compressionA-shapes">
-                            <div class="compressionA-head">Shapes</div>
-                            <select id="compressionAShapeSelect" class="in-yellow" aria-label="Shape family">
-                              <option value="L" selected>L</option>
-                              <option value="W">W</option>
-                            </select>
-                          </div>
-                          <div class="compressionA-type">
-                            <div class="compressionA-head">Type</div>
-                            <input id="compressionAShapeType" class="out-green" readonly value="W" aria-label="Shape type">
-                          </div>
-                          <div class="compressionA-left-props">
-                            <div class="t-row"><span>Ag =</span><input id="compressionAAg" class="out-green" readonly value="83.1"><span class="compression-given-unit">in²</span></div>
-                            <div class="t-row"><span>r<sub>x</sub> =</span><input id="compressionARx" class="out-green" readonly value="12"><span class="compression-given-unit">in</span></div>
-                          </div>
-                        </div>
-
-                        <div class="compressionA-right">
-                          <div class="compressionA-labels">
-                            <div class="compressionA-head">AISC_Manual_Label</div>
-                            <div id="compressionAAiscList" class="compressionA-list" role="listbox" aria-label="AISC shape list"></div>
-                          </div>
-                          <div class="compressionA-right-props">
-                            <div class="t-row"><span>r<sub>y</sub> =</span><input id="compressionARy" class="out-green" readonly value="3.39"><span class="compression-given-unit">in</span></div>
-                            <div class="t-row"><span>λ<sub>f</sub> =</span><input id="compressionALf" class="out-green" readonly value="22.5"><span class="compression-given-unit"></span></div>
-                            <div class="t-row"><span>λ<sub>w</sub> =</span><input id="compressionALw" class="out-green" readonly value="3.72"><span class="compression-given-unit"></span></div>
-                            <div class="t-row"><span>Label</span><input id="compressionAShapeLabel" class="out-green" readonly value="W8X24"><span class="compression-given-unit"></span></div>
-                          </div>
-                        </div>
+                    <div class="ns-section-picker" role="group" aria-label="Compression analysis section selector">
+                      <div class="ns-picker-col">
+                        <div class="ns-picker-head">Shapes</div>
+                        <div id="compressionNsShapeIcons" class="ns-shape-icons" aria-label="Shape family"></div>
+                        <div class="ns-picker-head">Type</div>
+                        <div id="compressionNsTypeChips" class="ns-type-chips" aria-label="Shape type"></div>
                       </div>
+                      <div class="ns-picker-col ns-picker-labels">
+                        <div class="ns-picker-head">AISC_Manual_Label</div>
+                        <div id="compressionNsAiscGrid" class="ns-aisc-grid" role="listbox" aria-label="AISC shape list"></div>
+                        <select id="compressionAShapeSelect" class="in-yellow ns-aisc-list sr-only" tabindex="-1" aria-label="Selected shape designation"></select>
+                      </div>
+                    </div>
+                    <input type="hidden" id="compressionAShapeType" value="">
+                    <div class="tension-prop-grid compression-analysis-prop-grid">
+                      <div class="t-row ns-prop-row"><span>Ag =</span><input id="compressionAAg" class="out-green" readonly value="83.1" aria-label="Gross area Ag, square inches"><span class="t-unit">in²</span></div>
+                      <div class="t-row ns-prop-row"><span>r<sub>y</sub> =</span><input id="compressionARy" class="out-green" readonly value="3.39" aria-label="Radius of gyration ry, inches"><span class="t-unit">in</span></div>
+                      <div class="t-row ns-prop-row"><span>r<sub>x</sub> =</span><input id="compressionARx" class="out-green" readonly value="12" aria-label="Radius of gyration rx, inches"><span class="t-unit">in</span></div>
+                      <div class="t-row ns-prop-row"><span>λ<sub>f</sub> =</span><input id="compressionALf" class="out-green" readonly value="22.5" aria-label="Flange slenderness lambda f"><span class="t-unit"></span></div>
+                      <div class="t-row ns-prop-row"><span>λ<sub>w</sub> =</span><input id="compressionALw" class="out-green" readonly value="3.72" aria-label="Web slenderness lambda w"><span class="t-unit"></span></div>
+                      <div class="t-row ns-prop-row"><span>Designation</span><input id="compressionAShapeLabel" class="out-green" readonly value="W8X24" aria-label="AISC section designation"><span class="t-unit"></span></div>
                     </div>
                   </div>
                   <div class="tension-card compression-card compression-slender-card">
@@ -12925,8 +13328,8 @@
                       <span id="compressionAKLy3" class="compression-cell"></span>
                       <span id="compressionAKLry3" class="compression-cell"></span>
                     </div>
-                    <div class="compression-slen-govern">
-                      <span id="compressionAKLGovCaption" class="compression-slen-govern-label">KL/r<sub>x</sub> Governs =</span>
+                    <div class="compression-slen-govern compression-slen-govern--analysis">
+                      <span id="compressionAKLGovCaption" class="compression-slen-govern-label">Governing KL/r =</span>
                       <span id="compressionAKLrGov" class="compression-cell">198.6755</span>
                       <span id="compressionAKLGov" class="compression-cell">KL = 50</span>
                     </div>
@@ -12934,43 +13337,104 @@
                 </div>
 
                 <div class="compression-col compression-col-right">
+                  <div class="sr-only" aria-hidden="true">
+                    <span id="compressionADemand1Lbl"></span>
+                    <span id="compressionADemand2Lbl"></span>
+                    <span id="compressionADemandGovLbl"></span>
+                    <input type="hidden" id="compressionADemand1" value="">
+                    <input type="hidden" id="compressionADemand2" value="">
+                    <input type="hidden" id="compressionADemandGov" value="">
+                    <span id="compressionAStrengthLbl"></span>
+                    <input type="hidden" id="compressionATu" value="">
+                    <span id="compressionATuDisplay"></span>
+                  </div>
                   <div class="tension-card compression-card compression-mini-stack compression-analysis-compactness">
                     <h4>Check Compactness</h4>
-                    <div class="compression-analysis-top-compact-grid">
-                      <div class="compression-check-block">
-                        <div class="compression-mini-row"><span>Flange λ<sub>r</sub></span><input id="compressionAFlangeLr" class="out-green" readonly value="13.4866"></div>
-                        <div class="compression-mini-row"><span>Flange λ</span><input id="compressionAFlangeL" class="out-green" readonly value="—"></div>
-                        <div id="compressionAFlangeClass" class="compression-mini-label">SLENDER FLANGE</div>
+                    <div class="compression-compactness-body">
+                      <div class="compression-compactness-col">
+                        <div class="compression-compactness-equation">
+                          <span class="compression-compactness-role">FLANGE:</span>
+                          <span class="compression-compactness-lam">λ<sub>r</sub> =</span>
+                          <input id="compressionAFlangeLr" class="out-green compression-compactness-val" type="text" readonly value="13.4866" aria-label="Flange λᵣ limit">
+                        </div>
+                        <div id="compressionAFlangeClass" class="compression-compactness-status">SLENDER FLANGE</div>
                       </div>
-                      <div class="compression-check-block">
-                        <div class="compression-mini-row"><span>Web λ<sub>r</sub></span><input id="compressionAWebLr" class="out-green" readonly value="35.8840"></div>
-                        <div class="compression-mini-row"><span>Web λ</span><input id="compressionAWebL" class="out-green" readonly value="—"></div>
-                        <div id="compressionAWebClass" class="compression-mini-label">SLENDER WEB</div>
+                      <div class="compression-compactness-col compression-compactness-col--web">
+                        <div class="compression-compactness-equation">
+                          <span class="compression-compactness-role">WEB:</span>
+                          <span class="compression-compactness-lam">λ<sub>r</sub> =</span>
+                          <input id="compressionAWebLr" class="out-green compression-compactness-val" type="text" readonly value="35.8840" aria-label="Web λᵣ limit">
+                        </div>
+                        <div id="compressionAWebClass" class="compression-compactness-status">SLENDER WEB</div>
                       </div>
                     </div>
+                    <input type="hidden" id="compressionAFlangeL" value="">
+                    <input type="hidden" id="compressionAWebL" value="">
                   </div>
                   <div class="tension-card compression-card compression-mini-stack compression-analysis-stress">
-                    <h4>Critical Stress</h4>
-                    <div class="compression-mini-row"><span>F<sub>e</sub> =</span><input id="compressionAFe" class="out-green" readonly value="29.1352"><span>ksi</span></div>
-                    <div class="compression-mini-row"><span>F<sub>cr</sub> =</span><input id="compressionAFcr" class="out-green" readonly value="24.3793"><span>ksi</span></div>
-                    <div class="compression-mini-row"><span>F<sub>n</sub> =</span><input id="compressionAFn" class="out-green" readonly value="2025.9193"><span>kips</span></div>
-                  </div>
-                  <div class="tension-card safe-card compression-safe-card compression-analysis-capacity">
-                    <h4>Governing Capacity</h4>
-                    <div id="compressionATuDisplay" class="safe-name">133.9267</div>
-                    <div class="t-row"><span>φP<sub>n</sub> (LRFD)</span><input id="compressionATu" class="out-green" readonly value="133.9267"><span>kips</span></div>
-                    <div class="compression-analysis-user-guide" aria-label="User guide">
-                      <div class="compression-analysis-user-guide-title">USER GUIDE</div>
-                      <div class="compression-analysis-user-guide-item is-yellow">
-                        <span class="swatch yellow" aria-hidden="true"></span>
-                        <span>Yellow cells — user input.</span>
+                    <h4>Critical Stress &amp; Strength</h4>
+                    <div class="compression-stress-body">
+                      <div class="compression-stress-field">
+                        <div class="compression-stress-field-title">Elastic buckling stress</div>
+                        <div class="compression-stress-field-row">
+                          <span class="compression-stress-field-var">F<sub>e</sub> =</span>
+                          <input id="compressionAFe" class="out-green compression-stress-field-val" type="text" readonly value="29.1352" aria-label="Elastic buckling stress F sub e, ksi">
+                          <span class="compression-stress-field-unit">ksi</span>
+                        </div>
                       </div>
-                      <div class="compression-analysis-user-guide-item is-green">
-                        <span class="swatch green" aria-hidden="true"></span>
-                        <span>Green cells — formula-driven. Do not edit.</span>
+                      <div class="compression-stress-field">
+                        <div class="compression-stress-field-title">Critical stress</div>
+                        <div class="compression-stress-field-row">
+                          <span class="compression-stress-field-var">F<sub>cr</sub> =</span>
+                          <input id="compressionAFcr" class="out-green compression-stress-field-val" type="text" readonly value="24.3793" aria-label="Critical stress F sub cr, ksi">
+                          <span class="compression-stress-field-unit">ksi</span>
+                        </div>
+                      </div>
+                      <div class="compression-stress-field">
+                        <div class="compression-stress-field-title">Nominal load</div>
+                        <div class="compression-stress-field-row">
+                          <span class="compression-stress-field-var">P<sub>n</sub> =</span>
+                          <input id="compressionAFn" class="out-green compression-stress-field-val" type="text" readonly value="2025.9193" aria-label="Nominal axial strength P sub n equals F sub cr times A sub g, kips">
+                          <span class="compression-stress-field-unit">kips</span>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div class="compression-analysis-governing" role="region" aria-label="Governing capacity check">
+                    <div class="compression-governing-cap-head">
+                      <span class="compression-governing-cap-head-strong">GOVERNING</span><span class="compression-governing-cap-head-rest"> Capacity</span>
+                    </div>
+                    <div class="compression-governing-cap-body">
+                      <div class="compression-governing-cap-main">
+                        <div class="compression-governing-cap-label">
+                          <span class="compression-governing-cap-var">Tu =</span>
+                          <span class="compression-governing-cap-unit-sub">(kips)</span>
+                        </div>
+                        <div id="compressionAnalysisGovCap" class="compression-governing-cap-value" aria-live="polite">--</div>
+                      </div>
+                      <div id="compressionAnalysisSafetyStatus" class="compression-governing-cap-status" aria-live="polite">--</div>
+                    </div>
+                  </div>
+                  <aside class="compression-analysis-ns-user-guide" aria-label="User guide">
+                    <div class="ns-guide-header">USER GUIDE</div>
+                    <div class="ns-guide-body">
+                      <div class="ns-guide-item">
+                        <span class="swatch yellow" aria-hidden="true"></span>
+                        <div class="ns-guide-text">
+                          <strong class="ns-guide-label">Yellow:</strong>
+                          <span class="ns-guide-desc">Your editable entries (loads, modulus, steel grade).</span>
+                        </div>
+                      </div>
+                      <div class="ns-guide-item">
+                        <span class="swatch green" aria-hidden="true"></span>
+                        <div class="ns-guide-text">
+                          <strong class="ns-guide-label">Green:</strong>
+                          <span class="ns-guide-desc">F<sub>y</sub> from grade and computed results elsewhere (e.g. compactness). Do not edit.</span>
+                        </div>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
                 </div>
                 </div>
               </div>

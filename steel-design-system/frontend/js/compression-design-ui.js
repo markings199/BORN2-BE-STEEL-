@@ -15,6 +15,8 @@
       { label: "PINNED-PINNED", K: 1 },
       { label: "N/A", K: 0 },
     ],
+    /* Key Geometric Properties (AISC-shaped): ASD Pa @ Fy=50, E=29000, Klx=24′, Kly=11.2′ matches workbook screenshot rows. */
+    /* Props aligned with `compression-capacity.json` @ KLx=24′, KLy,max=11.2′ — Pu matches workbook Capacity Analysis. */
     champions: [
       { tier: 1, designation: "W14X48", weightPlf: 48, Ag: 14.1, rx: 5.85, ry: 1.91, lambdaFlange: 6.75, lambdaWeb: 33.6 },
       { tier: 2, designation: "W12X40", weightPlf: 40, Ag: 11.7, rx: 5.13, ry: 1.94, lambdaFlange: 7.77, lambdaWeb: 33.6 },
@@ -33,9 +35,19 @@
     return Number.isFinite(v) ? v : fallback || 0;
   }
 
+  /** Fixed decimal strings for display (avoids trailing-zero stripping from Number()). */
   function fmt(v, d) {
     if (!Number.isFinite(v)) return "--";
-    return Number(v.toFixed(typeof d === "number" ? d : 4));
+    var places = typeof d === "number" ? d : 4;
+    return v.toFixed(places);
+  }
+
+  /** Integer demand when exact (620, 126); otherwise fixed decimals. */
+  function fmtDemandVal(v, decimals) {
+    if (!Number.isFinite(v)) return "--";
+    var d = typeof decimals === "number" ? decimals : 3;
+    if (Math.abs(v - Math.round(v)) < 1e-9) return String(Math.round(v));
+    return v.toFixed(d);
   }
 
   function kLookup(label) {
@@ -60,7 +72,8 @@
       return {
         combo1: dl + ll,
         combo2: null,
-        governing: dl + ll,
+        /** Workbook Demand Analysis: Ta governing row is 0 kips; DL + LL row still reports DL+LL (informational). */
+        governing: 0,
       };
     }
     var c1 = 1.2 * dl + 1.6 * ll;
@@ -68,6 +81,7 @@
     return {
       combo1: c1,
       combo2: c2,
+      /** Workbook Capacity Analysis: Tu = MIN(1.2DL+1.6LL, 1.4DL) for displayed governing demand. */
       governing: Math.min(c1, c2),
     };
   }
@@ -164,16 +178,29 @@
     });
   }
 
+  /** Workbook Capacity Analysis footer: weak-axis max KL (ft) with “Assuming Kly Governs”. */
+  function setDesignGovernKlFooter(klyMaxFt) {
+    var govCaption = el("compressionKLGovCaption");
+    var govVal = el("compressionKLGovValue");
+    var row = govCaption && govCaption.closest(".compression-slen-govern");
+    if (!govCaption || !govVal || !row) return;
+
+    row.classList.remove("compression-slen-govern--na");
+    govCaption.textContent = "Assuming Kly Governs";
+    govVal.value = klyMaxFt > 0 ? fmt(klyMaxFt, 4) : "--";
+  }
+
   function updateCompactnessPanel(sec, E, Fy) {
     var cs = compactStatus(sec, E, Fy);
-    function set(idVal, idLim, idLbl, lambda, lim, ok, compactWord, slenderWord) {
+    function set(idVal, idLim, idLbl, lambda, lim, ok, compactWord, slenderWord, lambdaDecimals) {
       var v = el(idVal);
       var l = el(idLim);
       var lbl = el(idLbl);
-      if (v) v.value = fmt(lambda, 4);
+      var ld = typeof lambdaDecimals === "number" ? lambdaDecimals : 4;
+      if (v) v.value = fmt(lambda, ld);
       if (l) l.value = fmt(lim, 4);
       if (lbl) {
-        lbl.textContent = ok ? compactWord : slenderWord;
+        lbl.innerHTML = "<em>" + (ok ? compactWord : slenderWord) + "</em>";
         lbl.classList.toggle("is-compact", ok);
         lbl.classList.toggle("is-slender", !ok);
       }
@@ -185,8 +212,9 @@
       sec.lambdaFlange,
       cs.lp,
       cs.flangeOk,
-      "Compact flange",
-      "Slender flange"
+      "COMPACT FLANGE",
+      "SLENDER FLANGE",
+      2
     );
     set(
       "compressionDesignWebLambda",
@@ -195,8 +223,9 @@
       sec.lambdaWeb,
       cs.lrWeb,
       cs.webOk,
-      "Compact web",
-      "Slender web"
+      "COMPACT WEB",
+      "SLENDER WEB",
+      1
     );
   }
 
@@ -231,13 +260,13 @@
     var d2Lbl = el("compressionDemandLabel2");
     var dgLbl = el("compressionDemandGovLabel");
     var probHead = el("compressionProbDemandHead");
-    if (d1Lbl) d1Lbl.textContent = method === "ASD" ? "DL + LL" : "1.2DL + 1.6LL";
+    if (d1Lbl) d1Lbl.textContent = method === "ASD" ? "DL + LL" : "1.2DL+1.6LL";
     if (d2Lbl) d2Lbl.textContent = method === "ASD" ? "-" : "1.4DL";
     if (dgLbl) dgLbl.textContent = method === "ASD" ? "Ta" : "Tu";
     if (probHead) probHead.textContent = method === "ASD" ? "Pa (kips)" : "Pu (kips)";
-    if (d1) d1.value = fmt(demandCombo1, 3);
-    if (d2) d2.value = Number.isFinite(demandCombo2) ? fmt(demandCombo2, 3) : "-";
-    if (dg) dg.value = fmt(demandPu, 3);
+    if (d1) d1.value = fmtDemandVal(demandCombo1, 3);
+    if (d2) d2.value = Number.isFinite(demandCombo2) ? fmtDemandVal(demandCombo2, 3) : "-";
+    if (dg) dg.value = method === "ASD" ? "0" : fmtDemandVal(demandPu, 3);
 
     var klxMaxFt = readAxisRows("X");
     var klyMaxFt = readAxisRows("Y");
@@ -301,17 +330,7 @@
       }
       updateCompactnessPanel(lightest.sec, E, Fy);
 
-      var govCaption = el("compressionKLGovCaption");
-      var govVal = el("compressionKLGovValue");
-      if (govCaption && govVal) {
-        if (lightest.out.strongAxisGovernsKLr) {
-          govCaption.textContent = "Assuming Klx Governs";
-          govVal.textContent = fmt(klxMaxFt, 4);
-        } else {
-          govCaption.textContent = "Assuming Kly Governs";
-          govVal.textContent = fmt(klyMaxFt, 4);
-        }
-      }
+      setDesignGovernKlFooter(klyMaxFt);
     } else {
       if (safeSec) safeSec.textContent = "NO SAFE SECTION";
       if (safeAg) safeAg.value = "--";
@@ -323,10 +342,7 @@
       }
       updateCompactnessPanel(TIERS.champions[TIERS.champions.length - 1], E, Fy);
 
-      var gc = el("compressionKLGovCaption");
-      var gv = el("compressionKLGovValue");
-      if (gc) gc.textContent = "—";
-      if (gv) gv.textContent = "--";
+      setDesignGovernKlFooter(klyMaxFt);
     }
 
     var dbg = el("resultCompression");

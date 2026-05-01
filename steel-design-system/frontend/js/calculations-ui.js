@@ -61,7 +61,11 @@
     try {
       var analysisView = document.querySelector("#compressionSection .compression-analysis-view");
       var cap = analysisView ? analysisView.querySelector(".compression-analysis-capacity") : null;
-      var guide = cap ? cap.querySelector(".compression-analysis-user-guide") : null;
+      var guide = analysisView
+        ? analysisView.querySelector(".compression-analysis-ns-user-guide")
+        : cap
+          ? cap.querySelector(".compression-analysis-user-guide")
+          : null;
       var rect = guide ? guide.getBoundingClientRect() : null;
       var h4 = cap ? cap.querySelector("h4") : null;
       var safe = cap ? cap.querySelector(".safe-name") : null;
@@ -513,6 +517,8 @@
       { label: "N/A", K: 0 },
     ];
     var compressionAnalysisCatalog = [];
+    var compressionNsShapeFilter = "all";
+    var compressionNsTypeFilter = "all";
 
     function n(id, fallback) {
       var el = document.getElementById(id);
@@ -573,11 +579,69 @@
       if (!(bf > 0 && tf > 0 && tw > 0 && d > 0)) return { lf: NaN, lw: NaN };
       return { lf: bf / (2 * tf), lw: (d - 2 * tf) / tw };
     }
-    function syncCompressionAnalysisFuFromGrade() {
+    function populateCompressionAnalysisGradeSelect() {
+      var sel = document.getElementById("compressionAGrade");
+      if (!sel) return;
+      var grades = window.Born2BeSteel && window.Born2BeSteel.steelGrades;
+      var prev = sel.value;
+      if (grades && grades.length) {
+        sel.innerHTML = "";
+        grades.forEach(function (g) {
+          var o = document.createElement("option");
+          o.value = g.astm;
+          o.textContent = g.astm;
+          sel.appendChild(o);
+        });
+        if (prev && Array.prototype.some.call(sel.options, function (o) { return o.value === prev; })) sel.value = prev;
+        else {
+          sel.value = "A992";
+          if (!Array.prototype.some.call(sel.options, function (o) { return o.value === sel.value; }))
+            sel.selectedIndex = 0;
+        }
+        return;
+      }
+      if (sel.options.length) return;
+      ["A36", "A572", "A992"].forEach(function (astm) {
+        var o = document.createElement("option");
+        o.value = astm;
+        o.textContent = astm;
+        sel.appendChild(o);
+      });
+      sel.value = "A992";
+    }
+
+    /** Match `Steel Grade` / `Compression-Design` XLOOKUP: Fy, Fu from grade row. */
+    function applyCompressionAnalysisGradeFromSelect(triggerCompute) {
+      var sel = document.getElementById("compressionAGrade");
+      var fyEl = document.getElementById("compressionAFy");
       var fuEl = document.getElementById("compressionAFu");
-      if (!fuEl) return;
-      var g = window.Born2BeSteel && Born2BeSteel.getSelectedGrade && Born2BeSteel.getSelectedGrade();
-      if (g && Number.isFinite(Number(g.fu))) fuEl.value = String(Number(g.fu));
+      if (!sel || !fyEl || !fuEl) return;
+      var grades = window.Born2BeSteel && window.Born2BeSteel.steelGrades;
+      var row =
+        grades &&
+        grades.find(function (g) {
+          return g.astm === sel.value;
+        });
+      if (!row) {
+        var gUp = String(sel.value || "").toUpperCase();
+        if (gUp === "A36") {
+          fyEl.value = "36";
+          fuEl.value = "58";
+        } else if (gUp.indexOf("A572") !== -1) {
+          fyEl.value = "50";
+          fuEl.value = "65";
+        } else {
+          fyEl.value = "50";
+          fuEl.value = "65";
+        }
+      } else {
+        fyEl.value = String(Number(row.fy));
+        fuEl.value = String(Number(row.fu));
+        if (window.Born2BeSteel && typeof window.Born2BeSteel.setActiveMaterial === "function") {
+          window.Born2BeSteel.setActiveMaterial(row.astm);
+        }
+      }
+      if (triggerCompute !== false) computeCompressionAnalysis("pre-fix");
     }
     /** Mirrors `Compression-Analysis`: AG47–AG62 slenderness grid, T64 govern, AG15/AG20/AG24/AG32 strengths; AB8/AH8/X10/AF10 compactness (`<` test). */
     function computeCompressionAnalysis(runId) {
@@ -658,7 +722,6 @@
       var maxX = xKlrs.length ? Math.max.apply(null, xKlrs) : 0;
       var maxY = yKlrs.length ? Math.max.apply(null, yKlrs) : 0;
       var klrGov = Math.max(maxX, maxY);
-      var govRx = maxX > maxY;
 
       var tolMatch = 1e-4;
       var govSlice =
@@ -668,7 +731,7 @@
 
       setText(
         "compressionAKLGovCaption",
-        govRx ? "KL/rx Governs =" : "KL/ry Governs ="
+        "Governing KL/r ="
       );
       setText(
         "compressionAKLrGov",
@@ -693,7 +756,37 @@
             : 0.877 * FeSafe;
       }
       var Pn = Number.isFinite(Fcr) ? Fcr * Ag : NaN;
-      var phiPn = Number.isFinite(Pn) ? 0.9 * Pn : NaN;
+      var methodEl = document.getElementById("compressionAMethod");
+      var method = methodEl ? String(methodEl.value || "LRFD").toUpperCase() : "LRFD";
+      var isAsd = method === "ASD";
+      var designStrength = NaN;
+      if (Number.isFinite(Pn)) {
+        designStrength = isAsd ? Pn / 1.67 : 0.9 * Pn;
+      }
+
+      var dlIn = document.getElementById("compressionADl");
+      var llIn = document.getElementById("compressionALl");
+      var dl = dlIn ? Math.max(0, Number(dlIn.value)) : 0;
+      var ll = llIn ? Math.max(0, Number(llIn.value)) : 0;
+      var combo1 = isAsd ? dl + ll : 1.2 * dl + 1.6 * ll;
+      var combo2 = isAsd ? NaN : 1.4 * dl;
+      var demandGov = isAsd ? dl + ll : Math.max(combo1, combo2);
+
+      var d1Lbl = document.getElementById("compressionADemand1Lbl");
+      var d2Lbl = document.getElementById("compressionADemand2Lbl");
+      var dgLbl = document.getElementById("compressionADemandGovLbl");
+      if (d1Lbl) d1Lbl.textContent = isAsd ? "DL + LL" : "1.2DL + 1.6LL";
+      if (d2Lbl) d2Lbl.textContent = isAsd ? "—" : "1.4DL";
+      if (dgLbl) dgLbl.textContent = isAsd ? "Pa" : "Pu";
+      var d1El = document.getElementById("compressionADemand1");
+      var d2El = document.getElementById("compressionADemand2");
+      var dgEl = document.getElementById("compressionADemandGov");
+      if (d1El) d1El.value = Number.isFinite(combo1) ? combo1.toFixed(4) : "";
+      if (d2El) d2El.value = Number.isFinite(combo2) ? combo2.toFixed(4) : isAsd ? "—" : "";
+      if (dgEl) dgEl.value = Number.isFinite(demandGov) ? demandGov.toFixed(4) : "";
+
+      var strLbl = document.getElementById("compressionAStrengthLbl");
+      if (strLbl) strLbl.innerHTML = isAsd ? "P<sub>n</sub> / &Omega; (ASD)" : "&phi;P<sub>n</sub> (LRFD)";
 
       setValue("compressionAFlangeLr", lamPf, 4);
       setValue("compressionAWebLr", lamRw, 4);
@@ -724,12 +817,32 @@
       if (elFcr)
         elFcr.value = Number.isFinite(Fcr) ? Fcr.toFixed(4) : "--";
       if (elFn) elFn.value = Number.isFinite(Pn) ? Pn.toFixed(4) : "--";
-      if (Number.isFinite(phiPn)) {
-        if (elTu) elTu.value = phiPn.toFixed(4);
-        setText("compressionATuDisplay", Number(phiPn.toFixed(4)).toString());
+      if (Number.isFinite(designStrength)) {
+        if (elTu) elTu.value = designStrength.toFixed(4);
+        setText("compressionATuDisplay", Number(designStrength.toFixed(4)).toString());
       } else {
         if (elTu) elTu.value = "--";
         setText("compressionATuDisplay", "--");
+      }
+
+      var govCapEl = document.getElementById("compressionAnalysisGovCap");
+      var statEl = document.getElementById("compressionAnalysisSafetyStatus");
+      var demandPositive = Number.isFinite(demandGov) && demandGov > 0;
+      var isSafe = demandPositive && Number.isFinite(designStrength) && designStrength > demandGov;
+      if (govCapEl) {
+        govCapEl.textContent = Number.isFinite(designStrength)
+          ? Number(designStrength.toFixed(4)).toString()
+          : "--";
+      }
+      if (statEl) {
+        if (!demandPositive) {
+          statEl.textContent = "—";
+          statEl.classList.remove("is-safe", "is-unsafe");
+        } else {
+          statEl.textContent = isSafe ? "SAFE!" : "UNSAFE";
+          statEl.classList.toggle("is-safe", isSafe);
+          statEl.classList.toggle("is-unsafe", !isSafe);
+        }
       }
 
       // #region agent log
@@ -739,7 +852,18 @@
         "js/calculations-ui.js:computeCompressionAnalysis",
         "Compression analysis live-calculation snapshot",
         {
-          inputs: { rx: rx, ry: ry, E: E, Fy: Fy, Ag: Ag, lfSec: lfSec, lwSec: lwSec },
+          inputs: {
+            rx: rx,
+            ry: ry,
+            E: E,
+            Fy: Fy,
+            Ag: Ag,
+            lfSec: lfSec,
+            lwSec: lwSec,
+            method: method,
+            dl: dl,
+            ll: ll,
+          },
           outputs: {
             maxX: maxX,
             maxY: maxY,
@@ -747,7 +871,8 @@
             Fe: FeSafe,
             Fcr: Fcr,
             Pn: Pn,
-            phiPn: phiPn,
+            designStrength: designStrength,
+            demandGov: demandGov,
           },
           compact: { lamPf: lamPf, lamRw: lamRw, flangeCompact: flangeCompact, webCompact: webCompact },
         }
@@ -768,7 +893,7 @@
           Fe: getNumValue("compressionAFe"),
           Fcr: getNumValue("compressionAFcr"),
           Fn: getNumValue("compressionAFn"),
-          phiPn: getNumValue("compressionATu"),
+          designStrength: getNumValue("compressionATu"),
         };
         var tol = 1e-2;
         function close(a, b) {
@@ -787,14 +912,17 @@
               Fe: FeSafe,
               Fcr: Fcr,
               Fn: Pn,
-              phiPn: phiPn,
+              designStrength: designStrength,
             },
             pass: {
               klrGov: close(dom.klrGov, Number(klrGov.toFixed(4))),
               Fe: close(dom.Fe, Number(FeSafe.toFixed(4))),
               Fcr: close(dom.Fcr, Number(Fcr.toFixed(4))),
               Fn: close(dom.Fn, Number(Pn.toFixed(4))),
-              phiPn: close(dom.phiPn, Number(phiPn.toFixed(4))),
+              designStrength:
+                Number.isFinite(designStrength) && dom.designStrength != null
+                  ? close(dom.designStrength, Number(designStrength.toFixed(4)))
+                  : !Number.isFinite(designStrength) && dom.designStrength == null,
             },
           }
         );
@@ -803,7 +931,7 @@
     }
     function bindCompressionAnalysisInputs() {
       var ids = [
-        "compressionAFy",
+        "compressionAMethod",
         "compressionAE",
         "compressionARx",
         "compressionARy",
@@ -816,6 +944,8 @@
         "compressionALy1",
         "compressionALy2",
         "compressionALy3",
+        "compressionADl",
+        "compressionALl",
       ].concat([
         "compressionACondX1",
         "compressionACondX2",
@@ -833,15 +963,25 @@
           });
         });
       });
+      var gradeNode = document.getElementById("compressionAGrade");
+      if (gradeNode) {
+        gradeNode.addEventListener("change", function () {
+          applyCompressionAnalysisGradeFromSelect(true);
+        });
+      }
       computeCompressionAnalysis("pre-fix");
     }
 
     function initCompressionAnalysisSectionSelection() {
-      var shapeSel = document.getElementById("compressionAShapeSelect");
-      var listHost = document.getElementById("compressionAAiscList");
-      if (!shapeSel || !listHost) return;
+      var designationSel = document.getElementById("compressionAShapeSelect");
+      var listHost = document.getElementById("compressionNsAiscGrid");
+      var shapeIconsHost = document.getElementById("compressionNsShapeIcons");
+      var typeChipsHost = document.getElementById("compressionNsTypeChips");
+      if (!designationSel || !listHost || !shapeIconsHost || !typeChipsHost) return;
 
+      populateCompressionAnalysisGradeSelect();
       populateAllCompressionBoundarySelects();
+      applyCompressionAnalysisGradeFromSelect(false);
 
       function setInput(id, value, digits) {
         var el = document.getElementById(id);
@@ -854,12 +994,47 @@
           typeof digits === "number" ? Number(value).toFixed(digits) : String(value);
       }
 
-      function applySection(sec, fam) {
+      function typesForShapeFilter() {
+        var rest = [];
+        var seen = {};
+        compressionAnalysisCatalog.forEach(function (s) {
+          if (!s) return;
+          if (compressionNsShapeFilter !== "all" && s.type !== compressionNsShapeFilter) return;
+          var t = s.type;
+          if (!t || seen[t]) return;
+          seen[t] = true;
+          rest.push(t);
+        });
+        rest.sort(function (a, b) {
+          return String(a).localeCompare(String(b));
+        });
+        return ["all"].concat(rest);
+      }
+
+      function filteredRows() {
+        var rows = compressionAnalysisCatalog.filter(function (s) {
+          if (!s) return false;
+          var okS = compressionNsShapeFilter === "all" || s.type === compressionNsShapeFilter;
+          var okT = compressionNsTypeFilter === "all" || s.type === compressionNsTypeFilter;
+          return okS && okT;
+        });
+        return rows;
+      }
+
+      function syncAiscButtonActiveStates() {
+        Array.prototype.forEach.call(listHost.querySelectorAll(".ns-aisc-btn"), function (btn) {
+          var on = btn.dataset.designation === designationSel.value;
+          btn.classList.toggle("is-active", on);
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+        });
+      }
+
+      function applySection(sec) {
         if (!sec) return;
         var lm = compressionSectionLambdas(sec);
         var lfStr = Number.isFinite(lm.lf) ? lm.lf : NaN;
         var lwStr = Number.isFinite(lm.lw) ? lm.lw : NaN;
-        setInput("compressionAShapeType", fam);
+        setInput("compressionAShapeType", sec.type || "");
         setInput("compressionAShapeLabel", sec.designation || "");
         setInput("compressionARx", sec.rx != null ? sec.rx : 0, 2);
         setInput("compressionARy", sec.ry != null ? sec.ry : 0, 2);
@@ -873,70 +1048,126 @@
         computeCompressionAnalysis("pre-fix");
       }
 
-      function pickShapeFamily(fam, preferredDesignation) {
-        var rows = compressionAnalysisCatalog.filter(function (s) {
-          return s && s.type === fam;
-        });
-        rows.sort(function (a, b) {
-          return String(a.designation).localeCompare(String(b.designation), "en", {
-            numeric: true,
+      function renderCompressionNsShapeChips() {
+        shapeIconsHost.innerHTML = "";
+        ["all", "L", "W"].forEach(function (id) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "ns-chip-btn" + (compressionNsShapeFilter === id ? " is-active" : "");
+          b.textContent = id === "all" ? "All" : id === "L" ? "L / ∠" : "W";
+          b.addEventListener("click", function () {
+            compressionNsShapeFilter = id;
+            var types = typesForShapeFilter();
+            if (compressionNsTypeFilter !== "all" && types.indexOf(compressionNsTypeFilter) === -1) {
+              compressionNsTypeFilter = "all";
+            }
+            rebuildCompressionSectionPicker({ preferDesignation: designationSel.value });
           });
+          shapeIconsHost.appendChild(b);
         });
-        listHost.innerHTML = "";
-        rows.forEach(function (sec, idx) {
-          var wrap = document.createElement("div");
-          wrap.className = "compressionA-list-row";
-          wrap.setAttribute("role", "option");
-          wrap.setAttribute("aria-selected", "false");
-          wrap.dataset.designation = sec.designation || "";
-          var c1 = document.createElement("span");
-          c1.textContent = sec.designation || "";
-          var c2 = document.createElement("span");
-          c2.textContent = sec.aiscManualLabel || sec.designation || "";
-          wrap.appendChild(c1);
-          wrap.appendChild(c2);
-          wrap.addEventListener("click", function () {
-            setSelectedRow(wrap, fam);
+      }
+
+      function renderCompressionNsTypeChips() {
+        var types = typesForShapeFilter();
+        if (compressionNsTypeFilter !== "all" && types.indexOf(compressionNsTypeFilter) === -1) {
+          compressionNsTypeFilter = "all";
+        }
+        typeChipsHost.innerHTML = "";
+        types.forEach(function (t) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "ns-chip-btn" + (compressionNsTypeFilter === t ? " is-active" : "");
+          b.textContent = t === "all" ? "All" : t;
+          b.addEventListener("click", function () {
+            compressionNsTypeFilter = t;
+            rebuildCompressionSectionPicker({ preferDesignation: designationSel.value });
           });
-          listHost.appendChild(wrap);
+          typeChipsHost.appendChild(b);
+        });
+      }
+
+      function rebuildCompressionSectionPicker(opt) {
+        opt = opt || {};
+        var prefer = opt.preferDesignation;
+
+        renderCompressionNsShapeChips();
+        renderCompressionNsTypeChips();
+
+        var rows = filteredRows();
+        if (!rows.length) rows = compressionAnalysisCatalog.slice();
+
+        designationSel.innerHTML = "";
+        rows.forEach(function (sec) {
+          var o = document.createElement("option");
+          o.value = sec.designation || "";
+          o.textContent = sec.designation || "";
+          designationSel.appendChild(o);
         });
 
         var pick =
-          (preferredDesignation &&
-            rows.find(function (r) {
-              return r.designation === preferredDesignation;
-            })) ||
-          rows[0];
-        if (!pick) return;
-        var rowEl = Array.prototype.find.call(
-          listHost.querySelectorAll(".compressionA-list-row"),
-          function (w) {
-            return w.dataset.designation === pick.designation;
-          }
-        );
-        if (rowEl) setSelectedRow(rowEl, fam);
+          prefer && rows.some(function (r) {
+            return r.designation === prefer;
+          })
+            ? prefer
+            : rows[0] && rows[0].designation;
+        if (pick) designationSel.value = pick;
+
+        listHost.innerHTML = "";
+        rows.forEach(function (sec) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className =
+            "ns-aisc-btn" +
+            (sec.designation === designationSel.value ? " is-active" : "");
+          b.textContent = sec.aiscManualLabel || sec.designation || "";
+          b.setAttribute("role", "option");
+          b.setAttribute(
+            "aria-selected",
+            sec.designation === designationSel.value ? "true" : "false"
+          );
+          b.dataset.designation = sec.designation || "";
+          b.addEventListener("click", function () {
+            rebuildCompressionSectionPicker({ preferDesignation: sec.designation });
+            sendCompressionLayoutDebugLog(
+              "pre-fix",
+              "H_SECSEL",
+              "js/calculations-ui.js:initCompressionAnalysisSectionSelection",
+              "Section Selection changed",
+              {
+                shapeFilter: compressionNsShapeFilter,
+                typeFilter: compressionNsTypeFilter,
+                designation: sec.designation || "",
+              }
+            );
+          });
+          listHost.appendChild(b);
+        });
+
+        var chosen = compressionAnalysisCatalog.find(function (s) {
+          return s.designation === designationSel.value;
+        });
+        applySection(chosen);
       }
 
-      function setSelectedRow(rowEl, fam) {
-        if (!rowEl) return;
-        Array.prototype.forEach.call(listHost.querySelectorAll(".compressionA-list-row"), function (r) {
-          r.classList.remove("is-selected");
-          r.setAttribute("aria-selected", "false");
+      designationSel.addEventListener("change", function () {
+        var chosen = compressionAnalysisCatalog.find(function (s) {
+          return s.designation === designationSel.value;
         });
-        rowEl.classList.add("is-selected");
-        rowEl.setAttribute("aria-selected", "true");
-        var des = rowEl.dataset.designation || "";
-        var sec = compressionAnalysisCatalog.find(function (s) {
-          return s.designation === des;
-        });
-        applySection(sec, fam);
-        sendCompressionLayoutDebugLog(
-          "pre-fix",
-          "H_SECSEL",
-          "js/calculations-ui.js:initCompressionAnalysisSectionSelection",
-          "Section Selection changed",
-          { family: fam, designation: des }
-        );
+        applySection(chosen);
+        syncAiscButtonActiveStates();
+      });
+
+      function defaultPreferDesignation() {
+        var order = ["W8X24", "L10X10X1-1/4"];
+        for (var i = 0; i < order.length; i++) {
+          var d = order[i];
+          if (compressionAnalysisCatalog.some(function (s) {
+            return s.designation === d;
+          }))
+            return d;
+        }
+        var r = compressionAnalysisCatalog[0];
+        return r && r.designation;
       }
 
       function setAnalysisSlendernessDefaults() {
@@ -959,10 +1190,6 @@
         setInput("compressionALy3", "", undefined);
       }
 
-      shapeSel.addEventListener("change", function () {
-        pickShapeFamily(shapeSel.value || "L");
-      });
-
       fetch("data/aisc-sections.json")
         .then(function (r) {
           return r.ok ? r.json() : Promise.reject(new Error("bad json"));
@@ -974,13 +1201,11 @@
           compressionAnalysisCatalog = (payload.sections || []).filter(function (s) {
             return s && (s.type === "W" || s.type === "L");
           });
-          syncCompressionAnalysisFuFromGrade();
+          compressionNsShapeFilter = "all";
+          compressionNsTypeFilter = "all";
           setAnalysisSlendernessDefaults();
           bindCompressionAnalysisInputs();
-          var fam = shapeSel.value || "L";
-          var prefer =
-            fam === "L" ? "L10X10X1-1/4" : "W8X24";
-          pickShapeFamily(fam, prefer);
+          rebuildCompressionSectionPicker({ preferDesignation: defaultPreferDesignation() });
         });
     }
     function setCompressionTabState(isAnalysis) {
@@ -1056,8 +1281,8 @@
           var img = imageCard ? imageCard.querySelector("img") : null;
           var rightCol = analysisView.querySelector(".compression-col-right");
           var compactnessCard = analysisView.querySelector(".compression-analysis-compactness");
-          var compactMiniRow = compactnessCard ? compactnessCard.querySelector(".compression-mini-row") : null;
-          var compactGrid = compactnessCard ? compactnessCard.querySelector(".compression-analysis-top-compact-grid") : null;
+          var compactMiniRow = compactnessCard ? compactnessCard.querySelector(".compression-compactness-equation") : null;
+          var compactGrid = compactnessCard ? compactnessCard.querySelector(".compression-compactness-body") : null;
           function rect(el) {
             if (!el || !el.getBoundingClientRect) return null;
             var r = el.getBoundingClientRect();
@@ -1198,25 +1423,34 @@
       // #endregion
     }
 
+    /** Mirror Design Calculator inputs into Analysis (`Compression-Design` → `Compression-Analysis`). Never overwrites design strength fields. */
     function syncCompressionDesignToAnalysis() {
-      var fyDesign = document.getElementById("compressionDesignFy");
+      var methodDesign = document.getElementById("compressionDesignMethod");
+      var gradeDesign = document.getElementById("compressionDesignGrade");
       var eDesign = document.getElementById("compressionDesignE");
       var dlDesign = document.getElementById("compressionDesignDl");
       var llDesign = document.getElementById("compressionDesignLl");
-      var fyAnalysis = document.getElementById("compressionAFy");
+      var methodA = document.getElementById("compressionAMethod");
+      var gradeA = document.getElementById("compressionAGrade");
       var eAnalysis = document.getElementById("compressionAE");
-      var tuAnalysis = document.getElementById("compressionATu");
-      if (fyDesign && fyAnalysis) fyAnalysis.value = fyDesign.value;
-      if (eDesign && eAnalysis) eAnalysis.value = eDesign.value;
-      // If analysis demand input is present, mirror the governing LRFD demand from design loads.
-      if (tuAnalysis && dlDesign && llDesign) {
-        var dl = Number(dlDesign.value);
-        var ll = Number(llDesign.value);
-        if (Number.isFinite(dl) && Number.isFinite(ll)) {
-          var pu = Math.min(1.2 * dl + 1.6 * ll, 1.4 * dl);
-          tuAnalysis.value = pu.toFixed(4);
+      var dlA = document.getElementById("compressionADl");
+      var llA = document.getElementById("compressionALl");
+      if (methodDesign && methodA) methodA.value = methodDesign.value;
+      if (gradeDesign && gradeA) {
+        gradeA.value = gradeDesign.value;
+        if (!Array.prototype.some.call(gradeA.options, function (o) { return o.value === gradeA.value; })) {
+          var o = document.createElement("option");
+          o.value = gradeDesign.value;
+          o.textContent = gradeDesign.value;
+          gradeA.appendChild(o);
+          gradeA.value = gradeDesign.value;
         }
       }
+      if (eDesign && eAnalysis) eAnalysis.value = eDesign.value;
+      if (dlDesign && dlA) dlA.value = dlDesign.value;
+      if (llDesign && llA) llA.value = llDesign.value;
+      applyCompressionAnalysisGradeFromSelect(false);
+      computeCompressionAnalysis("pre-fix");
     }
     setCompressionTabState(false);
     sendCompressionDebugLog(
@@ -1298,6 +1532,13 @@
       });
     }
     initCompressionAnalysisSectionSelection();
+
+    if (typeof window !== "undefined" && window.SteelGradesService && window.SteelGradesService.onUpdate) {
+      window.SteelGradesService.onUpdate(function () {
+        populateCompressionAnalysisGradeSelect();
+        applyCompressionAnalysisGradeFromSelect(true);
+      });
+    }
 
     // #region agent log
     function rectData(el) {
