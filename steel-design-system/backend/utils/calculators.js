@@ -34,6 +34,71 @@ function tensionRod({ Fy, An, Pu, phiT = PHI_T_DEFAULT }) {
   };
 }
 
+/**
+ * `Tension Rod` workbook — demand O25, net required gross bolt area Y23, rod dia Z34.
+ * LRFD: O25=MAX(N31,R31), N31=1.2*DL+1.6*LL, R31=1.4*DL; ASD: O25=N31 (DL+LL).
+ * Y23 = O25/(0.75*0.75*Fu); Z34 = SQRT(Y23/(PI()/4)).
+ */
+function tensionRodDesignSheet({
+  method,
+  deadLoadKips = 0,
+  liveLoadKips = 0,
+  Fu,
+}) {
+  const m = String(method || "LRFD").trim().toUpperCase();
+  if (m !== "LRFD" && m !== "ASD") {
+    const err = new Error('method must be "LRFD" or "ASD"');
+    err.status = 400;
+    throw err;
+  }
+  if (!Number.isFinite(Fu) || Fu <= 0) {
+    const err = new Error("Fu must be a positive finite number");
+    err.status = 400;
+    throw err;
+  }
+
+  const dl = Math.max(0, Number(deadLoadKips) || 0);
+  const ll = Math.max(0, Number(liveLoadKips) || 0);
+
+  let combo1Kips;
+  let combo2Kips;
+  let governingKips;
+
+  if (m === "ASD") {
+    combo1Kips = dl + ll;
+    combo2Kips = null;
+    governingKips = combo1Kips;
+  } else {
+    combo1Kips = 1.2 * dl + 1.6 * ll;
+    combo2Kips = 1.4 * dl;
+    governingKips = Math.max(combo1Kips, combo2Kips);
+  }
+
+  const requiredAbIn2 = governingKips / (0.75 * 0.75 * Fu);
+  const diameterIn = Math.sqrt(requiredAbIn2 / (Math.PI / 4));
+
+  return {
+    method: m,
+    combo1Kips,
+    combo2Kips,
+    governingKips,
+    requiredAbIn2,
+    diameterIn,
+    labels: {
+      demandLineFull:
+        m === "LRFD"
+          ? "→ (LRFD METHOD) GOVERNING Tu ="
+          : "→ (ASD METHOD) ALLOWABLE Ta =",
+      eq1: m === "LRFD" ? "1.2DL+1.6LL" : "DL+LL",
+      eq2: m === "LRFD" ? "Tu =1.4DL" : "Ta =",
+      strengthFormula:
+        m === "LRFD"
+          ? "Tu =(0.75)(0.75)(Fu)(Ab)"
+          : "Ta=(0.75)(Fu)(Ab)/2",
+    },
+  };
+}
+
 function flexuralBucklingStress({ Fy, E, KLr }) {
   if (KLr <= 0 || !Number.isFinite(KLr)) {
     const err = new Error("KL/r must be a positive finite number");
@@ -136,6 +201,7 @@ function sectionPropertiesReport(props) {
 module.exports = {
   tensionMember,
   tensionRod,
+  tensionRodDesignSheet,
   compressionMember,
   bendingCompact,
   shearWeb,

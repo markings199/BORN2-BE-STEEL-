@@ -6,6 +6,28 @@
 
   var API = window.SteelAPI;
 
+  /**
+   * Workbook-aligned labels with HTML subscripts (Born2BeSteel `Tension Rod`).
+   * Plain-text variants stay on the API response for consumers; UI uses these only.
+   */
+  var SHEET_LABELS = {
+    LRFD: {
+      demandLineHtml:
+        '<span class="tr-demand-arrow" aria-hidden="true">\u2192</span> (LRFD METHOD) GOVERNING T<sub>u</sub> =',
+      eq1Html: "1.2D<sub>L</sub> + 1.6L<sub>L</sub>",
+      eq2Html: "T<sub>u</sub> = 1.4D<sub>L</sub>",
+      strengthFormulaHtml:
+        "T<sub>u</sub> = (0.75)(0.75)(F<sub>u</sub>)(A<sub>b</sub>)",
+    },
+    ASD: {
+      demandLineHtml:
+        '<span class="tr-demand-arrow" aria-hidden="true">\u2192</span> (ASD METHOD) ALLOWABLE T<sub>a</sub> =',
+      eq1Html: "D<sub>L</sub> + L<sub>L</sub>",
+      eq2Html: "T<sub>a</sub> =",
+      strengthFormulaHtml: "T<sub>a</sub> = (0.75)(F<sub>u</sub>)(A<sub>b</sub>) / 2",
+    },
+  };
+
   function byId(id) {
     return document.getElementById(id);
   }
@@ -16,9 +38,9 @@
   var eEl = byId("tensionRodE");
   var dlEl = byId("tensionRodDL");
   var llEl = byId("tensionRodLL");
-  var methodBig = byId("tensionRodMethodBig");
+  var methodSel = byId("tensionRodDesignMethod");
 
-  var govLabel = byId("tensionRodGovLabel");
+  var demandLineEl = byId("tensionRodDemandLine");
   var eq1Label = byId("tensionRodEq1Label");
   var eq2Label = byId("tensionRodEq2Label");
   var tuEq1Out = byId("tensionRodTuEq1");
@@ -28,12 +50,14 @@
   var reqFormula1 = byId("tensionRodReqFormula1");
   var reqAbOut = byId("tensionRodRequiredAb");
   var dOut = byId("tensionRodSafeSection");
-  var methodTag = byId("tensionRodMethodTag");
 
   var state = {
     method: "LRFD",
     grades: null,
   };
+
+  var syncTimer = null;
+  var syncGen = 0;
 
   function num(raw) {
     var n = Number(raw);
@@ -62,6 +86,15 @@
   function setText(el, text) {
     if (!el) return;
     el.textContent = text == null ? "" : String(text);
+  }
+
+  function applyFormulaLabels(methodKey) {
+    var key = methodKey === "ASD" ? "ASD" : "LRFD";
+    var L = SHEET_LABELS[key];
+    if (demandLineEl) demandLineEl.innerHTML = L.demandLineHtml;
+    if (eq1Label) eq1Label.innerHTML = L.eq1Html;
+    if (eq2Label) eq2Label.innerHTML = L.eq2Html;
+    if (reqFormula1) reqFormula1.innerHTML = L.strengthFormulaHtml;
   }
 
   function getGradeList() {
@@ -100,25 +133,9 @@
     if (next !== "LRFD" && next !== "ASD") next = "LRFD";
     state.method = next;
 
-    setText(methodBig, next);
+    if (methodSel) methodSel.value = next;
 
-    var methodBtns = section.querySelectorAll("[data-tr-method]");
-    Array.prototype.forEach.call(methodBtns, function (btn) {
-      var active = String(btn.getAttribute("data-tr-method") || "").toUpperCase() === next;
-      btn.classList.toggle("is-primary", active);
-      btn.setAttribute("aria-selected", active ? "true" : "false");
-    });
-
-    /* Excel `Tension Rod`: N22, N23, N29, R29, X13 */
-    if (govLabel) govLabel.textContent = next === "LRFD" ? "GOVERNING Tu =" : "ALLOWABLE Ta =";
-    if (methodTag) methodTag.textContent = next === "LRFD" ? "(LRFD METHOD)" : "(ASD METHOD)";
-    if (eq1Label) eq1Label.textContent = next === "LRFD" ? "1.2DL+1.6LL" : "DL+LL";
-    if (eq2Label) eq2Label.textContent = next === "LRFD" ? "Tu =1.4DL" : "Ta =";
-    if (reqFormula1) {
-      reqFormula1.textContent =
-        next === "LRFD" ? "Tu =(0.75)(0.75)(Fu)(Ab)" : "Ta=(0.75)(Fu)(Ab)/2";
-    }
-
+    applyFormulaLabels(next);
     recompute();
   }
 
@@ -136,6 +153,40 @@
     recompute();
   }
 
+  /** Same numeric path as backend `tensionRodDesignSheet` (fallback / instant paint). */
+  function computeLocal(method, dl, ll, fu) {
+    var combo1 = method === "LRFD" ? 1.2 * dl + 1.6 * ll : dl + ll;
+    var combo2 = method === "LRFD" ? 1.4 * dl : null;
+    var gov = method === "LRFD" ? Math.max(combo1, combo2 || 0) : combo1;
+    var ab = fu > 0 ? gov / (0.75 * 0.75 * fu) : NaN;
+    var d = ab > 0 ? Math.sqrt(ab / (Math.PI / 4)) : NaN;
+    return {
+      combo1Kips: combo1,
+      combo2Kips: combo2,
+      governingKips: gov,
+      requiredAbIn2: ab,
+      diameterIn: d,
+    };
+  }
+
+  function applyNumbers(r) {
+    setText(tuEq1Out, fmt(r.combo1Kips, 1));
+    setText(
+      tuEq2Out,
+      r.combo2Kips == null || !Number.isFinite(r.combo2Kips) ? "--" : fmt(r.combo2Kips, 1)
+    );
+    setText(tuGovOut, fmt(r.governingKips, 1));
+    setText(reqAbOut, Number.isFinite(r.requiredAbIn2) ? fmt(r.requiredAbIn2, 4) : "--");
+    if (dOut) {
+      dOut.value = Number.isFinite(r.diameterIn) ? fmt(r.diameterIn, 4) : "";
+    }
+
+    applyFormulaLabels(state.method);
+
+    var result = byId("resultTensionRod");
+    if (result) result.textContent = "";
+  }
+
   function recompute() {
     var dl = num(dlEl ? dlEl.value : null);
     var ll = num(llEl ? llEl.value : null);
@@ -150,28 +201,51 @@
     setInvalid(fuEl, !(fu != null && fu > 0), "Fu must be positive (set by steel grade).");
     setInvalid(eEl, eKsi != null && eKsi <= 0, "E must be greater than zero when entered.");
 
-    /* Excel N31, R31, O25 — demand */
-    var eq1 =
-      state.method === "LRFD" ? 1.2 * dlSafe + 1.6 * llSafe : dlSafe + llSafe;
-    var eq2 = state.method === "LRFD" ? 1.4 * dlSafe : null;
-    var gov = state.method === "LRFD" ? Math.max(eq1, eq2 || 0) : eq1;
+    var methodKey = state.method;
+    var local =
+      fu != null && fu > 0
+        ? computeLocal(methodKey, dlSafe, llSafe, fu)
+        : {
+            combo1Kips: NaN,
+            combo2Kips: methodKey === "ASD" ? null : NaN,
+            governingKips: NaN,
+            requiredAbIn2: NaN,
+            diameterIn: NaN,
+          };
 
-    setText(tuEq1Out, fmt(eq1, 1));
-    setText(tuEq2Out, state.method === "LRFD" ? fmt(eq2, 1) : "--");
-    setText(tuGovOut, fmt(gov, 1));
+    applyNumbers(local);
+    scheduleServerSync(dlSafe, llSafe, fu, eKsi);
+  }
 
-    /*
-     * Excel Y23 = O25/(0.75*0.75*I14) — workbook uses this factor block for both LRFD and ASD.
-     * X13 text differs for ASD but Y23 does not branch on N11.
-     */
-    var ab = fu != null && fu > 0 ? gov / (0.75 * 0.75 * fu) : null;
-    var d = ab != null && ab > 0 ? Math.sqrt(ab / (Math.PI / 4)) : null;
+  function scheduleServerSync(dlSafe, llSafe, fu, eKsi) {
+    syncGen += 1;
+    var gen = syncGen;
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(function () {
+      runServerSync(gen, dlSafe, llSafe, fu, eKsi);
+    }, 100);
+  }
 
-    setText(reqAbOut, fmt(ab, 4));
-    setText(dOut, d == null ? "--" : fmt(d, 4));
+  function runServerSync(gen, dlSafe, llSafe, fu, eKsi) {
+    if (gen !== syncGen) return;
+    if (!API || typeof API.tensionRodDesign !== "function" || fu == null || !(fu > 0)) return;
 
-    var result = byId("resultTensionRod");
-    if (result) result.textContent = "";
+    var payload = {
+      method: state.method,
+      deadLoadKips: dlSafe,
+      liveLoadKips: llSafe,
+      Fu: fu,
+    };
+    if (eKsi != null && eKsi > 0) payload.modulusEKsi = eKsi;
+
+    API.tensionRodDesign(payload)
+      .then(function (data) {
+        if (gen !== syncGen || !data || !data.result) return;
+        applyNumbers(data.result);
+      })
+      .catch(function () {
+        /* Local compute already applied */
+      });
   }
 
   function bind() {
@@ -186,11 +260,11 @@
       });
     }
 
-    section.querySelectorAll("[data-tr-method]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        setMethod(btn.getAttribute("data-tr-method"));
+    if (methodSel) {
+      methodSel.addEventListener("change", function () {
+        setMethod(methodSel.value);
       });
-    });
+    }
 
     if (dlEl) dlEl.addEventListener("input", recompute);
     if (llEl) llEl.addEventListener("input", recompute);
@@ -217,7 +291,6 @@
           gradeSel.appendChild(opt);
         });
       }
-      /* Excel O5 default grade */
       var preferred = state.grades.find(function (g) {
         return String(g.astm).trim() === "A53 Gr. B";
       });

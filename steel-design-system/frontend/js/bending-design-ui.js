@@ -1,8 +1,16 @@
 (function () {
   "use strict";
 
+  var WB =
+    typeof BendingDesignWorkbook !== "undefined" ? BendingDesignWorkbook : null;
   var root = document.getElementById("bendingSection");
   if (!root) return;
+  if (!WB) {
+    console.error(
+      "bending-design-ui.js requires bending-design-workbook.js (load it first)."
+    );
+    return;
+  }
 
   function byId(id) {
     return document.getElementById(id);
@@ -14,18 +22,15 @@
   var dlEl = byId("bendingDesignDL");
   var llEl = byId("bendingDesignLL");
   var spanEl = byId("bendingDesignSpan");
-  var methodChip = byId("bendingDesignMethodChip");
+  var methodSel = byId("bendingDesignMethod");
   var manualMuEl = byId("bendingDesignManualMu");
   var manualIxEl = byId("bendingDesignManualIx");
   var deflDivisorEl = byId("bendingDesignDeflDivisor");
 
-  var btnWithoutDefl = byId("bendingDesignBtnWithoutDefl");
-  var btnConsiderDefl = byId("bendingDesignBtnConsiderDefl");
-  var btnConsiderWeight = byId("bendingDesignBtnConsiderWeight");
-  var btnIgnoreWeight = byId("bendingDesignBtnIgnoreWeight");
-
-  var capWithoutDefl = byId("bendingDesignCapWithoutDefl");
-  var capConsiderDefl = byId("bendingDesignCapConsiderDefl");
+  var selDefl = byId("bendingDesignDeflSelect");
+  var selBeamWeight = byId("bendingDesignBeamWeightSelect");
+  var btnCapWithoutDefl = byId("bendingDesignCapWithoutDeflBtn");
+  var btnCapConsideringDefl = byId("bendingDesignCapConsideringDeflBtn");
 
   var outWuGov = byId("bendingDesignWuGov");
   var outCombo1 = byId("bendingDesignCombo1");
@@ -40,11 +45,21 @@
   var safeSection = byId("bendingDesignSafeSection");
   var safeWeight = byId("bendingDesignSafeWeight");
   var safePhiMn = byId("bendingDesignSafePhiMn");
-  var safeIx = byId("bendingDesignSafeIx");
-  var safeRemark = byId("bendingDesignSafeRemark");
   var methodTag = byId("bendingDesignMethodTag");
   var phiMnLbl = byId("bendingDesignPhiMnLbl");
   var resultBendingDesign = byId("resultBendingDesign");
+  var capTableBody = byId("bendingCapacityTableBody");
+  var capDeflTableBody = byId("bendingCapacityDeflTableBody");
+  var bendCapacityView = byId("bendCapacityView");
+  var bendDesignViewEl = byId("bendDesignView");
+  var bendAnalysisViewEl = byId("bendAnalysisView");
+  var capDbSearch = byId("bendingCapDbSearch");
+  var capDbShape = byId("bendingCapDbShape");
+  var capDbType = byId("bendingCapDbType");
+  var capDbLabel = byId("bendingCapDbLabel");
+  var capDbResultCount = byId("bendingCapDbResultCount");
+  var capDbResetBtn = byId("bendingCapDbResetBtn");
+  var capDbNavBtn = byId("bendingCapDbNavBtn");
 
   var state = {
     method: "LRFD",
@@ -52,6 +67,10 @@
     beamWeightMode: "consider beam weight",
     grades: [],
     catalog: [],
+    _capRowsCache: null,
+    _capRowsInvalidInputs: false,
+    _capDeflRowsCache: null,
+    _capDeflRowsInvalidInputs: false,
   };
 
   function num(raw) {
@@ -68,6 +87,429 @@
   function fmtLoose(n, d) {
     if (!Number.isFinite(n)) return "--";
     return Number(n.toFixed(d)).toString();
+  }
+
+  function remarkPillHtml(safe, demand, phiMn) {
+    var base = "bending-cap-remark-pill";
+    if (!Number.isFinite(demand) || !Number.isFinite(phiMn)) {
+      return (
+        '<span class="' +
+        base +
+        " " +
+        base +
+        '--na" role="status">—</span>'
+      );
+    }
+    if (safe) {
+      return (
+        '<span class="' +
+        base +
+        " " +
+        base +
+        '--safe" role="status">SAFE!</span>'
+      );
+    }
+    return (
+      '<span class="' +
+      base +
+      " " +
+      base +
+      '--unsafe" role="status">UNSAFE :&lt;</span>'
+    );
+  }
+
+  function remarkPillHtmlIx(ixSafe, ix, ixLimit) {
+    var base = "bending-cap-remark-pill";
+    if (!Number.isFinite(ixLimit) || !Number.isFinite(ix)) {
+      return (
+        '<span class="' +
+        base +
+        " " +
+        base +
+        '--na" role="status">—</span>'
+      );
+    }
+    if (ixSafe) {
+      return (
+        '<span class="' +
+        base +
+        " " +
+        base +
+        '--safe" role="status">SAFE!</span>'
+      );
+    }
+    return (
+      '<span class="' +
+      base +
+      " " +
+      base +
+      '--unsafe" role="status">UNSAFE :&lt;</span>'
+    );
+  }
+
+  function bendingCapFilteredRows(rows) {
+    if (!Array.isArray(rows) || !rows.length) return [];
+    var q = (
+      capDbSearch && capDbSearch.value ? capDbSearch.value : ""
+    )
+      .trim()
+      .toLowerCase();
+    var labelQ = (
+      capDbLabel && capDbLabel.value ? capDbLabel.value : ""
+    )
+      .trim()
+      .toLowerCase();
+    var shapeVal = capDbShape && capDbShape.value ? capDbShape.value : "";
+    var typ = capDbType && capDbType.value ? capDbType.value : "";
+
+    return rows.filter(function (r) {
+      var lb = String(r.label || "").toLowerCase();
+      if (q && lb.indexOf(q) < 0) return false;
+      if (labelQ && lb.indexOf(labelQ) < 0) return false;
+      if (shapeVal === "W" && !/^w/i.test(String(r.label || ""))) return false;
+      if (typ === "rolled") {
+        /* catalog is rolled W-shapes only — keep row */
+      }
+      return true;
+    });
+  }
+
+  function isBendingCapacityRouteActive() {
+    return !!(bendCapacityView && bendCapacityView.classList.contains("is-active"));
+  }
+
+  function hideBendingCapacityRoute() {
+    if (!bendCapacityView || !bendCapacityView.classList.contains("is-active"))
+      return;
+    bendCapacityView.classList.remove("is-active");
+    bendCapacityView.setAttribute("aria-hidden", "true");
+    if (bendAnalysisViewEl && bendAnalysisViewEl.classList.contains("is-active"))
+      return;
+    if (bendDesignViewEl) bendDesignViewEl.classList.add("is-active");
+  }
+
+  function updateCapacityDbTitle() {
+    var h =
+      bendCapacityView &&
+      bendCapacityView.querySelector(".bending-cap-db-title");
+    if (!h) return;
+    var defl =
+      normalizeMode(state.deflectionMode) ===
+      normalizeMode("considering deflection");
+    h.textContent = defl
+      ? "Capacity Analysis Database (considering deflection)"
+      : "Capacity Analysis Database";
+  }
+
+  function updateCapacitySplitVisibility() {
+    var noDefl = byId("bendingCapSplitNoDefl");
+    var defl = byId("bendingCapSplitDefl");
+    var isDefl =
+      normalizeMode(state.deflectionMode) ===
+      normalizeMode("considering deflection");
+    if (noDefl) noDefl.hidden = !!isDefl;
+    if (defl) defl.hidden = !isDefl;
+    updateCapacityDbTitle();
+  }
+
+  function renderActiveCapacityTable() {
+    if (!isBendingCapacityRouteActive()) return;
+    updateCapacitySplitVisibility();
+    if (
+      normalizeMode(state.deflectionMode) ===
+      normalizeMode("considering deflection")
+    )
+      renderCapacityDeflTableBody();
+    else renderCapacityTableBody();
+  }
+
+  function showBendingCapacityRoute() {
+    if (!bendCapacityView) return;
+    if (bendAnalysisViewEl && bendAnalysisViewEl.classList.contains("is-active"))
+      return;
+    if (bendDesignViewEl) bendDesignViewEl.classList.remove("is-active");
+    bendCapacityView.classList.add("is-active");
+    bendCapacityView.setAttribute("aria-hidden", "false");
+    var dash = root.querySelector(".bending-calculator-dashboard");
+    if (dash) dash.scrollIntoView({ behavior: "smooth", block: "start" });
+    renderActiveCapacityTable();
+  }
+
+  function renderCapacityTableBody() {
+    if (!capTableBody || !isBendingCapacityRouteActive()) return;
+
+    capTableBody.textContent = "";
+
+    if (state._capRowsInvalidInputs) {
+      if (capDbResultCount) capDbResultCount.textContent = "0 results";
+      var invTr = document.createElement("tr");
+      var invTd = document.createElement("td");
+      invTd.colSpan = 16;
+      invTd.textContent =
+        "Enter valid Fy, E, and ensure the section catalog is loaded.";
+      invTd.style.textAlign = "center";
+      invTd.style.padding = "0.75rem";
+      invTd.style.background = "#fff";
+      invTr.appendChild(invTd);
+      capTableBody.appendChild(invTr);
+      return;
+    }
+
+    var rows = state._capRowsCache;
+    if (!Array.isArray(rows)) {
+      if (capDbResultCount) capDbResultCount.textContent = "0 results";
+      return;
+    }
+
+    var filtered = bendingCapFilteredRows(rows);
+    if (capDbResultCount)
+      capDbResultCount.textContent =
+        filtered.length +
+        " result" +
+        (filtered.length === 1 ? "" : "s");
+
+    if (!filtered.length) {
+      var emptyTr = document.createElement("tr");
+      var emptyTd = document.createElement("td");
+      emptyTd.colSpan = 16;
+      emptyTd.textContent = rows.length
+        ? "No sections match the current filters."
+        : "No capacity rows (catalog empty).";
+      emptyTd.style.textAlign = "center";
+      emptyTd.style.padding = "0.75rem";
+      emptyTd.style.background = "#fff";
+      emptyTr.appendChild(emptyTd);
+      capTableBody.appendChild(emptyTr);
+      return;
+    }
+
+    var frag = document.createDocumentFragment();
+    var prevGroup = null;
+    var zebra = 0;
+
+    for (var i = 0; i < filtered.length; i++) {
+      var r = filtered[i];
+      var gk = r.groupKey || "—";
+      if (gk !== prevGroup) {
+        prevGroup = gk;
+        var gr = document.createElement("tr");
+        gr.className = "bending-cap-group-row";
+        var gtd = document.createElement("td");
+        gtd.colSpan = 16;
+        gtd.textContent = gk;
+        gr.appendChild(gtd);
+        frag.appendChild(gr);
+      }
+
+      var tr = document.createElement("tr");
+      tr.className =
+        "bending-cap-data-row" +
+        (zebra % 2 ? " bending-cap-data-row--alt" : "");
+      zebra++;
+
+      function td(className, text) {
+        var cell = document.createElement("td");
+        if (className) cell.className = className;
+        cell.textContent = text;
+        tr.appendChild(cell);
+      }
+
+      td("bending-cap-section-cell", r.label);
+      td("", fmtLoose(r.W, 0));
+      td("", fmt(r.lf, 2));
+      td("", fmt(r.lw, 1));
+      td("", fmt(r.Zx, 0));
+      td("", fmt(r.Sx, 0));
+      td("", r.Kc != null && Number.isFinite(r.Kc) ? fmt(r.Kc, 6) : "--");
+      td("", fmt(r.lambdaPf, 5));
+      td("", fmt(r.lambdaRf, 5));
+      td("", fmt(r.Mp, 0));
+      td("", r.compactness || "—");
+      td("", fmt(r.Mn, 0));
+      td("", r.WuBeam != null && Number.isFinite(r.WuBeam) ? fmt(r.WuBeam, 4) : "--");
+      td("", r.MuBeam != null && Number.isFinite(r.MuBeam) ? fmt(r.MuBeam, 2) : "--");
+      td(
+        "bending-cap-pu-cell",
+        r.phiMn != null && Number.isFinite(r.phiMn)
+          ? fmt(r.phiMn, 0)
+          : "--"
+      );
+
+      var rc = document.createElement("td");
+      rc.className = "bending-cap-remark-cell";
+      rc.innerHTML = remarkPillHtml(r.safe, r.demand, r.phiMn);
+      tr.appendChild(rc);
+
+      frag.appendChild(tr);
+    }
+
+    capTableBody.appendChild(frag);
+  }
+
+  function renderCapacityDeflTableBody() {
+    if (!capDeflTableBody || !isBendingCapacityRouteActive()) return;
+
+    capDeflTableBody.textContent = "";
+
+    if (state._capDeflRowsInvalidInputs) {
+      if (capDbResultCount) capDbResultCount.textContent = "0 results";
+      var invTr = document.createElement("tr");
+      var invTd = document.createElement("td");
+      invTd.colSpan = 16;
+      invTd.textContent =
+        "Enter valid Fy, E, and ensure the section catalog is loaded.";
+      invTd.style.textAlign = "center";
+      invTd.style.padding = "0.75rem";
+      invTd.style.background = "#fff";
+      invTr.appendChild(invTd);
+      capDeflTableBody.appendChild(invTr);
+      return;
+    }
+
+    var rows = state._capDeflRowsCache;
+    if (!Array.isArray(rows)) {
+      if (capDbResultCount) capDbResultCount.textContent = "0 results";
+      return;
+    }
+
+    var filtered = bendingCapFilteredRows(rows);
+    if (capDbResultCount)
+      capDbResultCount.textContent =
+        filtered.length +
+        " result" +
+        (filtered.length === 1 ? "" : "s");
+
+    if (!filtered.length) {
+      var emptyTr = document.createElement("tr");
+      var emptyTd = document.createElement("td");
+      emptyTd.colSpan = 16;
+      emptyTd.textContent = rows.length
+        ? "No sections match the current filters."
+        : "No capacity rows (catalog empty).";
+      emptyTd.style.textAlign = "center";
+      emptyTd.style.padding = "0.75rem";
+      emptyTd.style.background = "#fff";
+      emptyTr.appendChild(emptyTd);
+      capDeflTableBody.appendChild(emptyTr);
+      return;
+    }
+
+    var frag = document.createDocumentFragment();
+    var prevGroup = null;
+    var zebra = 0;
+
+    for (var i = 0; i < filtered.length; i++) {
+      var r = filtered[i];
+      var gk = r.groupKey || "—";
+      if (gk !== prevGroup) {
+        prevGroup = gk;
+        var gr = document.createElement("tr");
+        gr.className = "bending-cap-group-row";
+        var gtd = document.createElement("td");
+        gtd.colSpan = 16;
+        gtd.textContent = gk;
+        gr.appendChild(gtd);
+        frag.appendChild(gr);
+      }
+
+      var tr = document.createElement("tr");
+      tr.className =
+        "bending-cap-data-row" +
+        (zebra % 2 ? " bending-cap-data-row--alt" : "");
+      zebra++;
+
+      function td(className, text) {
+        var cell = document.createElement("td");
+        if (className) cell.className = className;
+        cell.textContent = text;
+        tr.appendChild(cell);
+      }
+
+      td("bending-cap-section-cell", r.label);
+      td("", fmtLoose(r.W, 0));
+      td("", fmt(r.lf, 2));
+      td("", fmt(r.lw, 1));
+      td("", fmt(r.Zx, 0));
+      td("", fmt(r.Sx, 0));
+      td("", r.Kc != null && Number.isFinite(r.Kc) ? fmt(r.Kc, 6) : "--");
+      td("", fmt(r.lambdaPf, 5));
+      td("", fmt(r.lambdaRf, 5));
+      td("", fmt(r.Mp, 0));
+      td("", r.compactness || "—");
+      td("", fmt(r.Mn, 0));
+      td(
+        "",
+        r.muColumnDesignStrength != null &&
+          Number.isFinite(r.muColumnDesignStrength)
+          ? fmtLoose(r.muColumnDesignStrength, 1)
+          : "--"
+      );
+      td("", r.Ix != null && Number.isFinite(r.Ix) ? fmt(r.Ix, 0) : "--");
+
+      var rcM = document.createElement("td");
+      rcM.className = "bending-cap-remark-cell";
+      rcM.innerHTML = remarkPillHtml(
+        r.momentSafe,
+        r.momentDemand,
+        r.phiMn
+      );
+      tr.appendChild(rcM);
+
+      var rcIx = document.createElement("td");
+      rcIx.className = "bending-cap-remark-cell";
+      rcIx.innerHTML = remarkPillHtmlIx(r.ixSafe, r.Ix, r.ixLimit);
+      tr.appendChild(rcIx);
+
+      frag.appendChild(tr);
+    }
+
+    capDeflTableBody.appendChild(frag);
+  }
+
+  function resetBendingCapFilters() {
+    if (capDbSearch) capDbSearch.value = "";
+    if (capDbShape) capDbShape.value = "";
+    if (capDbType) capDbType.value = "";
+    if (capDbLabel) capDbLabel.value = "";
+    renderActiveCapacityTable();
+  }
+
+  function refreshCapacityTable(sec0, fy, E, method) {
+    if (!capTableBody || !capDeflTableBody) return;
+
+    var bad =
+      fy == null ||
+      fy <= 0 ||
+      E == null ||
+      E <= 0 ||
+      !state.catalog.length;
+
+    if (bad) {
+      state._capRowsInvalidInputs = true;
+      state._capDeflRowsInvalidInputs = true;
+      state._capRowsCache = [];
+      state._capDeflRowsCache = [];
+    } else {
+      state._capRowsInvalidInputs = false;
+      state._capDeflRowsInvalidInputs = false;
+      state._capRowsCache = WB.capacityAnalysisRowsWithoutDeflection(
+        state.catalog,
+        method,
+        sec0,
+        fy,
+        E
+      );
+      state._capDeflRowsCache = WB.capacityAnalysisRowsConsideringDeflection(
+        state.catalog,
+        method,
+        sec0,
+        fy,
+        E
+      );
+    }
+
+    if (!isBendingCapacityRouteActive()) return;
+    renderActiveCapacityTable();
   }
 
   function setInvalid(el, bad, title) {
@@ -94,184 +536,16 @@
       .replace(/\s+/g, " ");
   }
 
-  function lfSection(sec) {
-    return sec.bf / (2 * sec.tf);
-  }
-
-  function lwSection(sec) {
-    return (sec.d - 2 * sec.tf) / sec.tw;
-  }
-
-  function mnNominalKipFt(sec, fy, E) {
-    var Mp_ft = (fy * sec.Zx) / 12;
-    var lf = lfSection(sec);
-    var lw = lwSection(sec);
-    var Kc = 4 / Math.sqrt(lw);
-    var lp = 0.38 * Math.sqrt(E / fy);
-    var lr = 1 * Math.sqrt(E / fy);
-
-    var cls =
-      lf < lp ? "COMPACT" : lf < lr ? "NON-COMPACT" : "SLENDER";
-
-    if (cls === "COMPACT") return Mp_ft;
-
-    if (cls === "NON-COMPACT") {
-      var mnYield_ft = (0.7 * fy * sec.Sx) / 12;
-      return Mp_ft - (Mp_ft - mnYield_ft) * ((lf - lp) / (lr - lp));
-    }
-
-    var MnSlender_kip_in = (0.9 * E * Kc * sec.Sx) / (lf * lf);
-    return MnSlender_kip_in / 12;
-  }
-
-  function phiMnKipFt(Mn_ft, method) {
-    if (!Number.isFinite(Mn_ft)) return null;
-    if (method === "LRFD") return 0.9 * Mn_ft;
-    return Mn_ft / 1.67;
-  }
-
-  function wuGoverning(method, DL, LL) {
-    if (method === "ASD") return DL + LL;
-    var n = 1.2 * DL + 1.6 * LL;
-    var s = 1.4 * DL;
-    return Math.max(n, s);
-  }
-
-  function lineLoadWithBeam(method, DL, LL, wSelfPlf, beamWeightNorm) {
-    var wKlf = wSelfPlf / 1000;
-    if (beamWeightNorm === "ignore beam weight") {
-      return method === "ASD"
-        ? 0
-        : method === "LRFD"
-          ? 0
-          : null;
-    }
-    if (method === "ASD") return DL + LL + wKlf;
-    if (method === "LRFD") return 1.2 * (DL + wKlf) + 1.6 * LL;
-    return null;
-  }
-
-  function muDemandFromW(wKlf, L_ft) {
-    return (wKlf * L_ft * L_ft) / 8;
-  }
-
-  function ixRequiredExcel(LL_klf, L_ft, E_ksi, divisor) {
-    var L_in = L_ft * 12;
-    var w_kip_per_in = LL_klf / 12;
-    return (
-      (divisor * 5 * w_kip_per_in * Math.pow(L_in, 4)) / (384 * E_ksi * L_in)
-    );
-  }
-
-  function parseCatalog(json) {
-    var list = json && Array.isArray(json.sections) ? json.sections : [];
-    return list
-      .filter(function (s) {
-        return String(s.type || "").toUpperCase() === "W";
-      })
-      .map(function (s) {
-        return {
-          label: String(s.aiscManualLabel || s.designation || "").trim(),
-          weightPlf: Number(s.weightPlf),
-          Zx: Number(s.Zx),
-          Sx: Number(s.Sx),
-          Ix: Number(s.Ix),
-          bf: Number(s.bf),
-          tf: Number(s.tf),
-          tw: Number(s.tw),
-          d: Number(s.d),
-        };
-      })
-      .filter(function (s) {
-        return (
-          s.label &&
-          [s.weightPlf, s.Zx, s.Sx, s.Ix, s.bf, s.tf, s.tw, s.d].every(
-            Number.isFinite
-          )
-        );
-      })
-      .sort(function (a, b) {
-        return a.weightPlf - b.weightPlf;
-      });
-  }
-
   function lightestSafe(sec0) {
-    var method = state.method;
-    var fy = sec0.fy;
-    var E = sec0.E;
-    var DL = sec0.DL;
-    var LL = sec0.LL;
-    var L_ft = sec0.L_ft;
-    var wGov = sec0.wGov;
-    var O39 = sec0.O39;
-    var manualMu = sec0.manualMu;
-    var ixReq = sec0.ixReq;
-    var manualIx = sec0.manualIx;
-    var deflNorm = sec0.deflectionNorm;
-    var bwNorm = sec0.beamWeightNorm;
-
-    var activeMuDefl =
-      manualMu > 0 ? manualMu : O39;
-
-    var noDeflDemand = function (Sdem) {
-      return Math.max(O39, Sdem);
-    };
-
-    var ixLimit = manualIx > 0 ? manualIx : ixReq;
-
-    var pick = null;
-
-    for (var i = 0; i < state.catalog.length; i++) {
-      var sec = state.catalog[i];
-      var Rline = lineLoadWithBeam(method, DL, LL, sec.weightPlf, bwNorm);
-      if (Rline == null) continue;
-      var Sdem = muDemandFromW(Rline, L_ft);
-      var Mn_ft = mnNominalKipFt(sec, fy, E);
-      var phiMn = phiMnKipFt(Mn_ft, method);
-      if (!Number.isFinite(phiMn)) continue;
-
-      var okMoment = false;
-      var okIx = true;
-
-      if (deflNorm === "considering deflection") {
-        /*
-         * Capacity sheet columns `T` (moment) and `U` (Ix) are evaluated per row.
-         * MINIFS on column `U` alone can pick an overly light section that fails `T`;
-         * requiring both matches the reference screenshot (e.g. W12×16 vs W10×12).
-         */
-        okMoment = phiMn > activeMuDefl;
-        okIx = sec.Ix > ixLimit;
-      } else {
-        var demand = noDeflDemand(Sdem);
-        okMoment = phiMn > demand;
-      }
-
-      if (okMoment && okIx) {
-        pick = {
-          sec: sec,
-          phiMn: phiMn,
-          Mn_ft: Mn_ft,
-          Sdem: Sdem,
-        };
-        break;
-      }
-    }
-
-    return pick;
+    return WB.pickLightestSection(state.catalog, state.method, sec0);
   }
 
   function syncMethodUi() {
     var m = state.method;
-    if (methodChip) methodChip.textContent = m;
-    root.querySelectorAll("[data-bd-method]").forEach(function (btn) {
-      var on =
-        String(btn.getAttribute("data-bd-method") || "").toUpperCase() === m;
-      btn.classList.toggle("is-primary", on);
-      btn.setAttribute("aria-pressed", on ? "true" : "false");
-    });
+    if (methodSel) methodSel.value = m;
     if (methodTag)
       methodTag.textContent =
-        m === "LRFD" ? "(LRFD METHOD)" : "(ASD METHOD)";
+        "→ " + (m === "LRFD" ? "(LRFD METHOD)" : "(ASD METHOD)");
 
     if (outWuLbl) outWuLbl.textContent = m === "LRFD" ? "GOVERNING Wu =" : "ALLOWABLE Wa =";
     if (outCombo1Lbl)
@@ -280,41 +554,101 @@
     if (outCombo2Lbl)
       outCombo2Lbl.textContent = m === "LRFD" ? "1.4DL" : "—";
 
+    if (phiMnLbl)
+      phiMnLbl.innerHTML =
+        m === "LRFD" ? "M<sub>u</sub> =" : "M<sub>a</sub> =";
+
     var capLbl =
       m === "LRFD"
         ? "CAPACITY ANALYSIS"
         : "CAPACITY ANALYSIS (ASD)";
-    if (capWithoutDefl) capWithoutDefl.textContent = capLbl + " without considering deflection";
-    if (capConsiderDefl) capConsiderDefl.textContent = capLbl + " considering deflection";
+    root.querySelectorAll(".bending-cap-analysis-btn-head").forEach(function (el) {
+      el.textContent = capLbl;
+    });
 
-    syncDeflectionButtons();
-    syncBeamWeightButtons();
-    syncCapModeButtons();
+    root.querySelectorAll(".bending-demand-mu-factored-lbl").forEach(function (el) {
+      el.innerHTML =
+        m === "LRFD"
+          ? "<strong>M<sub>u</sub> (Factored Moment):</strong>"
+          : "<strong>M<sub>a</sub> (Allowable Moment):</strong>";
+    });
+    var formulaStrip = byId("bendingDemandFormulaDisplay");
+    if (formulaStrip)
+      formulaStrip.innerHTML =
+        m === "LRFD"
+          ? "M<sub>u</sub> = <em>w</em>L²/8"
+          : "M<sub>a</sub> = <em>w</em>L²/8";
+    var manualIns = byId("bendingDemandManualInstruction");
+    if (manualIns)
+      manualIns.innerHTML =
+        m === "LRFD"
+          ? "<em>INSTRUCTION: LEAVE THE YELLOW M<sub>u</sub> BELOW AS <strong>0</strong> IF THE BEAM IS SIMPLY SUPPORTED.</em>"
+          : "<em>INSTRUCTION: LEAVE THE YELLOW M<sub>a</sub> BELOW AS <strong>0</strong> IF THE BEAM IS SIMPLY SUPPORTED.</em>";
+
+    syncDeflectionSelect();
+    syncBeamWeightSelect();
+    syncCapacityTableHeaders();
+    syncCapacityDeflTableHeaders();
   }
 
-  function syncDeflectionButtons() {
+  function syncCapacityTableHeaders() {
+    var thWu = byId("bendingCapThWu");
+    var thMuBeam = byId("bendingCapThMuBeam");
+    var thDesign = byId("bendingCapThDesignStrength");
+    if (!thWu || !thMuBeam || !thDesign) return;
+    var m = state.method;
+    if (m === "LRFD") {
+      thWu.innerHTML = "W<sub>u</sub> (w/ beam wt)";
+      thMuBeam.innerHTML = "M<sub>u</sub> (w/ beam wt)";
+      thDesign.innerHTML = "M<sub>u</sub>";
+      thDesign.title =
+        "Design flexural strength column (LRFD): 0.9Mn, shown under Mu header in workbook capacity sheet.";
+    } else {
+      thWu.innerHTML = "w<sub>a</sub> (w/ beam wt)";
+      thMuBeam.innerHTML = "M<sub>a</sub> (w/ beam wt)";
+      thDesign.innerHTML = "M<sub>u</sub>";
+      thDesign.title =
+        "Design flexural strength column (ASD): Mn/1.67, shown under Mu header in workbook capacity sheet.";
+    }
+  }
+
+  function syncCapacityDeflTableHeaders() {
+    var thMu = byId("bendingCapDeflThMu");
+    if (!thMu) return;
+    thMu.innerHTML = "M<sub>u</sub>";
+  }
+
+  function syncCapAnalysisButtons() {
     var key = normalizeMode(state.deflectionMode);
-    var without = key === normalizeMode("without considering deflection");
-    if (btnWithoutDefl)
-      btnWithoutDefl.classList.toggle("is-selected", without);
-    if (btnConsiderDefl)
-      btnConsiderDefl.classList.toggle("is-selected", !without);
+    var vConsider = normalizeMode("considering deflection");
+    var isConsider = key === vConsider;
+    if (btnCapWithoutDefl) {
+      btnCapWithoutDefl.setAttribute("aria-pressed", isConsider ? "false" : "true");
+      btnCapWithoutDefl.classList.toggle("is-selected", !isConsider);
+    }
+    if (btnCapConsideringDefl) {
+      btnCapConsideringDefl.setAttribute("aria-pressed", isConsider ? "true" : "false");
+      btnCapConsideringDefl.classList.toggle("is-selected", isConsider);
+    }
   }
 
-  function syncBeamWeightButtons() {
+  function syncDeflectionSelect() {
+    var key = normalizeMode(state.deflectionMode);
+    var vConsider = normalizeMode("considering deflection");
+    var val =
+      key === vConsider
+        ? "considering deflection"
+        : "without considering deflection";
+    if (selDefl) selDefl.value = val;
+    syncCapAnalysisButtons();
+  }
+
+  function syncBeamWeightSelect() {
+    if (!selBeamWeight) return;
     var key = normalizeMode(state.beamWeightMode);
-    var ignore = key === normalizeMode("ignore beam weight");
-    if (btnConsiderWeight)
-      btnConsiderWeight.classList.toggle("is-selected", !ignore);
-    if (btnIgnoreWeight) btnIgnoreWeight.classList.toggle("is-selected", ignore);
-  }
-
-  function syncCapModeButtons() {
-    var key = normalizeMode(state.deflectionMode);
-    var without = key === normalizeMode("without considering deflection");
-    if (capWithoutDefl) capWithoutDefl.classList.toggle("is-active-mode", without);
-    if (capConsiderDefl)
-      capConsiderDefl.classList.toggle("is-active-mode", !without);
+    var vIgnore = normalizeMode("ignore beam weight");
+    selBeamWeight.value =
+      key === vIgnore ? "ignore beam weight" : "consider beam weight";
   }
 
   function setMethod(next) {
@@ -327,14 +661,13 @@
 
   function setDeflectionMode(label) {
     state.deflectionMode = normalizeMode(label);
-    syncDeflectionButtons();
-    syncCapModeButtons();
+    syncDeflectionSelect();
     recompute();
   }
 
   function setBeamWeightMode(label) {
     state.beamWeightMode = normalizeMode(label);
-    syncBeamWeightButtons();
+    syncBeamWeightSelect();
     recompute();
   }
 
@@ -427,13 +760,14 @@
     var combo1 =
       method === "LRFD" ? 1.2 * dlS + 1.6 * llS : dlS + llS;
     var combo2 = method === "LRFD" ? 1.4 * dlS : null;
-    var wGov = wuGoverning(method, dlS, llS);
+    var wGov = WB.wuGoverning(method, dlS, llS);
 
-    if (outCombo1) outCombo1.textContent = fmtLoose(combo1, 1);
-    if (outCombo2)
-      outCombo2.textContent =
-        method === "LRFD" && combo2 != null ? fmtLoose(combo2, 1) : "—";
-    if (outWuGov) outWuGov.textContent = fmtLoose(wGov, 1);
+    setOut(outCombo1, fmtLoose(combo1, 1));
+    setOut(
+      outCombo2,
+      method === "LRFD" && combo2 != null ? fmtLoose(combo2, 1) : "—"
+    );
+    setOut(outWuGov, fmtLoose(wGov, 1));
 
     var O39 =
       fy != null &&
@@ -441,7 +775,7 @@
       L_ft != null &&
       L_ft > 0 &&
       Number.isFinite(wGov)
-        ? muDemandFromW(wGov, L_ft)
+        ? WB.muDemandFromW(wGov, L_ft)
         : null;
 
     setOut(outMuCalc, fmtLoose(O39, 2));
@@ -454,19 +788,13 @@
       L_ft != null &&
       L_ft > 0 &&
       Number.isFinite(llS)
-        ? ixRequiredExcel(llS, L_ft, E, deflDiv)
+        ? WB.ixRequiredExcel(llS, L_ft, E, deflDiv)
         : null;
 
-    setOut(outIxReq, fmt(ixReq, 5));
+    setOut(outIxReq, fmt(ixReq, 6));
     if (outIxFormula)
-      outIxFormula.textContent =
-        "Δmax = 5 w L⁴ / (384 E Ix);  w = LL (kip/ft);  L (" +
-        (L_ft != null ? fmtLoose(L_ft, 2) : "--") +
-        " ft);  E (" +
-        (E != null ? fmtLoose(E, 0) : "--") +
-        " ksi);  δallow = L / (" +
-        (deflDiv != null ? String(deflDiv) : "--") +
-        ").";
+      outIxFormula.innerHTML =
+        "<span class=\"bending-ix-formula-main\">Δ<sub>max</sub> = 5<em>WL</em>⁴/(384<em>EI</em>)</span>";
 
     var deflectionNorm = normalizeMode(state.deflectionMode);
     var beamWeightNorm = normalizeMode(state.beamWeightMode);
@@ -500,7 +828,7 @@
     }
 
     if (safeSection)
-      safeSection.textContent = pick && pick.sec ? pick.sec.label : "--";
+      setOut(safeSection, pick && pick.sec ? pick.sec.label : "--");
     setOut(
       safeWeight,
       pick && pick.sec ? fmtLoose(pick.sec.weightPlf, 0) : "--"
@@ -509,26 +837,10 @@
       safePhiMn,
       pick && Number.isFinite(pick.phiMn) ? fmtLoose(pick.phiMn, 2) : "--"
     );
-    setOut(safeIx, pick && pick.sec ? fmtLoose(pick.sec.Ix, 0) : "--");
-
-    if (safeRemark) {
-      if (!pick)
-        setOut(
-          safeRemark,
-          fy && E && L_ft && state.catalog.length
-            ? "No W-shape satisfies Excel-style checks."
-            : "--"
-        );
-      else
-        setOut(
-          safeRemark,
-          deflectionNorm === "considering deflection"
-            ? "Lightest section with φMn > governing Mu and Ix > required."
-            : "φMn > max(Mu from Wu, Mu from factored w incl. beam weight when enabled)."
-        );
-    }
 
     if (resultBendingDesign) resultBendingDesign.textContent = "";
+
+    refreshCapacityTable(sec0, fy, E, method);
   }
 
   function bind() {
@@ -562,30 +874,58 @@
         setGrade(gradeSel.value);
       });
 
-    if (btnWithoutDefl)
-      btnWithoutDefl.addEventListener("click", function () {
-        setDeflectionMode("without considering deflection");
-      });
-    if (btnConsiderDefl)
-      btnConsiderDefl.addEventListener("click", function () {
-        setDeflectionMode("considering deflection");
-      });
-    if (btnConsiderWeight)
-      btnConsiderWeight.addEventListener("click", function () {
-        setBeamWeightMode("consider beam weight");
-      });
-    if (btnIgnoreWeight)
-      btnIgnoreWeight.addEventListener("click", function () {
-        setBeamWeightMode("ignore beam weight");
+    if (methodSel)
+      methodSel.addEventListener("change", function () {
+        setMethod(methodSel.value);
       });
 
-    if (capWithoutDefl)
-      capWithoutDefl.addEventListener("click", function () {
-        setDeflectionMode("without considering deflection");
+    if (selDefl)
+      selDefl.addEventListener("change", function () {
+        setDeflectionMode(selDefl.value);
+        if (isBendingCapacityRouteActive()) renderActiveCapacityTable();
       });
-    if (capConsiderDefl)
-      capConsiderDefl.addEventListener("click", function () {
-        setDeflectionMode("considering deflection");
+    if (selBeamWeight)
+      selBeamWeight.addEventListener("change", function () {
+        setBeamWeightMode(selBeamWeight.value);
+      });
+
+    function wireCapBtn(btn) {
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        var mode = btn.getAttribute("data-cap-mode");
+        if (!mode) return;
+        if (
+          normalizeMode(mode) ===
+          normalizeMode("without considering deflection")
+        ) {
+          setDeflectionMode(mode);
+          showBendingCapacityRoute();
+        } else {
+          setDeflectionMode(mode);
+          showBendingCapacityRoute();
+        }
+      });
+    }
+    wireCapBtn(btnCapWithoutDefl);
+    wireCapBtn(btnCapConsideringDefl);
+
+    function wireCapDbFilter(el, evtName) {
+      if (!el) return;
+      el.addEventListener(evtName || "input", function () {
+        renderActiveCapacityTable();
+      });
+    }
+    wireCapDbFilter(capDbSearch);
+    wireCapDbFilter(capDbLabel);
+    wireCapDbFilter(capDbShape, "change");
+    wireCapDbFilter(capDbType, "change");
+    if (capDbResetBtn)
+      capDbResetBtn.addEventListener("click", function () {
+        resetBendingCapFilters();
+      });
+    if (capDbNavBtn)
+      capDbNavBtn.addEventListener("click", function () {
+        hideBendingCapacityRoute();
       });
   }
 
@@ -598,7 +938,7 @@
         return r.json();
       })
       .then(function (json) {
-        state.catalog = parseCatalog(json);
+        state.catalog = WB.parseCatalog(json);
       })
       .catch(function () {
         state.catalog = [];

@@ -1,24 +1,26 @@
 (function () {
   "use strict";
 
-  var PHI_B = 0.9;
-  var OMEGA_B = 1.67;
-  var DEFAULT_E_KSI = 29000;
   /** Preferred default when present in Excel export (Bending Analysis workbook). */
   var PREFERRED_ANALYSIS_GRADE = "A618 Gr. I, II";
+
+  function baWorkbook() {
+    return typeof window !== "undefined" ? window.BendingAnalysisWorkbook : null;
+  }
 
   function steelGradeSvc() {
     return typeof window !== "undefined" ? window.SteelGradesService : null;
   }
 
-  function clamp(n, a, b) {
-    if (!Number.isFinite(n)) return n;
-    return Math.min(b, Math.max(a, n));
-  }
-
   function fmtFixed(n, dp) {
     if (!Number.isFinite(n)) return "--";
     return Number(n.toFixed(dp)).toFixed(dp);
+  }
+
+  /** Trim trailing zeros after rounding (workbook-style display). */
+  function fmtTrim(n, dp) {
+    if (!Number.isFinite(n)) return "--";
+    return String(Number(n.toFixed(dp)));
   }
 
   function getEl(id) {
@@ -51,100 +53,201 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  /**
-   * Bending Analysis workbook: λ_w from database (h/t_w); k_c = 4 / √λ_w.
-   * Nominal flexural strength in flange-local slender regime: M_n = 0.9 E k_c S_x / λ_f² (kip·in).
-   */
-  function computeAll(inputs) {
-    var E = inputs.E;
-    var Fy = inputs.Fy;
-    var Zx = inputs.Zx;
-    var Sx = inputs.Sx;
-    var bf = inputs.bf;
-    var tf = inputs.tf;
-    var tw = inputs.tw;
-    var d = inputs.d;
-    var lambdaFSheet = inputs.lambdaF;
-    var lambdaWSheet = inputs.lambdaW;
-
-    if (![E, Fy, Zx, Sx, bf, tf, tw, d].every(Number.isFinite)) {
-      return { ok: false, error: "Select a section and provide E and Fy." };
-    }
-    if (E <= 0 || Fy <= 0 || Zx <= 0 || Sx <= 0 || bf <= 0 || tf <= 0 || tw <= 0 || d <= 0) {
-      return { ok: false, error: "Inputs must be positive." };
-    }
-
-    var h = d - 2 * tf;
-    var lambdaFGeom = bf / (2 * tf);
-    var lambdaWGeom = h > 0 && tw > 0 ? h / tw : null;
-
-    var lambdaF = Number.isFinite(lambdaFSheet) ? lambdaFSheet : lambdaFGeom;
-    var lambdaW = Number.isFinite(lambdaWSheet) ? lambdaWSheet : lambdaWGeom;
-
-    if (!Number.isFinite(lambdaF) || lambdaF <= 0) {
-      return { ok: false, error: "Invalid flange slenderness λ_f." };
-    }
-
-    var lambdaPF = 0.38 * Math.sqrt(E / Fy);
-    var lambdaRF = 1.0 * Math.sqrt(E / Fy);
-
-    var classification = "SLENDER";
-    if (lambdaF < lambdaPF) classification = "COMPACT";
-    else if (lambdaF < lambdaRF) classification = "NON-COMPACT";
-
-    var kc = null;
-    if (Number.isFinite(lambdaW) && lambdaW > 0) {
-      kc = 4 / Math.sqrt(lambdaW);
-    }
-
-    var Mp = Fy * Zx;
-    var Mr = 0.7 * Fy * Sx;
-
-    var Mn;
-    if (classification === "COMPACT") {
-      Mn = Mp;
-    } else if (classification === "NON-COMPACT") {
-      var denom = lambdaRF - lambdaPF;
-      var t = denom > 0 ? (lambdaF - lambdaPF) / denom : 0;
-      t = clamp(t, 0, 1);
-      Mn = Mp - (Mp - Mr) * t;
-      Mn = clamp(Mn, Math.min(Mp, Mr), Math.max(Mp, Mr));
-    } else {
-      if (!Number.isFinite(kc)) return { ok: false, error: "Cannot compute k_c from web slenderness." };
-      Mn = (0.9 * E * kc * Sx) / (lambdaF * lambdaF);
-    }
-
-    var method = inputs.method;
-    var Ma = method === "LRFD" ? PHI_B * Mn : Mn / OMEGA_B;
-
-    return {
-      ok: true,
-      values: {
-        lambdaF: lambdaF,
-        lambdaW: lambdaW,
-        lambdaPF: lambdaPF,
-        lambdaRF: lambdaRF,
-        kc: kc,
-        classification: classification,
-        Mn: Mn,
-        Ma: Ma,
-        method: method,
-      },
-    };
-  }
-
   var state = {
     byDesignation: Object.create(null),
-    allSectionRows: [],
-    allSections: [],
+    /**
+     * Rows for the picker + `computeBorn2BeSteelAnalysis`:
+     * Prefer `bendingAnalysisCatalog` from `aisc-sections.json` (Excel `aisc shapes database (2)` row order).
+     * Fallback: Key Geometric Properties rows passing `analysisExcelCatalogRow`.
+     */
+    catalogRows: [],
+    /** When true, catalog + order come from Excel `aisc shapes database (2)` (see bendingAnalysisCatalog). */
+    useExcelDb2Catalog: false,
+    /** Distinct Type column values from workbook catalog (e.g. ["W","L"]). */
+    excelTypeChoices: null,
+    /** From `bendingAnalysisCatalog.meta.shapePickerLabels` — maps chips to Excel **Shapes** symbols. */
+    excelShapePickerLabels: null,
+    /** Excel picker: active shape chips (`i`/`l` = UI labels; filter uses **Shapes** column via meta). */
+    excelShapesActive: { i: false, l: false },
+    excelTypesActive: { W: false, L: false },
+    excelShapeMulti: false,
+    excelTypeMulti: false,
+    /** Match shipped workbook startup (FN17 refs blank -> 0) until user edits Design inputs. */
+    useDesignFn17: false,
     selected: null,
     method: "ASD",
-    selectedShape: "I",
-    selectedType: "W",
     selectedGrade: PREFERRED_ANALYSIS_GRADE,
-    page: 0,
+    shapeFilter: "all",
+    typeFilter: "all",
   };
-  var ROWS_PER_PAGE = 6;
+
+  /**
+   * Born2BeSteel Bending Analysis sheet: rolled wide-flange shapes only (`type === "W"` in
+   * Key Geometric Properties export), with full geometry for `computeBorn2BeSteelAnalysis`.
+   */
+  var BEND_ANALYSIS_GEOM_KEYS = ["Zx", "Sx", "bf", "tf", "tw", "d", "lambdaF", "lambdaW"];
+
+  function analysisExcelCatalogRow(s) {
+    if (!s || s.designation == null) return false;
+    if (String(s.type || "").toUpperCase() !== "W") return false;
+    return BEND_ANALYSIS_GEOM_KEYS.every(function (k) {
+      return Number.isFinite(Number(s[k]));
+    });
+  }
+
+  /** Excel-backed picker lists Type=L angles plus Type=W; only W rows satisfy bending FN geometry checks. */
+  function bendingPickerCatalogRow(s) {
+    if (!s || s.designation == null) return false;
+    var ty = String(s.type || "").toUpperCase();
+    if (ty === "W") return analysisExcelCatalogRow(s);
+    if (ty === "L") {
+      var zx = Number(s.Zx);
+      var sx = Number(s.Sx);
+      var d = Number(s.d);
+      var ag = Number(s.Ag);
+      return (
+        Number.isFinite(zx) &&
+        Number.isFinite(sx) &&
+        (Number.isFinite(d) || Number.isFinite(ag)) &&
+        String(s.designation).trim() !== ""
+      );
+    }
+    return false;
+  }
+
+  /** Union of Excel `Shapes` symbols for currently active shape chips (see catalog meta). */
+  function excelActiveShapeSymbols() {
+    var labels = state.excelShapePickerLabels;
+    var sa = state.excelShapesActive || { i: false, l: false };
+    var out = [];
+    if (!labels || !labels.length) return out;
+    for (var i = 0; i < labels.length; i++) {
+      var entry = labels[i];
+      if (!entry || !sa[entry.id]) continue;
+      var ms = entry.matchShapeSymbols;
+      if (Array.isArray(ms)) {
+        for (var j = 0; j < ms.length; j++) out.push(ms[j]);
+      }
+    }
+    return out;
+  }
+
+  function passesShapeCategory(row, shapeFilter) {
+    if (state.useExcelDb2Catalog) {
+      var sa = state.excelShapesActive || { i: false, l: false };
+      if (!sa.i && !sa.l) return true;
+      var sym = row.shapeSymbol != null ? String(row.shapeSymbol).trim() : "";
+      var allowed = excelActiveShapeSymbols();
+      if (allowed.length > 0) {
+        if (!sym) return false;
+        return allowed.indexOf(sym) >= 0;
+      }
+      var tyE = String(row.type || "").toUpperCase();
+      return (sa.i && tyE === "W") || (sa.l && tyE === "L");
+    }
+    var t = String(row.type || "").toUpperCase();
+    switch (shapeFilter) {
+      case "all":
+        return true;
+      case "w":
+        return t === "W";
+      case "channel":
+        return t === "C" || t === "MC";
+      case "angle":
+        return t === "L" || t === "2L";
+      case "tee":
+        return t === "WT" || t === "MT" || t === "ST";
+      case "hss":
+        return t === "HSS";
+      case "pipe":
+        return t === "PIPE";
+      default:
+        return true;
+    }
+  }
+
+  function passesTypeFamily(row, typeFilter) {
+    if (state.useExcelDb2Catalog) {
+      var tyE = String(row.type || "").toUpperCase();
+      var ta = state.excelTypesActive || { W: false, L: false };
+      if (!ta.W && !ta.L) return true;
+      return (ta.W && tyE === "W") || (ta.L && tyE === "L");
+    }
+    if (typeFilter === "all") return true;
+    return (
+      String(row.type || "").toUpperCase() ===
+      String(typeFilter).toUpperCase()
+    );
+  }
+
+  /** Leaving multi-select on Shapes: collapse to one chip only (does not change Type — Excel columns are independent). */
+  function collapseExcelShapeMulti() {
+    if (state.excelShapesActive.i && state.excelShapesActive.l) {
+      state.excelShapesActive = { i: true, l: false };
+    } else if (!state.excelShapesActive.i && !state.excelShapesActive.l) {
+      state.excelShapesActive = { i: true, l: false };
+    }
+  }
+
+  function collapseExcelTypeMulti() {
+    if (state.excelTypesActive.W && state.excelTypesActive.L) {
+      state.excelTypesActive = { W: true, L: false };
+    } else if (!state.excelTypesActive.W && !state.excelTypesActive.L) {
+      state.excelTypesActive = { W: true, L: false };
+    }
+  }
+
+  function syncExcelPickToLegacyStrings() {
+    if (!state.useExcelDb2Catalog) return;
+    if (state.excelShapesActive.i && !state.excelShapesActive.l) state.shapeFilter = "i";
+    else if (!state.excelShapesActive.i && state.excelShapesActive.l) state.shapeFilter = "l";
+    else state.shapeFilter = "all";
+    if (state.excelTypesActive.W && !state.excelTypesActive.L) state.typeFilter = "W";
+    else if (!state.excelTypesActive.W && state.excelTypesActive.L) state.typeFilter = "L";
+    else state.typeFilter = "all";
+  }
+
+  function syncExcelFilterUi() {
+    var filtPanel = getEl("bendSectionFiltersPanel");
+    if (!filtPanel || !state.useExcelDb2Catalog) return;
+    filtPanel.querySelectorAll("[data-bend-shape]").forEach(function (btn) {
+      var k = btn.getAttribute("data-bend-shape");
+      btn.classList.toggle(
+        "is-active",
+        !!(state.excelShapesActive && state.excelShapesActive[k])
+      );
+    });
+    filtPanel.querySelectorAll("[data-bend-type]").forEach(function (btn) {
+      var k = btn.getAttribute("data-bend-type");
+      btn.classList.toggle(
+        "is-active",
+        !!(state.excelTypesActive && state.excelTypesActive[k])
+      );
+    });
+    var sm = filtPanel.querySelector('[data-bend-tool="shape-multi"]');
+    var tm = filtPanel.querySelector('[data-bend-tool="type-multi"]');
+    if (sm) {
+      sm.setAttribute("aria-pressed", state.excelShapeMulti ? "true" : "false");
+      sm.classList.toggle("is-pressed", !!state.excelShapeMulti);
+    }
+    if (tm) {
+      tm.setAttribute("aria-pressed", state.excelTypeMulti ? "true" : "false");
+      tm.classList.toggle("is-pressed", !!state.excelTypeMulti);
+    }
+  }
+
+  /** Designations in JSON order after Shapes + Type filters (within analysis catalog). */
+  function getFilteredDesignations() {
+    var rows = state.catalogRows || [];
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!passesShapeCategory(row, state.shapeFilter)) continue;
+      if (!passesTypeFamily(row, state.typeFilter)) continue;
+      out.push(row.designation);
+    }
+    return out;
+  }
 
   function syncGradeAndFy() {
     var gradeEl = getEl("bendAnalysisGrade");
@@ -204,273 +307,188 @@
     }
   }
 
-  function prefixOf(designation) {
-    var m = String(designation || "").toUpperCase().match(/^[A-Z]+/);
-    return m ? m[0] : "";
+  /** Excel `AISC_Manual_Label` column (falls back to designation). */
+  function aiscManualLabelDisplay(row) {
+    if (!row) return "";
+    var m = row.aiscManualLabel;
+    if (m != null && String(m).trim()) return String(m).trim();
+    return row.designation || "";
   }
 
-  function shapeToPrefixes(shape) {
-    if (shape === "I") return ["W"];
-    if (shape === "L") return ["L"];
-    return [];
+  /**
+   * AISC_Manual_Label grid — same visual pattern as Tension Non-Staggered `ns-aisc-grid`
+   * (buttons in a two-column scroll panel; behavior stays Born2BeSteel / bending catalog).
+   */
+  function renderAiscLabelGrid(designations) {
+    var list = getEl("bendSectionList");
+    if (!list) return;
+    list.innerHTML = "";
+    var des = Array.isArray(designations) ? designations : [];
+    for (var i = 0; i < des.length; i++) {
+      var designation = des[i];
+      var key = String(designation).toUpperCase();
+      var crow = state.byDesignation[key];
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "ns-aisc-btn";
+      b.setAttribute("role", "option");
+      b.textContent = crow ? aiscManualLabelDisplay(crow) : designation;
+      if (state.selected && key === state.selected) b.classList.add("is-active");
+      b.addEventListener("click", function (k) {
+        return function (e) {
+          e.preventDefault();
+          selectSection(k);
+        };
+      }(key));
+      list.appendChild(b);
+    }
   }
 
-  function typeToPrefixes(type) {
-    if (type === "W") return ["W"];
-    if (type === "L") return ["L"];
-    return [];
+  /**
+   * Two-column AISC_Manual_Label grid; order = JSON export order within active filters,
+   * with an optional W12× demo block pulled first when present.
+   */
+  function rerenderList() {
+    var list = getFilteredDesignations();
+    var preferred = [
+      "W4X13",
+      "W12X279",
+      "W12X305",
+      "W12X35",
+      "W12X45",
+      "W12X53",
+      "W12X65",
+      "W12X30",
+      "W12X336",
+      "W12X40",
+      "W12X50",
+      "W12X58",
+      "W12X72",
+    ];
+    var set = new Set(list);
+    var ordered = preferred.filter(function (d) {
+      return set.has(d);
+    });
+    list.forEach(function (d) {
+      if (ordered.indexOf(d) === -1) ordered.push(d);
+    });
+    renderAiscLabelGrid(ordered);
   }
 
-  function availablePrefixes() {
-    return Array.from(
-      new Set(state.allSections.map(function (d) { return prefixOf(d); }).filter(Boolean))
-    ).sort();
+  function selectionStillInFilteredList() {
+    var sel = state.selected;
+    if (!sel) return true;
+    var list = getFilteredDesignations();
+    return list.indexOf(sel) >= 0;
   }
 
-  function filteredSections() {
-    var allowedByShape = shapeToPrefixes(state.selectedShape);
-    var allowedByType = typeToPrefixes(state.selectedType);
-
-    return state.allSections.filter(function (d) {
-      var p = prefixOf(d);
-      if (allowedByShape.length && allowedByShape.indexOf(p) === -1) return false;
-      if (allowedByType.length && allowedByType.indexOf(p) === -1) return false;
-      return true;
+  function syncFilterChipActive(container, attrName, activeVal) {
+    if (!container) return;
+    container.querySelectorAll("[" + attrName + "]").forEach(function (btn) {
+      var v = btn.getAttribute(attrName);
+      btn.classList.toggle("is-active", v === activeVal);
     });
   }
 
-  function renderSectionGrid(designations) {
-    var list = getEl("bendSectionList");
-    if (!list) return;
-    list.innerHTML = "";
+  /**
+   * Shape / Type chips — Excel-backed catalog uses workbook `typesDistinct` only (see export-aisc-sections.js).
+   * Legacy fallback keeps tension-style shape families for Key Geom–only JSON.
+   */
+  function renderBendingNsFilterChips() {
+    var shapeHost = getEl("bendNsShapeIcons");
+    var typeHost = getEl("bendNsTypeChips");
+    var shapesBlock = getEl("bendNsShapesBlock");
+    if (!shapeHost || !typeHost) return;
 
-    var items = Array.isArray(designations) ? designations.slice() : [];
-    for (var i = 0; i < items.length; i += 2) {
-      var left = items[i] || null;
-      var right = items[i + 1] || null;
+    shapeHost.innerHTML = "";
+    typeHost.innerHTML = "";
 
-      var row = document.createElement("div");
-      row.className =
-        "bend-table-row" +
-        (state.selected && (state.selected === left || state.selected === right) ? " is-active" : "");
-      row.setAttribute("role", "option");
-
-      function cell(designation) {
-        var s = document.createElement("span");
-        s.textContent = designation || "";
-        if (!designation) {
-          s.style.visibility = "hidden";
-          s.setAttribute("aria-hidden", "true");
-          return s;
-        }
-        s.addEventListener("click", function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          selectSection(designation);
-        });
-        return s;
+    if (state.useExcelDb2Catalog) {
+      if (shapesBlock) {
+        shapesBlock.hidden = false;
+        shapesBlock.removeAttribute("aria-hidden");
       }
-
-      row.appendChild(cell(left));
-      row.appendChild(cell(right));
-      list.appendChild(row);
-    }
-  }
-
-  function renderSectionGridColumnPairs(leftCol, rightCol) {
-    var list = getEl("bendSectionList");
-    if (!list) return;
-    list.innerHTML = "";
-
-    var L = Array.isArray(leftCol) ? leftCol : [];
-    var R = Array.isArray(rightCol) ? rightCol : [];
-    var rows = Math.max(L.length, R.length);
-
-    for (var i = 0; i < rows; i++) {
-      var left = L[i] || null;
-      var right = R[i] || null;
-
-      var row = document.createElement("div");
-      row.className =
-        "bend-table-row" +
-        (state.selected && (state.selected === left || state.selected === right) ? " is-active" : "");
-      row.setAttribute("role", "option");
-
-      function cell(designation) {
-        var s = document.createElement("span");
-        s.textContent = designation || "";
-        if (!designation) {
-          s.style.visibility = "hidden";
-          s.setAttribute("aria-hidden", "true");
-          return s;
-        }
-        s.addEventListener("click", function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          selectSection(designation);
-        });
-        return s;
-      }
-
-      row.appendChild(cell(left));
-      row.appendChild(cell(right));
-      list.appendChild(row);
-    }
-  }
-
-  function updatePagination(totalRows) {
-    var prev = getEl("bendPagePrev");
-    var next = getEl("bendPageNext");
-    var info = getEl("bendPageInfo");
-    var pages = Math.max(1, Math.ceil((totalRows || 0) / ROWS_PER_PAGE));
-    if (state.page >= pages) state.page = pages - 1;
-    if (state.page < 0) state.page = 0;
-    if (prev) prev.disabled = state.page <= 0;
-    if (next) next.disabled = state.page >= pages - 1;
-    if (info) info.textContent = String(state.page + 1) + "/" + String(pages);
-  }
-
-  function populateFilterOptions() {
-    var shapeList = getEl("bendShapeOptions");
-    var typeList = getEl("bendTypeOptions");
-    var shapeBox = getEl("bendShapeOptionsList");
-    var typeBox = getEl("bendTypeOptionsList");
-    if (!shapeList || !typeList) return;
-
-    var prefixes = availablePrefixes();
-
-    shapeList.innerHTML = ["I", "L"].map(function (p) { return "<option value=\"" + p + "\"></option>"; }).join("");
-    typeList.innerHTML = ["W", "L"].map(function (p) { return "<option value=\"" + p + "\"></option>"; }).join("");
-
-    function renderBox(box, kind, options) {
-      if (!box) return;
-      box.innerHTML = "";
-      options.forEach(function (opt) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "bend-mini-opt";
-        btn.textContent = opt;
-        btn.setAttribute("role", "option");
-        var isEnabled = true;
-        if (kind === "shape") {
-          var pfx = shapeToPrefixes(opt);
-          isEnabled = pfx.some(function (p) { return prefixes.indexOf(p) !== -1; });
-        } else {
-          var pfx2 = typeToPrefixes(opt);
-          var allowed = shapeToPrefixes(state.selectedShape);
-          isEnabled = pfx2.some(function (p) {
-            return prefixes.indexOf(p) !== -1 && (!allowed.length || allowed.indexOf(p) !== -1);
-          });
-        }
-        if (!isEnabled) {
-          btn.disabled = true;
-          btn.classList.add("is-disabled");
-        }
-        btn.addEventListener("click", function () {
-          if (btn.disabled) return;
-          if (kind === "shape") {
-            state.selectedShape = opt;
-            state.selectedType = opt === "L" ? "L" : "W";
-            state.page = 0;
-            var tEl = getEl("bendTypeFilter");
-            if (tEl) tEl.value = state.selectedType;
-            var sEl = getEl("bendShapeFilter");
-            if (sEl) sEl.value = state.selectedShape;
-            populateFilterOptions();
-          } else {
-            state.selectedType = opt;
-            state.page = 0;
-            var tEl2 = getEl("bendTypeFilter");
-            if (tEl2) tEl2.value = state.selectedType;
-          }
-          rerenderList();
-        });
-        box.appendChild(btn);
-      });
-    }
-
-    renderBox(shapeBox, "shape", ["I", "L"]);
-    renderBox(typeBox, "type", ["W", "L"]);
-
-    syncFilterActiveStates();
-  }
-
-  function syncFilterActiveStates() {
-    var shapeVal = String(state.selectedShape || "").trim().toUpperCase();
-    var typeVal = String(state.selectedType || "").trim().toUpperCase();
-
-    function sync(boxId, active) {
-      var box = getEl(boxId);
-      if (!box) return;
-      Array.prototype.forEach.call(box.querySelectorAll(".bend-mini-opt"), function (b) {
-        b.classList.toggle("is-active", String(b.textContent || "").trim().toUpperCase() === active);
-      });
-    }
-    sync("bendShapeOptionsList", shapeVal === "I" ? "I" : shapeVal);
-    sync("bendTypeOptionsList", typeVal);
-  }
-
-  function rerenderList() {
-    var list = filteredSections();
-    state.sections = list;
-
-    if (state.selectedShape === "I" && state.selectedType === "W") {
-      var preferred = [
-        "W12X279",
-        "W12X305",
-        "W12X35",
-        "W12X45",
-        "W12X53",
-        "W12X65",
-        "W12X30",
-        "W12X336",
-        "W12X40",
-        "W12X50",
-        "W12X58",
-        "W12X72",
+      var metaLabs = state.excelShapePickerLabels;
+      var shapeOpts = [
+        {
+          v: "i",
+          label:
+            metaLabs && metaLabs[0] && metaLabs[0].label ? metaLabs[0].label : "I",
+        },
+        {
+          v: "l",
+          label:
+            metaLabs && metaLabs[1] && metaLabs[1].label ? metaLabs[1].label : "L",
+        },
       ];
-      var set = new Set(list);
-      var ordered = preferred.filter(function (d) {
-        return set.has(d);
+      shapeOpts.forEach(function (o) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ns-chip-btn";
+        b.setAttribute("data-bend-shape", o.v);
+        b.textContent = o.label;
+        shapeHost.appendChild(b);
       });
-      list.forEach(function (d) {
-        if (ordered.indexOf(d) === -1) ordered.push(d);
-      });
-      var mid = Math.ceil(ordered.length / 2);
-      var left = ordered.slice(0, mid);
-      var right = ordered.slice(mid);
-      var totalRows = Math.max(left.length, right.length);
-      updatePagination(totalRows);
-      var pageStart = state.page * ROWS_PER_PAGE;
-      var pageEnd = pageStart + ROWS_PER_PAGE;
-      renderSectionGridColumnPairs(left.slice(pageStart, pageEnd), right.slice(pageStart, pageEnd));
     } else {
-      var totalRows2 = Math.ceil(list.length / 2);
-      updatePagination(totalRows2);
-      var pageStart2 = state.page * ROWS_PER_PAGE * 2;
-      var pageEnd2 = pageStart2 + ROWS_PER_PAGE * 2;
-      renderSectionGrid(list.slice(pageStart2, pageEnd2));
+      if (shapesBlock) {
+        shapesBlock.hidden = false;
+        shapesBlock.removeAttribute("aria-hidden");
+      }
+      var shapes = [
+        { v: "all", label: "All" },
+        { v: "w", label: "W" },
+        { v: "channel", label: "CHANNEL" },
+        { v: "angle", label: "L / ∠" },
+        { v: "tee", label: "TEE" },
+        { v: "hss", label: "HSS" },
+        { v: "pipe", label: "PIPE" },
+      ];
+      shapes.forEach(function (o) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "ns-chip-btn";
+        b.setAttribute("data-bend-shape", o.v);
+        b.textContent = o.label;
+        shapeHost.appendChild(b);
+      });
     }
-    syncFilterActiveStates();
-  }
 
-  function classLabel(cls) {
-    if (cls === "COMPACT") return "Compact Flange";
-    if (cls === "NON-COMPACT") return "Non-compact Flange";
-    return "Slender Flange";
+    var typeIds = ["all", "W", "M", "S", "HP", "C", "MC"];
+    if (state.useExcelDb2Catalog) {
+      typeIds = ["W", "L"];
+    }
+    typeIds.forEach(function (t) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "ns-chip-btn";
+      b.setAttribute("data-bend-type", t);
+      b.textContent = t === "all" ? "All" : t;
+      typeHost.appendChild(b);
+    });
+
+    var filtPanel = getEl("bendSectionFiltersPanel");
+    if (filtPanel) {
+      if (state.useExcelDb2Catalog) syncExcelFilterUi();
+      else {
+        syncFilterChipActive(filtPanel, "data-bend-shape", state.shapeFilter);
+        syncFilterChipActive(filtPanel, "data-bend-type", state.typeFilter);
+      }
+    }
   }
 
   function updateMethodUI() {
-    var btn = getEl("bendMethodToggle");
-    if (!btn) return;
-    btn.textContent = state.method;
-    btn.setAttribute("aria-pressed", state.method === "ASD" ? "true" : "false");
-    var label = getEl("bendCapacityLabel");
-    if (label) {
-      label.innerHTML =
+    var methodEl = getEl("bendMethodToggle");
+    if (!methodEl) return;
+    if ("value" in methodEl) methodEl.value = state.method;
+    else methodEl.textContent = state.method;
+    var head = getEl("bendCapacityHead");
+    if (head) head.textContent = "Bending capacity";
+    var pref = getEl("bendDesignMomentPrefix");
+    if (pref) {
+      pref.innerHTML =
         state.method === "LRFD"
-          ? "Bending capacity (<em>M</em><sub>u</sub>) (kip·in)"
-          : "Bending capacity (<em>M</em><sub>a</sub>) (kip·in)";
+          ? "<em>M</em><sub>u</sub>:"
+          : "<em>M</em><sub>a</sub>:";
     }
   }
 
@@ -494,11 +512,56 @@
       setVal("bendKc", "--");
       setVal("bendLambdaPF", "--");
       setVal("bendLambdaRF", "--");
+      setVal("bendLambdaPFDesign", "--");
+      setVal("bendLambdaRFDesign", "--");
       setText("bendClass", "—");
       setVal("bendMn", "--");
       setVal("bendMa", "--");
-      out.textContent = "Select a section to begin.";
-      out.classList.remove("is-error");
+      out.textContent =
+        getFilteredDesignations().length === 0
+          ? "No sections match the current Shapes / Type filters."
+          : "Select a section to begin.";
+      out.classList.toggle("is-error", getFilteredDesignations().length === 0);
+      return;
+    }
+
+    if (!analysisExcelCatalogRow(state._selectedProps)) {
+      setText("bendSelectedSection", aiscManualLabelDisplay(state._selectedProps));
+      setVal("bendLambdaF", "--");
+      setVal("bendLambdaW", "--");
+      setVal("bendPropZx", "--");
+      setVal("bendSx", "--");
+      setVal("bendKc", "--");
+      setVal("bendLambdaPF", "--");
+      setVal("bendLambdaRF", "--");
+      setVal("bendLambdaPFDesign", "--");
+      setVal("bendLambdaRFDesign", "--");
+      setText("bendClass", "—");
+      setVal("bendMn", "--");
+      setVal("bendMa", "--");
+      var isAngle =
+        String(state._selectedProps.type || "").toUpperCase() === "L";
+      out.textContent = isAngle
+        ? "Angles (Type L / Shape L) are listed to match the workbook picker. This page’s Bending Analysis equations use rolled wide-flange (Type W / Shape I) geometry — select Shape I and Type W for Mn and Ma."
+        : "Bending Analysis (Born2BeSteel) applies to rolled W-shapes with full geometric properties in the workbook catalog.";
+      out.classList.add("is-error");
+      return;
+    }
+
+    if (eVal == null || !(eVal > 0)) {
+      out.textContent =
+        "Enter a valid modulus E (ksi) greater than zero — workbook cell O12.";
+      out.classList.add("is-error");
+      setVal("bendMn", "--");
+      setVal("bendMa", "--");
+      return;
+    }
+    if (fy == null || !(fy > 0)) {
+      out.textContent =
+        "Yield strength Fy is missing — choose a steel grade with Fy (workbook W10).";
+      out.classList.add("is-error");
+      setVal("bendMn", "--");
+      setVal("bendMa", "--");
       return;
     }
 
@@ -506,19 +569,48 @@
     var zxEl = getEl("bendAnalysisZx");
     if (zxEl && Number.isFinite(p.Zx)) zxEl.value = String(p.Zx);
 
-    var zx = Number.isFinite(p.Zx) ? p.Zx : readNumber(zxEl);
+    var WB = baWorkbook();
+    if (!WB || typeof WB.computeBorn2BeSteelAnalysis !== "function") {
+      out.textContent = "Analysis workbook failed to load.";
+      out.classList.add("is-error");
+      return;
+    }
 
-    var r = computeAll({
+    /** `Bending Design`!O12 / X10 — drive FN17 λ limits and compact Mp (FN19) like Excel. */
+    var eDesign = readNumber(getEl("bendingDesignE"));
+    var fyDesign = readNumber(getEl("bendingDesignFy"));
+    var lpFn17 = 0;
+    var lrFn17 = 0;
+    if (
+      state.useDesignFn17 &&
+      eDesign != null &&
+      eDesign > 0 &&
+      fyDesign != null &&
+      fyDesign > 0
+    ) {
+      lpFn17 = WB.lambdaPfAnalysis(eDesign, fyDesign);
+      lrFn17 = WB.lambdaRfAnalysis(eDesign, fyDesign);
+    }
+    var fyMp =
+      fyDesign != null && fyDesign > 0 ? fyDesign : fy;
+
+    var sec = {
+      Zx: Number(p.Zx),
+      Sx: Number(p.Sx),
+      bf: Number(p.bf),
+      tf: Number(p.tf),
+      tw: Number(p.tw),
+      d: Number(p.d),
+      lambdaF: Number(p.lambdaF),
+      lambdaW: Number(p.lambdaW),
+    };
+
+    var r = WB.computeBorn2BeSteelAnalysis(sec, {
       E: eVal,
       Fy: fy,
-      Zx: zx,
-      Sx: p.Sx,
-      bf: p.bf,
-      tf: p.tf,
-      tw: p.tw,
-      d: p.d,
-      lambdaF: p.lambdaF,
-      lambdaW: p.lambdaW,
+      fyMp: fyMp,
+      lpDesign: lpFn17,
+      lrDesign: lrFn17,
       method: state.method,
     });
 
@@ -531,17 +623,25 @@
     out.classList.remove("is-error");
     var v = r.values;
 
-    setText("bendSelectedSection", selected);
-    setVal("bendLambdaF", fmtFixed(v.lambdaF, 4));
-    setVal("bendLambdaW", Number.isFinite(v.lambdaW) ? fmtFixed(v.lambdaW, 4) : "--");
-    setVal("bendPropZx", Number.isFinite(p.Zx) ? fmtFixed(p.Zx, 4) : "--");
-    setVal("bendSx", Number.isFinite(p.Sx) ? fmtFixed(p.Sx, 4) : "--");
+    setText("bendSelectedSection", aiscManualLabelDisplay(p));
+    setVal("bendLambdaF", fmtTrim(v.lambdaF, 4));
+    setVal("bendLambdaW", Number.isFinite(v.lambdaW) ? fmtTrim(v.lambdaW, 4) : "--");
+    setVal("bendPropZx", Number.isFinite(p.Zx) ? fmtTrim(p.Zx, 4) : "--");
+    setVal("bendSx", Number.isFinite(p.Sx) ? fmtTrim(p.Sx, 4) : "--");
     setVal("bendKc", Number.isFinite(v.kc) ? fmtFixed(v.kc, 4) : "--");
-    setVal("bendLambdaPF", fmtFixed(v.lambdaPF, 4));
-    setVal("bendLambdaRF", fmtFixed(v.lambdaRF, 4));
-    setText("bendClass", classLabel(v.classification));
-    setVal("bendMn", fmtFixed(v.Mn, 4));
-    setVal("bendMa", fmtFixed(v.Ma, 4));
+    setVal("bendLambdaPF", fmtTrim(v.lambdaPfDisplay, 4));
+    setVal("bendLambdaRF", fmtTrim(v.lambdaRfDisplay, 4));
+    setVal(
+      "bendLambdaPFDesign",
+      Number.isFinite(v.lambdaPfFn17) ? fmtTrim(v.lambdaPfFn17, 4) : "--"
+    );
+    setVal(
+      "bendLambdaRFDesign",
+      Number.isFinite(v.lambdaRfFn17) ? fmtTrim(v.lambdaRfFn17, 4) : "--"
+    );
+    setText("bendClass", v.flangeClass);
+    setVal("bendMn", fmtFixed(v.Mn_kip_in, 4));
+    setVal("bendMa", fmtFixed(v.Mdesign_kip_in, 4));
 
     out.textContent = "";
   }
@@ -571,12 +671,17 @@
   function bindTabs() {
     var section = getEl("bendingSection");
     if (!section) return;
-    var tabs = section.querySelectorAll(".bending-top-tabs .bending-tab");
+    var tabs = section.querySelectorAll("#formBending .compression-tab[data-bend-tab]");
     var designView = getEl("bendDesignView");
     var analysisView = getEl("bendAnalysisView");
     if (!tabs.length || !designView || !analysisView) return;
 
     function setTabState(isAnalysis) {
+      var capV = document.getElementById("bendCapacityView");
+      if (capV) {
+        capV.classList.remove("is-active");
+        capV.setAttribute("aria-hidden", "true");
+      }
       section.classList.toggle("is-analysis-tab", !!isAnalysis);
       tabs.forEach(function (t) {
         var mode = t.getAttribute("data-bend-tab");
@@ -600,16 +705,15 @@
 
   function bind() {
     var list = getEl("bendSectionList");
-    var toggle = getEl("bendMethodToggle");
-    if (!list || !toggle) return;
+    var methodEl = getEl("bendMethodToggle");
+    if (!list || !methodEl) return;
 
-    toggle.addEventListener("click", function () {
-      state.method = state.method === "ASD" ? "LRFD" : "ASD";
+    methodEl.addEventListener("change", function () {
+      state.method = methodEl.value === "LRFD" ? "LRFD" : "ASD";
       updateMethodUI();
       computeAndRender(true);
     });
 
-    var fyEl = getEl("bendAnalysisFy");
     var eEl = getEl("bendAnalysisE");
     var gradeEl = getEl("bendAnalysisGrade");
     if (gradeEl) {
@@ -619,67 +723,112 @@
       });
     }
     if (eEl) eEl.addEventListener("input", function () { computeAndRender(true); });
-    if (fyEl) fyEl.addEventListener("input", function () { computeAndRender(true); });
-
-    var shapeEl = getEl("bendShapeFilter");
-    var typeEl = getEl("bendTypeFilter");
-    var prevBtn = getEl("bendPagePrev");
-    var nextBtn = getEl("bendPageNext");
-    if (shapeEl) {
-      shapeEl.addEventListener("input", function () {
-        var v = String(shapeEl.value || "").trim().toUpperCase();
-        if (v === "I" || v === "L") {
-          state.selectedShape = v;
-          state.selectedType = v === "L" ? "L" : "W";
-          state.page = 0;
-          if (typeEl) typeEl.value = state.selectedType;
-          populateFilterOptions();
-          rerenderList();
-        }
-      });
-    }
-    if (typeEl) {
-      typeEl.addEventListener("input", function () {
-        var v2 = String(typeEl.value || "").trim().toUpperCase();
-        if (v2 === "W" || v2 === "L") {
-          state.selectedType = v2;
-          state.page = 0;
-          rerenderList();
-        }
-      });
-    }
-    if (prevBtn) {
-      prevBtn.addEventListener("click", function () {
-        if (state.page <= 0) return;
-        state.page -= 1;
-        rerenderList();
-      });
-    }
-    if (nextBtn) {
-      nextBtn.addEventListener("click", function () {
-        state.page += 1;
-        rerenderList();
-      });
-    }
-
-    document.querySelectorAll("[data-bend-clear]").forEach(function (el) {
-      el.addEventListener("click", function () {
-        var which = el.getAttribute("data-bend-clear");
-        if (which === "shape") state.selectedShape = "I";
-        if (which === "type") state.selectedType = "W";
-        if (which === "all") {
-          state.selectedShape = "I";
-          state.selectedType = "W";
-        }
-        state.page = 0;
-        if (shapeEl) shapeEl.value = state.selectedShape;
-        if (typeEl) typeEl.value = state.selectedType;
-        populateFilterOptions();
-        rerenderList();
-      });
-    });
 
     updateMethodUI();
+
+    var filtPanel = getEl("bendSectionFiltersPanel");
+    if (filtPanel) {
+      filtPanel.addEventListener("click", function (ev) {
+        var t = ev.target;
+        if (!t || !t.closest) return;
+
+        var toolBtn = t.closest("[data-bend-tool]");
+        if (toolBtn && state.useExcelDb2Catalog) {
+          ev.preventDefault();
+          var tool = toolBtn.getAttribute("data-bend-tool");
+          if (tool === "shape-multi") {
+            state.excelShapeMulti = !state.excelShapeMulti;
+            if (!state.excelShapeMulti) collapseExcelShapeMulti();
+          } else if (tool === "shape-clear") {
+            state.excelShapesActive = { i: false, l: false };
+          } else if (tool === "type-multi") {
+            state.excelTypeMulti = !state.excelTypeMulti;
+            if (!state.excelTypeMulti) collapseExcelTypeMulti();
+          } else if (tool === "type-clear") {
+            state.excelTypesActive = { W: false, L: false };
+          }
+          syncExcelPickToLegacyStrings();
+          syncExcelFilterUi();
+          if (!selectionStillInFilteredList()) {
+            state.selected = null;
+            state._selectedProps = null;
+          }
+          rerenderList();
+          computeAndRender(true);
+          return;
+        }
+
+        var shapeBtn = t.closest("[data-bend-shape]");
+        if (shapeBtn) {
+          ev.preventDefault();
+          var shape = shapeBtn.getAttribute("data-bend-shape");
+          if (state.useExcelDb2Catalog) {
+            if (state.excelShapeMulti) {
+              state.excelShapesActive[shape] = !state.excelShapesActive[shape];
+            } else {
+              state.excelShapesActive = {
+                i: shape === "i",
+                l: shape === "l",
+              };
+            }
+            syncExcelPickToLegacyStrings();
+            syncExcelFilterUi();
+          } else {
+            state.shapeFilter = shape;
+            syncFilterChipActive(filtPanel, "data-bend-shape", state.shapeFilter);
+          }
+          if (!selectionStillInFilteredList()) {
+            state.selected = null;
+            state._selectedProps = null;
+          }
+          rerenderList();
+          computeAndRender(true);
+          return;
+        }
+
+        var typeBtn = t.closest("[data-bend-type]");
+        if (typeBtn) {
+          ev.preventDefault();
+          var typ = typeBtn.getAttribute("data-bend-type");
+          if (state.useExcelDb2Catalog) {
+            if (state.excelTypeMulti) {
+              state.excelTypesActive[typ] = !state.excelTypesActive[typ];
+            } else {
+              state.excelTypesActive = {
+                W: typ === "W",
+                L: typ === "L",
+              };
+            }
+            syncExcelPickToLegacyStrings();
+            syncExcelFilterUi();
+          } else {
+            state.typeFilter = typ;
+            syncFilterChipActive(filtPanel, "data-bend-type", state.typeFilter);
+          }
+          if (!selectionStillInFilteredList()) {
+            state.selected = null;
+            state._selectedProps = null;
+          }
+          rerenderList();
+          computeAndRender(true);
+        }
+      });
+    }
+  }
+
+  /** Recompute Analysis when Design-calculator material inputs change (Excel cross-sheet refs). */
+  function bindAnalysisFromDesignInputs() {
+    function refresh() {
+      state.useDesignFn17 = true;
+      if (activeBendViewIsAnalysis()) computeAndRender(true);
+    }
+    ["bendingDesignE", "bendingDesignFy"].forEach(function (id) {
+      var el = getEl(id);
+      if (!el) return;
+      el.addEventListener("input", refresh);
+    });
+    var dg = getEl("bendingDesignGrade");
+    if (dg) dg.addEventListener("change", refresh);
   }
 
   function init() {
@@ -695,6 +844,7 @@
     }
     bindTabs();
     bind();
+    bindAnalysisFromDesignInputs();
 
     fetch("data/aisc-sections.json")
       .then(function (r) {
@@ -704,41 +854,59 @@
         return { sections: [] };
       })
       .then(function (data) {
-        var rows = (data && data.sections) ? data.sections : [];
-        state.allSectionRows = rows
+        state.byDesignation = Object.create(null);
+        state.catalogRows = [];
+        state.useExcelDb2Catalog = false;
+        state.excelTypeChoices = null;
+        state.excelShapePickerLabels = null;
+
+        var bac = data && data.bendingAnalysisCatalog;
+        var srcRows =
+          bac && Array.isArray(bac.sections) && bac.sections.length ? bac.sections : null;
+
+        if (srcRows) {
+          state.useExcelDb2Catalog = true;
+          var metaTypes =
+            bac.meta && Array.isArray(bac.meta.typesDistinct) ? bac.meta.typesDistinct : [];
+          state.excelTypeChoices = metaTypes.length ? metaTypes.slice() : ["W", "L"];
+          state.excelShapePickerLabels =
+            bac.meta && Array.isArray(bac.meta.shapePickerLabels)
+              ? bac.meta.shapePickerLabels
+              : null;
+          state.excelShapesActive = { i: true, l: false };
+          state.excelTypesActive = { W: true, L: false };
+          state.excelShapeMulti = false;
+          state.excelTypeMulti = false;
+          state.shapeFilter = "i";
+          state.typeFilter = "W";
+        } else {
+          srcRows = (data && data.sections) ? data.sections : [];
+          state.excelShapesActive = { i: false, l: false };
+          state.excelTypesActive = { W: false, L: false };
+          state.excelShapeMulti = false;
+          state.excelTypeMulti = false;
+          state.shapeFilter = "all";
+          state.typeFilter = "all";
+        }
+
+        state.catalogRows = srcRows
           .map(function (s) {
-            if (!s || !s.designation) return null;
+            var ok = state.useExcelDb2Catalog
+              ? bendingPickerCatalogRow(s)
+              : analysisExcelCatalogRow(s);
+            if (!ok) return null;
             var d = String(s.designation).toUpperCase();
             var copy = Object.assign({}, s, { designation: d });
             state.byDesignation[d] = copy;
             return copy;
           })
           .filter(Boolean);
-        state.allSections = state.allSectionRows
-          .map(function (s) { return s.designation; })
-          .sort();
 
-        var pfx = availablePrefixes();
-        if (pfx.indexOf("W") === -1 && pfx.length) {
-          state.selectedShape = pfx.indexOf("L") !== -1 ? "L" : "I";
-          state.selectedType = state.selectedShape === "L" ? "L" : "W";
-        }
-        var shapeEl = getEl("bendShapeFilter");
-        var typeEl = getEl("bendTypeFilter");
-        if (shapeEl) shapeEl.value = state.selectedShape;
-        if (typeEl) typeEl.value = state.selectedType;
-        populateFilterOptions();
+        renderBendingNsFilterChips();
         rerenderList();
 
-        var listEl = getEl("bendSectionList");
-        if (listEl && !listEl.children.length && state.selectedShape === "I" && state.selectedType === "W") {
-          renderSectionGridColumnPairs(
-            ["W12X279", "W12X305", "W12X35", "W12X45", "W12X53", "W12X65"],
-            ["W12X30", "W12X336", "W12X40", "W12X50", "W12X58", "W12X72"]
-          );
-        }
-
-        if (state.byDesignation["W12X45"]) selectSection("W12X45");
+        if (state.byDesignation["W4X13"]) selectSection("W4X13");
+        else if (state.byDesignation["W12X45"]) selectSection("W12X45");
         else computeAndRender(true);
       });
   }

@@ -1,8 +1,18 @@
 const express = require("express");
 const calculationController = require("../controllers/calculationController");
-const { validateBody, schemas } = require("../middleware/validation");
+const {
+  validateBody,
+  schemas,
+  validateTensionRodDesign,
+} = require("../middleware/validation");
 
 const router = express.Router();
+
+router.post(
+  "/tension-rod-design",
+  validateTensionRodDesign,
+  calculationController.tensionRodDesignSheet
+);
 
 router.post(
   "/tension",

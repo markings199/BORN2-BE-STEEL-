@@ -50,6 +50,25 @@ function tensionRod(req, res, next) {
   }
 }
 
+function tensionRodDesignSheet(req, res, next) {
+  try {
+    const v = req.validated;
+    const result = calculators.tensionRodDesignSheet({
+      method: v.method,
+      deadLoadKips: v.deadLoadKips,
+      liveLoadKips: v.liveLoadKips,
+      Fu: v.Fu,
+    });
+    res.json({
+      check: "tension-rod-design",
+      input: v,
+      result,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 function bending(req, res, next) {
   try {
     const v = req.validated;
@@ -134,6 +153,7 @@ module.exports = {
   tension,
   compression,
   tensionRod,
+  tensionRodDesignSheet,
   bending,
   shear,
   sectionProperties,

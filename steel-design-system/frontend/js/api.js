@@ -62,6 +62,11 @@
     },
 
     /** ASTM grades from Excel export (static JSON / embed); same shape as legacy mocks. */
+    /** `Tension Rod` workbook-aligned demand + required diameter (ksi / kips). */
+    tensionRodDesign: function (body) {
+      return this.post("/api/calculations/tension-rod-design", body || {});
+    },
+
     listSteelGrades: function () {
       var S = global.SteelGradesService;
       if (!S || typeof S.ensureLoaded !== "function") {

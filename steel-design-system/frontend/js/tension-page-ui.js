@@ -272,6 +272,8 @@
   var anFractureOut = byId("tensionAnFracture");
   var agFractureOut = byId("tensionAgFracture");
   var safeSectionOut = byId("tensionSafeSection");
+  var designSectionSelect = byId("tensionDesignSectionSelect");
+  var designSectionPreview = byId("tensionDesignSectionPreview");
   var safeAgOut = byId("tensionSafeAg");
   var safeRemarkOut = byId("tensionSafeRemark");
   var cdCapacityTbody = byId("cdCapacityTbody");
@@ -403,6 +405,7 @@
   var analysisGoverningDisplayStag = byId("analysisGoverningDisplayStag");
   var analysisSafetyStatusStag = byId("analysisSafetyStatusStag");
   var analysisStagGovEqLabel = byId("analysisStagGovEqLabel");
+  var analysisGovEqLabelNon = byId("analysisGovEqLabelNon");
 
   function enforceRequestedVisualLocks() {
     // Hard-apply styles in case cached/native select rendering ignores CSS.
@@ -1304,7 +1307,11 @@
     }
 
     if (minAg === null || !candidateSections.length) {
-      if (safeSectionOut) safeSectionOut.textContent = "--";
+      if (safeSectionOut) {
+        if ("value" in safeSectionOut) safeSectionOut.value = "--";
+        safeSectionOut.textContent = "--";
+      }
+      if (designSectionPreview) designSectionPreview.value = "--";
       safeAgOut.value = "--";
       safeRemarkOut.value = "NO SAFE SECTION";
       if (safeRemarkOut && safeRemarkOut.classList) {
@@ -1326,7 +1333,12 @@
       return rowSafe(s) && Math.abs(s.Ag - minAg) < 1e-4;
     });
 
-    safeSectionOut.textContent = picked.name;
+    if (safeSectionOut) {
+      if ("value" in safeSectionOut) safeSectionOut.value = picked.name;
+      safeSectionOut.textContent = picked.name;
+    }
+    if (designSectionPreview) designSectionPreview.value = picked.name;
+    if (designSectionSelect) designSectionSelect.value = picked.name;
     safeAgOut.value = fmt(picked.Ag, 2);
     safeRemarkOut.value = "SAFE";
     if (safeRemarkOut && safeRemarkOut.classList) {
@@ -1356,6 +1368,16 @@
     shapeSelect.innerHTML = "";
     var first = candidateSections[0] ? candidateSections[0].name : "";
     if (first) shapeSelect.value = first;
+    if (designSectionSelect) {
+      designSectionSelect.innerHTML = "";
+      candidateSections.forEach(function (s) {
+        var opt = document.createElement("option");
+        opt.value = s.name;
+        opt.textContent = s.name;
+        designSectionSelect.appendChild(opt);
+      });
+      designSectionSelect.value = first || "";
+    }
     renderNonStaggeredSelector();
     rebuildStagShapeOptions({ prefer: shapeSelect.value });
   }
@@ -1586,9 +1608,10 @@
 
     var govCap = Math.min(yieldCap, fracCap, bsCap);
     var isSafe = govCap >= demand && demand > 0;
-    if (analysisGoverningDisplay) analysisGoverningDisplay.textContent = fmt(govCap, 3) + " kips";
+    if (analysisGovEqLabelNon) analysisGovEqLabelNon.textContent = method === "LRFD" ? "Tu =" : "Ta =";
+    if (analysisGoverningDisplay) analysisGoverningDisplay.textContent = demand === 0 ? "--" : fmt(govCap, 3);
     if (analysisSafetyStatus) {
-      analysisSafetyStatus.textContent = demand === 0 ? "--" : isSafe ? "SAFE!" : "UNSAFE";
+      analysisSafetyStatus.textContent = demand === 0 ? "--" : isSafe ? "SAFE" : "UNSAFE";
       if (demand === 0) {
         analysisSafetyStatus.classList.remove("is-safe", "is-unsafe");
       } else {
@@ -2044,7 +2067,7 @@
       var platesCard = stagRoot.querySelector(".analysis-stag-plates-card");
       var pathingCard = stagRoot.querySelector(".analysis-stag-pathing-card");
       var guideCard = stagRoot.querySelector(".analysis-stag-user-guide-inline");
-      var situation1 = stagRoot.querySelector(".analysis-stag-center > .analysis-stag-situations");
+      var situation1 = stagRoot.querySelector(".analysis-stag-center .analysis-stag-situations");
       var sr = rect(shearCard);
       var pr = rect(platesCard);
       var par = rect(pathingCard);
@@ -2356,6 +2379,17 @@
     }
     shapeSelect.addEventListener("input", onPrimaryShapeChange);
     shapeSelect.addEventListener("change", onPrimaryShapeChange);
+  }
+  if (designSectionSelect) {
+    designSectionSelect.addEventListener("change", function () {
+      if (designSectionPreview) designSectionPreview.value = designSectionSelect.value || "--";
+      if (shapeSelect && designSectionSelect.value) {
+        shapeSelect.value = designSectionSelect.value;
+        renderNonStaggeredSelector();
+        rebuildStagShapeOptions({ prefer: shapeSelect.value });
+      }
+      recomputeAll();
+    });
   }
 
   initSteelOptions();

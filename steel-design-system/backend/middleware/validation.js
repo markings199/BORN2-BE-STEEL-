@@ -90,4 +90,68 @@ const schemas = {
   ],
 };
 
-module.exports = { validateBody, schemas };
+/** Born2BeSteel `Tension Rod` sheet inputs (ksi / kips). */
+function validateTensionRodDesign(req, res, next) {
+  const errors = [];
+
+  const method = String(req.body.method ?? "LRFD")
+    .trim()
+    .toUpperCase();
+  if (method !== "LRFD" && method !== "ASD") {
+    errors.push('method must be "LRFD" or "ASD"');
+  }
+
+  function nonNegative(name, val, required = true) {
+    if (val === undefined || val === null || val === "") {
+      if (!required) return undefined;
+      errors.push(`${name} is required`);
+      return undefined;
+    }
+    const n = Number(val);
+    if (!Number.isFinite(n)) {
+      errors.push(`${name} must be a finite number`);
+      return undefined;
+    }
+    if (n < 0) {
+      errors.push(`${name} must be >= 0`);
+      return undefined;
+    }
+    return n;
+  }
+
+  const deadLoadKips = nonNegative("deadLoadKips", req.body.deadLoadKips);
+  const liveLoadKips = nonNegative("liveLoadKips", req.body.liveLoadKips);
+
+  const fuRaw = req.body.Fu;
+  if (fuRaw === undefined || fuRaw === null || fuRaw === "") {
+    errors.push("Fu is required");
+  } else {
+    const Fu = Number(fuRaw);
+    if (!Number.isFinite(Fu)) errors.push("Fu must be a finite number");
+    else if (Fu <= 0) errors.push("Fu must be positive");
+  }
+
+  let modulusEKsi;
+  const eRaw = req.body.modulusEKsi;
+  if (eRaw !== undefined && eRaw !== null && eRaw !== "") {
+    const E = Number(eRaw);
+    if (!Number.isFinite(E)) errors.push("modulusEKsi must be a finite number");
+    else if (E <= 0) errors.push("modulusEKsi must be positive");
+    else modulusEKsi = E;
+  }
+
+  if (errors.length) {
+    return res.status(400).json({ error: "Validation failed", details: errors });
+  }
+
+  req.validated = {
+    method,
+    deadLoadKips,
+    liveLoadKips,
+    Fu: Number(req.body.Fu),
+    modulusEKsi,
+  };
+  next();
+}
+
+module.exports = { validateBody, schemas, validateTensionRodDesign };
