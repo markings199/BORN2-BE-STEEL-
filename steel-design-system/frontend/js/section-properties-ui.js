@@ -12,6 +12,7 @@
   var mainImage = document.getElementById("sectionPropsMainImage");
   var openDbBtn = document.getElementById("openAiscDatabaseBtn");
   var backBtn = document.getElementById("backToSectionDashboardBtn");
+  /* Panel is position:fixed at document body; element must exist before this synchronously loaded script runs. */
   var dbPanel = document.getElementById("aiscDbPanel");
   var dbBackdrop = dbPanel ? dbPanel.querySelector("[data-close-db]") : null;
   var dbSearch = document.getElementById("aiscDbSearchInput");
@@ -28,7 +29,15 @@
 
   if (!form || !secSel || !searchInput || !dbPanel || !dbBody || !chipWrap) return;
 
+  /**
+   * Excel `Section Properties`!`J28` — drives `FILTER` on `Key Geometric Properties`
+   * Table1: `ISNUMBER(SEARCH(J28, AISC_Manual_Label))`. First spill row (`A2305`) uses **sheet row order**.
+   */
+  var EXCEL_SECTION_PROPERTIES_J28 = "W10";
+
   var sectionRows = [];
+  /** Same rows as `sectionRows`, but in workbook export order (Excel Table1 physical order). */
+  var sectionRowsSheetOrder = [];
   var selectedShapePrefix = "";
   var dbSortKey = "designation";
   var dbSortDir = "asc";
@@ -171,44 +180,41 @@
       .replace(/-/g, "");
   }
 
+  function rowMatchesSearchNeedle(row, needleUpper) {
+    var d = String(row && row.designation || "").toUpperCase();
+    var m = String(manualLabelOfRow(row) || "").toUpperCase();
+    return (
+      (d && d.indexOf(needleUpper) !== -1) ||
+      (m && m.indexOf(needleUpper) !== -1)
+    );
+  }
+
+  /**
+   * Match Excel `FILTER` spill row 1: first Key Geometric Properties row where
+   * `SEARCH(query, AISC_Manual_Label)` succeeds — substring, case-insensitive, **sheet order**.
+   */
   function findSectionRow(query) {
     var qRaw = String(query || "").trim();
     var q = normalizeDesignationKey(qRaw);
     if (!q) return null;
 
-    var scored = sectionRows
-      .map(function (row) {
-        var designation = String(row && row.designation || "");
-        var manual = manualLabelOfRow(row);
-        var type = String(typeOfRow(row) || "");
+    var exactSheet = sectionRowsSheetOrder.find(function (row) {
+      return normalizeDesignationKey(row && row.designation) === q;
+    });
+    if (exactSheet) return exactSheet;
 
-        var dNorm = normalizeDesignationKey(designation);
-        var mNorm = normalizeDesignationKey(manual);
-        var tNorm = normalizeDesignationKey(type);
+    var exactManual = sectionRowsSheetOrder.find(function (row) {
+      return normalizeDesignationKey(manualLabelOfRow(row)) === q;
+    });
+    if (exactManual) return exactManual;
 
-        var score = -1;
-        if (dNorm === q) score = 1000; // exact section designation
-        else if (mNorm === q) score = 920; // exact manual label
-        else if (dNorm.indexOf(q) === 0) score = 820; // designation prefix (e.g., W10)
-        else if (mNorm.indexOf(q) === 0) score = 780; // manual label prefix
-        else if (tNorm === q) score = 720; // exact type (W/C/L/HSS/...)
-        else if (dNorm.indexOf(q) !== -1) score = 620; // designation contains
-        else if (mNorm.indexOf(q) !== -1) score = 560; // manual label contains
-        else if (tNorm.indexOf(q) === 0) score = 500; // type prefix
+    var needle = qRaw.toUpperCase();
+    for (var i = 0; i < sectionRowsSheetOrder.length; i++) {
+      var row = sectionRowsSheetOrder[i];
+      if (rowMatchesSearchNeedle(row, needle)) return row;
+    }
 
-        return { row: row, score: score };
-      })
-      .filter(function (x) {
-        return x.score >= 0;
-      })
-      .sort(function (a, b) {
-        if (b.score !== a.score) return b.score - a.score;
-        var da = String(a.row && a.row.designation || "");
-        var db = String(b.row && b.row.designation || "");
-        return da.localeCompare(db, undefined, { numeric: true, sensitivity: "base" });
-      });
-
-    return scored.length ? scored[0].row : null;
+    return null;
   }
 
   function applySectionRow(row, opts) {
@@ -501,7 +507,11 @@
         loadOne(exact);
         return;
       }
-      if (sectionRows.length) applySectionRow(sectionRows[0]);
+      var def =
+        findSectionRow(EXCEL_SECTION_PROPERTIES_J28) ||
+        sectionRowsSheetOrder[0] ||
+        sectionRows[0];
+      if (def) applySectionRow(def);
     });
   }
 
@@ -534,10 +544,13 @@
       );
     }
     var pick =
-      findSectionRow("W10X112") ||
-      findSectionRow("W10") ||
+      findSectionRow(EXCEL_SECTION_PROPERTIES_J28) ||
+      sectionRowsSheetOrder[0] ||
       (sectionRows.length ? sectionRows[0] : null);
-    if (pick) loadOne(pick.designation);
+    if (pick) {
+      applySectionRow(pick);
+      if (searchInput) searchInput.value = EXCEL_SECTION_PROPERTIES_J28;
+    }
   }
 
   fetch("data/aisc-sections.json")
@@ -546,11 +559,14 @@
       return r.json();
     })
     .then(function (payload) {
-      sectionRows = sortByDesignation(payload.sections || []);
+      var raw = payload.sections || [];
+      sectionRowsSheetOrder = raw;
+      sectionRows = sortByDesignation(raw);
       finishSectionCatalogInit();
     })
     .catch(function () {
       sectionRows = [];
+      sectionRowsSheetOrder = [];
       finishSectionCatalogInit();
       if (searchInput && typeof searchInput.setCustomValidity === "function") {
         searchInput.setCustomValidity("Excel section catalog failed to load.");

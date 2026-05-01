@@ -3,6 +3,7 @@
 
   /** Preferred default when present in Excel export (Bending Analysis workbook). */
   var PREFERRED_ANALYSIS_GRADE = "A618 Gr. I, II";
+  var PREFERRED_ANALYSIS_FY = 50;
 
   function baWorkbook() {
     return typeof window !== "undefined" ? window.BendingAnalysisWorkbook : null;
@@ -258,6 +259,7 @@
     var svc = steelGradeSvc();
     var fy = svc && typeof svc.fyFor === "function" ? svc.fyFor(selected) : null;
     if (Number.isFinite(fy)) fyEl.value = String(fy);
+    else if (selected === PREFERRED_ANALYSIS_GRADE) fyEl.value = String(PREFERRED_ANALYSIS_FY);
   }
 
   function pickDefaultGradeAstm(list) {
@@ -285,6 +287,12 @@
       opt.textContent = String(gr.astm);
       el.appendChild(opt);
     });
+    if (!list.some(function (g) { return g && String(g.astm) === PREFERRED_ANALYSIS_GRADE; })) {
+      var prefOpt = document.createElement("option");
+      prefOpt.value = PREFERRED_ANALYSIS_GRADE;
+      prefOpt.textContent = PREFERRED_ANALYSIS_GRADE;
+      el.appendChild(prefOpt);
+    }
     var keys = {};
     list.forEach(function (gr) {
       if (gr && gr.astm) keys[String(gr.astm)] = true;

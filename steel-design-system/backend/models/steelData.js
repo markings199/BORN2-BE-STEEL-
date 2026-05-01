@@ -1,5 +1,16 @@
-/* Sample W-shapes (in, in², in⁴, in³); verify against AISC Manual for production. */
-const sections = [
+const fs = require("fs");
+const path = require("path");
+
+function normalizeDesignationKey(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/×/g, "X")
+    .replace(/-/g, "");
+}
+
+/** Fallback when `frontend/data/aisc-sections.json` is missing or empty. */
+const SAMPLE_SECTIONS = [
   {
     designation: "W12x19",
     weightPlf: 19,
@@ -53,9 +64,40 @@ const sections = [
   },
 ];
 
-const byDesignation = new Map(
-  sections.map((s) => [s.designation.toUpperCase(), s])
-);
+let sections = [];
+const byDesignation = new Map();
+
+function loadSections() {
+  const catalogPath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "frontend",
+    "data",
+    "aisc-sections.json"
+  );
+  sections = [];
+  byDesignation.clear();
+  if (fs.existsSync(catalogPath)) {
+    try {
+      const payload = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+      if (Array.isArray(payload.sections) && payload.sections.length) {
+        sections = payload.sections;
+      }
+    } catch {
+      sections = [];
+    }
+  }
+  if (!sections.length) {
+    sections = SAMPLE_SECTIONS.slice();
+  }
+  for (const row of sections) {
+    const key = normalizeDesignationKey(row.designation);
+    if (key) byDesignation.set(key, row);
+  }
+}
+
+loadSections();
 
 function listSections() {
   return sections.map(({ designation, weightPlf, Ag, d, bf }) => ({
@@ -69,7 +111,7 @@ function listSections() {
 
 function getSection(designation) {
   if (!designation || typeof designation !== "string") return null;
-  return byDesignation.get(designation.trim().toUpperCase()) || null;
+  return byDesignation.get(normalizeDesignationKey(designation)) || null;
 }
 
 module.exports = { sections, listSections, getSection };

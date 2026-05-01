@@ -167,9 +167,9 @@
     return !!resolveMaterialImagePath(astm);
   }
 
+  /** Match Excel display: designation text is taken verbatim from Table48 (e.g. L8 "A709 36"). */
   function formatAstmTitle(astm) {
-    var s = astm.replace(/Gr\.(\S)/, "Gr. $1");
-    return "ASTM " + s;
+    return "ASTM " + String(astm || "").trim().replace(/\s+/g, " ");
   }
 
   function notesToBullets(notes) {
@@ -184,45 +184,16 @@
     return [notes.trim()];
   }
 
+  /* Excel Steel Grade sheet supplies ASTM / Fy / Fu only (Table48); no per-grade prose cells — omit added commentary. */
   function getExtraNote(astm) {
-    if (astm.indexOf("A1085") !== -1) {
-      return "Acceptable for Round HSS & Rectangular HSS — enhanced ductility; verify AISC 360 & project specs.";
-    }
-    if (astm.indexOf("A992") !== -1) {
-      return "Preferred for W-shapes; excellent weldability and seismic provisions.";
-    }
-    if (astm.indexOf("A500") !== -1) {
-      return "Standard cold-formed HSS; see AISC Manual tables.";
-    }
-    if (astm.indexOf("A501") !== -1) {
-      return "Hot-formed pipe; suited to columns and compression members.";
-    }
-    if (astm.indexOf("A588") !== -1) {
-      return "Weathering steel; often used unpainted in bridges.";
-    }
-    return "Refer to AISC 360-22 and the governing ASTM standard.";
+    return "";
   }
 
   function getAcademicNote(astm) {
-    if (astm.indexOf("A992") !== -1) {
-      return "Academic note: ASTM A992 is commonly specified for W-shapes in building frames. Use Fy = 50 ksi and Fu = 65 ksi for preliminary LRFD strength checks, then verify member stability (including LTB), connection behavior, and seismic detailing per AISC 360-22 and the governing building code.";
-    }
-    if (astm.indexOf("A1085") !== -1) {
-      return "Academic note: ASTM A1085 provides tighter geometric tolerances and is frequently used for HSS members. For design studies, confirm wall thickness assumptions, local slenderness classification, and connection limit states in accordance with AISC 360-22 and the applicable ASTM product specification.";
-    }
-    if (astm.indexOf("A500") !== -1) {
-      return "Academic note: ASTM A500 grades are widely used for cold-formed HSS. Treat tabulated Fy/Fu as nominal values for preliminary analysis and check section classification, effective properties, and connection requirements under AISC 360-22 before finalizing design.";
-    }
-    if (astm.indexOf("A588") !== -1 || astm.indexOf("A709 50W") !== -1 || astm.indexOf("A847") !== -1) {
-      return "Academic note: Weathering steel grades may reduce maintenance demands in suitable exposure conditions. For coursework and practice, include service environment assumptions and verify corrosion-performance criteria, fracture considerations, and code-specific detailing requirements.";
-    }
-    return "Academic note: Material properties shown are nominal values intended for preliminary LRFD evaluation. Final design should verify applicable ASTM product form, AISC 360-22 limit states, member stability, and project-specific serviceability and detailing criteria.";
+    return "";
   }
 
   function getShortGuideNote(astm) {
-    if (/A500|A501|A1085|A618/i.test(astm)) {
-      return "HSS/Pipe family: prioritize wall slenderness checks, connection detailing, and local buckling limits for LRFD design.";
-    }
     return "";
   }
 

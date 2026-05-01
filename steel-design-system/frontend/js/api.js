@@ -64,7 +64,28 @@
     /** ASTM grades from Excel export (static JSON / embed); same shape as legacy mocks. */
     /** `Tension Rod` workbook-aligned demand + required diameter (ksi / kips). */
     tensionRodDesign: function (body) {
-      return this.post("/api/calculations/tension-rod-design", body || {});
+      var payload = body || {};
+      var relPath = "/api/calculations/tension-rod-design";
+      var host = typeof window !== "undefined" && window.location
+        ? window.location.hostname
+        : "";
+      var port = typeof window !== "undefined" && window.location
+        ? String(window.location.port || "")
+        : "";
+      var isLocalHost =
+        host === "localhost" || host === "127.0.0.1" || host === "::1";
+      var isLikelyStaticHost = isLocalHost && port && port !== "3040";
+
+      // When frontend is served by a static dev server (e.g. :3000), call the API server directly.
+      if (isLikelyStaticHost) {
+        return this.post("http://localhost:3040" + relPath, payload).catch(
+          function () {
+            // Fallback to same-origin path for environments that proxy /api.
+            return global.SteelAPI.post(relPath, payload);
+          }
+        );
+      }
+      return this.post(relPath, payload);
     },
 
     listSteelGrades: function () {

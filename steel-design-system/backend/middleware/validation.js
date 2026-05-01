@@ -87,6 +87,8 @@ const schemas = {
     { key: "Sy", opts: { required: false, ...positive } },
     { key: "Zy", opts: { required: false, ...positive } },
     { key: "Ag", opts: { required: false, ...positive } },
+    { key: "rx", opts: { required: false, ...positive } },
+    { key: "ry", opts: { required: false, ...positive } },
   ],
 };
 

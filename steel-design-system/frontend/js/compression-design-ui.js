@@ -25,6 +25,23 @@
     ],
   };
 
+  /** `Compression-Design ` workbook defaults (Born2BeSteel Final (2).xlsx). */
+  var EXCEL_COMPRESSION_DESIGN_DEFAULTS = {
+    method: "LRFD", // G15
+    grade: "A992", // H29
+    deadLoadKips: 90, // H43
+    liveLoadKips: 320, // H53
+    modulusEKsi: 29000, // H61
+    slenderness: {
+      X1: { cond: "FIXED-PINNED", L: 30 }, // R45, X45
+      X2: { cond: "N/A", L: "" }, // R49, X49(blank)
+      X3: { cond: "N/A", L: "" }, // R52, X52(blank)
+      Y1: { cond: "PINNED-PINNED", L: 8 }, // R55, X55
+      Y2: { cond: "FIXED-PINNED", L: 14 }, // R58, X58
+      Y3: { cond: "PINNED-PINNED", L: 8 }, // R60, X60
+    },
+  };
+
   function el(id) {
     return document.getElementById(id);
   }
@@ -176,6 +193,36 @@
       o.textContent = b.label;
       sel.appendChild(o);
     });
+  }
+
+  function setAxisDefault(axis, rowIdx, cfg) {
+    var cond = el("compression" + axis + rowIdx + "Cond");
+    var Lin = el("compression" + axis + rowIdx + "L");
+    if (cond && cfg && cfg.cond != null) cond.value = String(cfg.cond);
+    if (Lin && cfg) Lin.value = cfg.L === "" ? "" : String(cfg.L);
+  }
+
+  function applyExcelCompressionDesignDefaults() {
+    var methodSel = el("compressionDesignMethod");
+    var gradeSel = el("compressionDesignGrade");
+    var fyIn = el("compressionDesignFy");
+    var eIn = el("compressionDesignE");
+    var dlIn = el("compressionDesignDl");
+    var llIn = el("compressionDesignLl");
+
+    if (methodSel) methodSel.value = EXCEL_COMPRESSION_DESIGN_DEFAULTS.method;
+    if (gradeSel) gradeSel.value = EXCEL_COMPRESSION_DESIGN_DEFAULTS.grade;
+    if (dlIn) dlIn.value = String(EXCEL_COMPRESSION_DESIGN_DEFAULTS.deadLoadKips);
+    if (llIn) llIn.value = String(EXCEL_COMPRESSION_DESIGN_DEFAULTS.liveLoadKips);
+    if (eIn) eIn.value = String(EXCEL_COMPRESSION_DESIGN_DEFAULTS.modulusEKsi);
+    if (fyIn) fyIn.value = String(fyFromGrade(EXCEL_COMPRESSION_DESIGN_DEFAULTS.grade));
+
+    setAxisDefault("X", 1, EXCEL_COMPRESSION_DESIGN_DEFAULTS.slenderness.X1);
+    setAxisDefault("X", 2, EXCEL_COMPRESSION_DESIGN_DEFAULTS.slenderness.X2);
+    setAxisDefault("X", 3, EXCEL_COMPRESSION_DESIGN_DEFAULTS.slenderness.X3);
+    setAxisDefault("Y", 1, EXCEL_COMPRESSION_DESIGN_DEFAULTS.slenderness.Y1);
+    setAxisDefault("Y", 2, EXCEL_COMPRESSION_DESIGN_DEFAULTS.slenderness.Y2);
+    setAxisDefault("Y", 3, EXCEL_COMPRESSION_DESIGN_DEFAULTS.slenderness.Y3);
   }
 
   /** Workbook Capacity Analysis footer: weak-axis max KL (ft) with “Assuming Kly Governs”. */
@@ -381,26 +428,7 @@
       });
     });
 
-    // Defaults matching workbook screenshot (`Compression-Design`)
-    var x1 = el("compressionX1Cond");
-    var x1l = el("compressionX1L");
-    if (x1) x1.value = "FIXED-PINNED";
-    if (x1l) x1l.value = "30";
-    var y1 = el("compressionY1Cond");
-    var y3 = el("compressionY3Cond");
-    if (y1) y1.value = "PINNED-PINNED";
-    if (y3) y3.value = "PINNED-PINNED";
-    [["compressionX2Cond", "compressionX2L"], ["compressionX3Cond", "compressionX3L"]].forEach(function (pair) {
-      var s = el(pair[0]);
-      var L = el(pair[1]);
-      if (s) s.value = "N/A";
-      if (L) L.value = "";
-    });
-    var y2 = el("compressionY2Cond");
-    var y2l = el("compressionY2L");
-    if (y2) y2.value = "FIXED-PINNED";
-    if (y2l) y2l.value = "14";
-
+    applyExcelCompressionDesignDefaults();
     recompute();
   }
 

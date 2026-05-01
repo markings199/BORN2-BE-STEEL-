@@ -120,6 +120,8 @@ function sectionProperties(req, res, next) {
         Sy: v.Sy ?? catalog.Sy,
         Zy: v.Zy ?? catalog.Zy,
         Ag: v.Ag ?? catalog.Ag,
+        rx: v.rx ?? catalog.rx,
+        ry: v.ry ?? catalog.ry,
       });
     }
 
@@ -130,7 +132,9 @@ function sectionProperties(req, res, next) {
       v.Iy !== undefined ||
       v.Sy !== undefined ||
       v.Zy !== undefined ||
-      v.Ag !== undefined;
+      v.Ag !== undefined ||
+      v.rx !== undefined ||
+      v.ry !== undefined;
 
     if (!hasAny) {
       return res.status(400).json({

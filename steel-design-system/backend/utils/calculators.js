@@ -179,21 +179,38 @@ function shearWeb({ Fy, Aw, Vu, phiV = PHI_V_DEFAULT }) {
 
 function sectionPropertiesReport(props) {
   const out = { ...props };
-  const rx =
-    props.Ix !== undefined && props.Ag !== undefined && props.Ag > 0
-      ? Math.sqrt(props.Ix / props.Ag)
-      : undefined;
-  const ry =
-    props.Iy !== undefined && props.Ag !== undefined && props.Ag > 0
-      ? Math.sqrt(props.Iy / props.Ag)
-      : undefined;
-  if (rx !== undefined) out.rx = Number(rx.toFixed(4));
-  if (ry !== undefined) out.ry = Number(ry.toFixed(4));
+
+  let rx;
+  if (props.rx !== undefined && Number.isFinite(Number(props.rx))) {
+    rx = Number(props.rx);
+  } else if (
+    props.Ix !== undefined &&
+    props.Ag !== undefined &&
+    props.Ag > 0
+  ) {
+    rx = Number(Math.sqrt(props.Ix / props.Ag).toFixed(4));
+  }
+
+  let ry;
+  if (props.ry !== undefined && Number.isFinite(Number(props.ry))) {
+    ry = Number(props.ry);
+  } else if (
+    props.Iy !== undefined &&
+    props.Ag !== undefined &&
+    props.Ag > 0
+  ) {
+    ry = Number(Math.sqrt(props.Iy / props.Ag).toFixed(4));
+  }
+
+  if (rx !== undefined) out.rx = rx;
+  if (ry !== undefined) out.ry = ry;
+
   return {
-    unit: "Lengths in inches; Ag (in^2); I (in^4); S, Z (in^3)",
+    unit: "Lengths in inches; Ag (in^2); I (in^4); S, Z (in^3); rx, ry (in)",
     properties: out,
     notes: [
-      "rx = sqrt(Ix/Ag), ry = sqrt(Iy/Ag) when Ix, Iy, and Ag are provided.",
+      "When rx and ry are supplied (Key Geometric Properties / catalog), those values are used as in Excel.",
+      "Otherwise rx = sqrt(Ix/Ag), ry = sqrt(Iy/Ag) when the inputs needed are present.",
     ],
   };
 }

@@ -56,6 +56,17 @@
     grades: null,
   };
 
+  /** `Tension Rod` sheet defaults (Born2BeSteel Final (2).xlsx). */
+  var EXCEL_TENSION_ROD_DEFAULTS = {
+    method: "LRFD", // N11
+    grade: "A53 Gr. B", // O5
+    fy: 35, // I12
+    fu: 60, // I14
+    deadLoadKips: 4, // I22
+    liveLoadKips: 6, // I25
+    modulusEKsi: 29000, // J31
+  };
+
   var syncTimer = null;
   var syncGen = 0;
 
@@ -119,13 +130,24 @@
 
   function getFallbackGrades() {
     var list = window.Born2BeSteel && window.Born2BeSteel.steelGrades ? window.Born2BeSteel.steelGrades : [];
-    return (list || [])
+    var out = (list || [])
       .map(function (g) {
         return { astm: String(g.astm || "").trim(), fy: Number(g.fy), fu: Number(g.fu) };
       })
       .filter(function (g) {
         return g.astm && Number.isFinite(g.fy) && Number.isFinite(g.fu);
       });
+    var hasDefault = out.some(function (g) {
+      return g.astm === EXCEL_TENSION_ROD_DEFAULTS.grade;
+    });
+    if (!hasDefault) {
+      out.push({
+        astm: EXCEL_TENSION_ROD_DEFAULTS.grade,
+        fy: EXCEL_TENSION_ROD_DEFAULTS.fy,
+        fu: EXCEL_TENSION_ROD_DEFAULTS.fu,
+      });
+    }
+    return out;
   }
 
   function setMethod(next) {
@@ -282,6 +304,18 @@
     getGradeList().then(function (list) {
       if (!list || !list.length) list = getFallbackGrades();
       state.grades = list && list.length ? list : [];
+      if (state.grades && state.grades.length) {
+        var hasDefault = state.grades.some(function (g) {
+          return String(g.astm || "").trim() === EXCEL_TENSION_ROD_DEFAULTS.grade;
+        });
+        if (!hasDefault) {
+          state.grades.push({
+            astm: EXCEL_TENSION_ROD_DEFAULTS.grade,
+            fy: EXCEL_TENSION_ROD_DEFAULTS.fy,
+            fu: EXCEL_TENSION_ROD_DEFAULTS.fu,
+          });
+        }
+      }
       if (gradeSel) {
         gradeSel.innerHTML = "";
         state.grades.forEach(function (g) {
@@ -291,11 +325,11 @@
           gradeSel.appendChild(opt);
         });
       }
-      var preferred = state.grades.find(function (g) {
-        return String(g.astm).trim() === "A53 Gr. B";
-      });
-      setMethod("LRFD");
-      setGrade(preferred ? preferred.astm : state.grades[0] ? state.grades[0].astm : "");
+      if (dlEl) dlEl.value = String(EXCEL_TENSION_ROD_DEFAULTS.deadLoadKips);
+      if (llEl) llEl.value = String(EXCEL_TENSION_ROD_DEFAULTS.liveLoadKips);
+      if (eEl) eEl.value = String(EXCEL_TENSION_ROD_DEFAULTS.modulusEKsi);
+      setMethod(EXCEL_TENSION_ROD_DEFAULTS.method);
+      setGrade(EXCEL_TENSION_ROD_DEFAULTS.grade);
       recompute();
     });
   }

@@ -8,6 +8,21 @@ const {
 
 const router = express.Router();
 
+router.get("/tension-rod-design", (req, res) => {
+  res.json({
+    ok: true,
+    method: "POST",
+    path: "/api/calculations/tension-rod-design",
+    body: {
+      method: "LRFD | ASD",
+      deadLoadKips: "number (≥ 0)",
+      liveLoadKips: "number (≥ 0)",
+      Fu: "number (> 0), ksi",
+      modulusEKsi: "optional number (> 0), ksi",
+    },
+  });
+});
+
 router.post(
   "/tension-rod-design",
   validateTensionRodDesign,

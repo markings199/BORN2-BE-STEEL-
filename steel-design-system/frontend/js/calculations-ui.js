@@ -519,6 +519,28 @@
     var compressionAnalysisCatalog = [];
     var compressionNsShapeFilter = "all";
     var compressionNsTypeFilter = "all";
+    /** `Compression-Analysis` workbook defaults (Born2BeSteel Final (2).xlsx). */
+    var EXCEL_COMPRESSION_ANALYSIS_DEFAULTS = {
+      method: "LRFD", // G15
+      grade: "A992", // H25
+      fy: 50, // G29 (from grade)
+      fu: 65, // K29 (from grade)
+      modulusEKsi: 29000, // I31
+      sectionDesignation: "L10X10X1-1/4", // selected list row in workbook snapshot (Ag=23.4, rx=ry=3.02)
+      shapeFilter: "L",
+      typeFilter: "L",
+      slenderness: {
+        X1: { cond: "PINNED-PINNED", L: 50 }, // Q47, W47
+        X2: { cond: "N/A", L: "" }, // Q51, W51(blank)
+        X3: { cond: "N/A", L: "" }, // Q54, W54(blank)
+        Y1: { cond: "PINNED-PINNED", L: 28 }, // Q57, W57
+        Y2: { cond: "N/A", L: "" }, // Q60, W60(blank)
+        Y3: { cond: "N/A", L: "" }, // Q62, W62(blank)
+      },
+      // Load fields are not visibly used in the workbook snapshot but keep deterministic defaults from compression page.
+      deadLoadKips: 90,
+      liveLoadKips: 320,
+    };
 
     function n(id, fallback) {
       var el = document.getElementById(id);
@@ -578,6 +600,13 @@
         d = sec.d;
       if (!(bf > 0 && tf > 0 && tw > 0 && d > 0)) return { lf: NaN, lw: NaN };
       return { lf: bf / (2 * tf), lw: (d - 2 * tf) / tw };
+    }
+    /** UI Shapes map: workbook/I-shape bucket displays as `I` while underlying type remains `W`. */
+    function compressionShapeFromSection(sec) {
+      if (!sec) return "";
+      var t = String(sec.type || "").toUpperCase().trim();
+      if (t === "W") return "I";
+      return t;
     }
     function populateCompressionAnalysisGradeSelect() {
       var sel = document.getElementById("compressionAGrade");
@@ -645,6 +674,13 @@
     }
     /** Mirrors `Compression-Analysis`: AG47–AG62 slenderness grid, T64 govern, AG15/AG20/AG24/AG32 strengths; AB8/AH8/X10/AF10 compactness (`<` test). */
     function computeCompressionAnalysis(runId) {
+      function fmtFixed(n, d) {
+        return Number.isFinite(n) ? Number(n).toFixed(d) : "";
+      }
+      function fmtTrim(n, d) {
+        if (!Number.isFinite(n)) return "";
+        return Number(Number(n).toFixed(d)).toString();
+      }
       var rx = Math.max(1e-6, n("compressionARx", 3.02));
       var ry = Math.max(1e-6, n("compressionARy", 3.02));
       var E = Math.max(1e-6, n("compressionAE", 29000));
@@ -678,14 +714,14 @@
             : document.getElementById("compressionAry" + suff);
         if (rCell)
           rCell.textContent =
-            active ? Number(rAxis.toFixed(4)).toString() : "";
+            active ? fmtFixed(rAxis, 2) : "";
 
         var klSpan = document.getElementById("compressionAKL" + axis.toLowerCase() + idx);
         var klrSpan = document.getElementById("compressionAKLr" + axis.toLowerCase() + idx);
         if (klSpan)
-          klSpan.textContent = Number.isFinite(klFt) ? Number(klFt.toFixed(4)).toString() : "";
+          klSpan.textContent = Number.isFinite(klFt) ? fmtTrim(klFt, 4) : "";
         if (klrSpan)
-          klrSpan.textContent = Number.isFinite(klr) ? Number(klr.toFixed(4)).toString() : "";
+          klrSpan.textContent = Number.isFinite(klr) ? fmtFixed(klr, 3) : "";
 
         return {
           axis: axis,
@@ -731,16 +767,18 @@
 
       setText(
         "compressionAKLGovCaption",
-        "Governing KL/r ="
+        govSlice
+          ? "KL/r" + String(govSlice.axis || "").toLowerCase() + " Governs ="
+          : "Governing KL/r ="
       );
       setText(
         "compressionAKLrGov",
-        klrGov > 0 ? Number(klrGov.toFixed(4)).toString() : "--"
+        klrGov > 0 ? fmtFixed(klrGov, 4) : "--"
       );
       setText(
         "compressionAKLGov",
         govSlice && Number.isFinite(govSlice.klFt)
-          ? "KL = " + Number(govSlice.klFt.toFixed(4)).toString()
+          ? "KL = " + fmtTrim(govSlice.klFt, 4)
           : "KL = --"
       );
 
@@ -798,14 +836,14 @@
       setClassLabel(
         "compressionAFlangeClass",
         flangeCompact,
-        "COMPACT FLANGE",
-        "SLENDER FLANGE"
+        "Slender Flange",
+        "Slender Flange"
       );
       setClassLabel(
         "compressionAWebClass",
         webCompact,
-        "COMPACT WEB",
-        "SLENDER WEB"
+        "Slender Web",
+        "Slender Web"
       );
 
       var elFe = document.getElementById("compressionAFe");
@@ -818,8 +856,8 @@
         elFcr.value = Number.isFinite(Fcr) ? Fcr.toFixed(4) : "--";
       if (elFn) elFn.value = Number.isFinite(Pn) ? Pn.toFixed(4) : "--";
       if (Number.isFinite(designStrength)) {
-        if (elTu) elTu.value = designStrength.toFixed(4);
-        setText("compressionATuDisplay", Number(designStrength.toFixed(4)).toString());
+        if (elTu) elTu.value = fmtFixed(designStrength, 4);
+        setText("compressionATuDisplay", fmtFixed(designStrength, 4));
       } else {
         if (elTu) elTu.value = "--";
         setText("compressionATuDisplay", "--");
@@ -831,7 +869,7 @@
       var isSafe = demandPositive && Number.isFinite(designStrength) && designStrength > demandGov;
       if (govCapEl) {
         govCapEl.textContent = Number.isFinite(designStrength)
-          ? Number(designStrength.toFixed(4)).toString()
+          ? fmtFixed(designStrength, 4)
           : "--";
       }
       if (statEl) {
@@ -999,7 +1037,6 @@
         var seen = {};
         compressionAnalysisCatalog.forEach(function (s) {
           if (!s) return;
-          if (compressionNsShapeFilter !== "all" && s.type !== compressionNsShapeFilter) return;
           var t = s.type;
           if (!t || seen[t]) return;
           seen[t] = true;
@@ -1014,7 +1051,7 @@
       function filteredRows() {
         var rows = compressionAnalysisCatalog.filter(function (s) {
           if (!s) return false;
-          var okS = compressionNsShapeFilter === "all" || s.type === compressionNsShapeFilter;
+          var okS = compressionNsShapeFilter === "all" || compressionShapeFromSection(s) === compressionNsShapeFilter;
           var okT = compressionNsTypeFilter === "all" || s.type === compressionNsTypeFilter;
           return okS && okT;
         });
@@ -1050,11 +1087,11 @@
 
       function renderCompressionNsShapeChips() {
         shapeIconsHost.innerHTML = "";
-        ["all", "L", "W"].forEach(function (id) {
+        ["all", "L", "I"].forEach(function (id) {
           var b = document.createElement("button");
           b.type = "button";
           b.className = "ns-chip-btn" + (compressionNsShapeFilter === id ? " is-active" : "");
-          b.textContent = id === "all" ? "All" : id === "L" ? "L / ∠" : "W";
+          b.textContent = id === "all" ? "All" : id === "L" ? "L / ∠" : "I";
           b.addEventListener("click", function () {
             compressionNsShapeFilter = id;
             var types = typesForShapeFilter();
@@ -1158,7 +1195,11 @@
       });
 
       function defaultPreferDesignation() {
-        var order = ["W8X24", "L10X10X1-1/4"];
+        var order = [
+          EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.sectionDesignation,
+          "L10X10X1-1/4",
+          "W8X24",
+        ];
         for (var i = 0; i < order.length; i++) {
           var d = order[i];
           if (compressionAnalysisCatalog.some(function (s) {
@@ -1171,23 +1212,37 @@
       }
 
       function setAnalysisSlendernessDefaults() {
+        var methodEl = document.getElementById("compressionAMethod");
+        var gradeEl = document.getElementById("compressionAGrade");
+        var fyEl = document.getElementById("compressionAFy");
+        var fuEl = document.getElementById("compressionAFu");
+        var eEl = document.getElementById("compressionAE");
+        var dlEl = document.getElementById("compressionADl");
+        var llEl = document.getElementById("compressionALl");
+        if (methodEl) methodEl.value = EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.method;
+        if (gradeEl) gradeEl.value = EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.grade;
+        if (fyEl) fyEl.value = String(EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.fy);
+        if (fuEl) fuEl.value = String(EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.fu);
+        if (eEl) eEl.value = String(EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.modulusEKsi);
+        if (dlEl) dlEl.value = String(EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.deadLoadKips);
+        if (llEl) llEl.value = String(EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.liveLoadKips);
         [
-          ["compressionACondX1", "PINNED-PINNED"],
-          ["compressionACondX2", "N/A"],
-          ["compressionACondX3", "N/A"],
-          ["compressionACondY1", "PINNED-PINNED"],
-          ["compressionACondY2", "N/A"],
-          ["compressionACondY3", "N/A"],
+          ["compressionACondX1", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.X1.cond],
+          ["compressionACondX2", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.X2.cond],
+          ["compressionACondX3", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.X3.cond],
+          ["compressionACondY1", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.Y1.cond],
+          ["compressionACondY2", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.Y2.cond],
+          ["compressionACondY3", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.Y3.cond],
         ].forEach(function (pair) {
           var el = document.getElementById(pair[0]);
           if (el) el.value = pair[1];
         });
-        setInput("compressionALx1", 50, 3);
-        setInput("compressionALx2", "", undefined);
-        setInput("compressionALx3", "", undefined);
-        setInput("compressionALy1", 28, 3);
-        setInput("compressionALy2", "", undefined);
-        setInput("compressionALy3", "", undefined);
+        setInput("compressionALx1", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.X1.L, 3);
+        setInput("compressionALx2", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.X2.L, undefined);
+        setInput("compressionALx3", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.X3.L, undefined);
+        setInput("compressionALy1", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.Y1.L, 3);
+        setInput("compressionALy2", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.Y2.L, undefined);
+        setInput("compressionALy3", EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.slenderness.Y3.L, undefined);
       }
 
       fetch("data/aisc-sections.json")
@@ -1201,9 +1256,10 @@
           compressionAnalysisCatalog = (payload.sections || []).filter(function (s) {
             return s && (s.type === "W" || s.type === "L");
           });
-          compressionNsShapeFilter = "all";
-          compressionNsTypeFilter = "all";
+          compressionNsShapeFilter = EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.shapeFilter;
+          compressionNsTypeFilter = EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.typeFilter;
           setAnalysisSlendernessDefaults();
+          applyCompressionAnalysisGradeFromSelect(false);
           bindCompressionAnalysisInputs();
           rebuildCompressionSectionPicker({ preferDesignation: defaultPreferDesignation() });
         });
@@ -1421,6 +1477,15 @@
         }
       }
       // #endregion
+
+      /** Ensure Analysis Calculator paints computed defaults on first visible frame. */
+      if (isAnalysis && typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(function () {
+          computeCompressionAnalysis("pre-fix");
+        });
+      } else if (isAnalysis) {
+        computeCompressionAnalysis("pre-fix");
+      }
     }
 
     /** Mirror Design Calculator inputs into Analysis (`Compression-Design` → `Compression-Analysis`). Never overwrites design strength fields. */

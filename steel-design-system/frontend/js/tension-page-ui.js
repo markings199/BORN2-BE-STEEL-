@@ -99,6 +99,12 @@
     analysisStag: document.getElementById("tensionViewAnalysisStag"),
   };
   var tensionShell = root.querySelector(".tension-shell");
+  /** Apply `NS -Tension Analysis` workbook defaults once when user opens the Analysis Calculator tab (distinct from `Tension Design`). */
+  var excelNsAnalysisCalculatorDefaultsApplied = false;
+  /** Apply `S -Tension Analysis` workbook defaults once when user opens **Tension — Staggered** (plate `X45` is stagger-only; decoupled from non-stagger plate). */
+  var excelStaggerAnalysisCalculatorDefaultsApplied = false;
+  /** **`Tension Design`** workbook defaults (shared by **Design Calculator** + **Capacity and Demand Analysis**) — applied at end of catalog load. */
+  var excelTensionDesignCalculatorDefaultsApplied = false;
 
   function enforceAnalysisScrollLayout() {
     // Runtime guard against conflicting CSS height/overflow rules.
@@ -189,6 +195,9 @@
     dbg("pre-fix", "H0", "tension-page-ui.js:setView", "Tension top view changed", { view: name });
     // #endregion
     enforceAnalysisScrollLayout();
+    if (name === "analysisStag" && !excelNsAnalysisCalculatorDefaultsApplied) {
+      if (applyExcelNsAnalysisCalculatorDefaults()) excelNsAnalysisCalculatorDefaultsApplied = true;
+    }
     if (name === "analysisStag" || name === "analysisNon") recomputeAll();
   }
 
@@ -210,12 +219,13 @@
       analysisCalcStag.setAttribute("aria-hidden", isStag ? "false" : "true");
     }
     if (mode === "stag") {
+      if (!excelStaggerAnalysisCalculatorDefaultsApplied && candidateSections && candidateSections.length) {
+        if (applyExcelStaggerAnalysisCalculatorDefaults()) excelStaggerAnalysisCalculatorDefaultsApplied = true;
+      }
       if (analysisStagUnsupportedLc && unsupportedLc) analysisStagUnsupportedLc.value = unsupportedLc.value;
-      if (analysisStagPlateThickness && plateThickness) analysisStagPlateThickness.value = plateThickness.value;
       syncShapeFromNonToStag();
     } else if (mode === "non") {
       if (analysisStagUnsupportedLc && unsupportedLc) unsupportedLc.value = analysisStagUnsupportedLc.value;
-      if (analysisStagPlateThickness && plateThickness) plateThickness.value = analysisStagPlateThickness.value;
       syncShapeFromStagToNon();
     }
     analysisModeButtons.forEach(function (b) {
@@ -489,12 +499,58 @@
     FLANGE_WEB: "assets/tension-page/tension-detail-3.png",
   };
 
-  /** Sheet2 N-column labels → O-column U (matches Excel XLOOKUP on connection). */
+  /** Sheet2 `N3:N5` → `O3:O5` (matches `Tension Design`!`V28`). */
   var TENSION_CONNECTION_U = {
     FLANGE: 0.6,
     WEB: 0.6,
     "FLANGES & WEB": 1,
   };
+
+  /** Excel `Tension Design`!`J13` default grade (`Table48`). */
+  var EXCEL_TENSION_DESIGN_STEEL_GRADE = "A572 Gr. 65";
+
+  /** Excel `NS -Tension Analysis` sample inputs (distinct from `Tension Design` defaults). */
+  var EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE = "A992";
+
+  /**
+   * Last-resort grades when `SteelGradesService` / `Born2BeSteel` are still empty (e.g. `main.js` exited early
+   * before `Born2BeSteel` assignment, or `steel-grades.json` fetch pending/failed). Matches `steel-grades.json` subset.
+   */
+  var TENSION_FALLBACK_STEEL_GRADES = [
+    { astm: "A36", fy: 36, fu: 58, notes: "", imgGroup: "carbon" },
+    { astm: "A992", fy: 50, fu: 65, notes: "", imgGroup: "wshape" },
+    { astm: "A572 Gr. 42", fy: 42, fu: 60, notes: "", imgGroup: "plate" },
+    { astm: "A572 Gr. 50", fy: 50, fu: 65, notes: "", imgGroup: "beam" },
+    { astm: "A572 Gr. 55", fy: 55, fu: 70, notes: "", imgGroup: "heavy" },
+    { astm: "A572 Gr. 60", fy: 60, fu: 75, notes: "", imgGroup: "bridge" },
+    { astm: "A572 Gr. 65", fy: 65, fu: 80, notes: "", imgGroup: "heavy" },
+    { astm: "A53 Gr. B", fy: 35, fu: 60, notes: "", imgGroup: "pipe" },
+    { astm: "A500 Gr. B", fy: 42, fu: 58, notes: "", imgGroup: "hss" },
+    { astm: "A500 Gr. C", fy: 46, fu: 62, notes: "", imgGroup: "hss" },
+  ];
+
+  /**
+   * Same sections / order as Excel `Tension(Capacity and Demand )` Table6 (`tension-capacity-angles.json`).
+   * Populated in `loadTensionCatalog`; falls back to single-angle AISC rows if the export is missing.
+   */
+  function tensionDesignAngleCatalog() {
+    if (tensionCapacityAnglesOrdered.length) return tensionCapacityAnglesOrdered;
+    return candidateSections.filter(function (s) {
+      return nsTypeOfSection(s) === "L";
+    });
+  }
+
+  /**
+   * Excel `Tension(Capacity and Demand )`!`Q`: `'Tension Design'!$Z$17*'Tension Design'!$Z$13*[t]`.
+   * (`Z17` gage lines × `Z13` bolt/hole dia × thickness — not multiplied by `Z15` fasteners/line.)
+   */
+  function excelDesignAholeIn2(gageLines, boltDiaIn, sectionThicknessIn) {
+    var gz = Math.max(1, num(gageLines, 1));
+    var d = num(boltDiaIn, 0);
+    var t = num(sectionThicknessIn, 0);
+    if (!Number.isFinite(d) || d <= 0 || !Number.isFinite(t) || t <= 0) return NaN;
+    return gz * d * t;
+  }
 
   var FALLBACK_ANGLE_SECTIONS = [
     { name: "L4X4X3/8", family: "ANGLE", Ag: 2.88, weightLbFt: null, rx: 1.2, ry: 0.79, rmin: 0.79, t: 0.375, xbar: 1.16, ybar: 1.16 },
@@ -509,6 +565,8 @@
   ];
 
   var candidateSections = FALLBACK_ANGLE_SECTIONS.slice();
+  /** Excel capacity table order (row 12 first); drives slenderness row index and lightest-`MINIFS` tie-break. */
+  var tensionCapacityAnglesOrdered = [];
   var currentNsShapeFilter = "all";
   var currentNsTypeFilter = "all";
   var nsMasterShapeOptions = ["all", "ANGLE", "W", "HSS", "CHANNEL", "TEE", "PIPE", "OTHER"];
@@ -543,6 +601,28 @@
           if (!key) return;
           angleByName[key] = row;
         });
+
+        tensionCapacityAnglesOrdered = angleRows
+          .map(function (row) {
+            var name = String(row.designation || "").trim();
+            if (!name) return null;
+            return {
+              name: name,
+              family: "ANGLE",
+              type: "L",
+              Ag: Number(row.Ag) || 0,
+              weightLbFt: Number.isFinite(Number(row.weightLbFt)) ? Number(row.weightLbFt) : null,
+              rx: Number(row.rx) || 0,
+              ry: Number(row.ry) || 0,
+              rmin: Number(row.rmin) || 0,
+              t: Number(row.t) || 0,
+              xbar: Number(row.xbar) || 0,
+              ybar: Number(row.ybar) || 0,
+            };
+          })
+          .filter(function (row) {
+            return !!row;
+          });
 
         candidateSections = aiscRows
           .map(function (row) {
@@ -589,6 +669,7 @@
       })
       .catch(function () {
         candidateSections = FALLBACK_ANGLE_SECTIONS.slice();
+        tensionCapacityAnglesOrdered = [];
       })
       .finally(function () {
         if (typeof done === "function") done();
@@ -1024,8 +1105,19 @@
   function clamp(v, lo, hi) {
     return Math.min(hi, Math.max(lo, v));
   }
+  function tensionGradesList() {
+    var fromSvc =
+      window.SteelGradesService && typeof window.SteelGradesService.getGrades === "function"
+        ? window.SteelGradesService.getGrades()
+        : null;
+    if (fromSvc && fromSvc.length) return fromSvc;
+    var fromBorn = window.Born2BeSteel && window.Born2BeSteel.steelGrades;
+    if (fromBorn && fromBorn.length) return fromBorn;
+    return TENSION_FALLBACK_STEEL_GRADES;
+  }
+
   function currentGrade() {
-    var steel = window.Born2BeSteel && window.Born2BeSteel.steelGrades;
+    var steel = tensionGradesList();
     if (!steel || !steel.length) return null;
     var key = steelSelect && steelSelect.value;
     var found = steel.find(function (g) { return g.astm === key; });
@@ -1034,7 +1126,7 @@
 
   function syncSteelFields() {
     var g = currentGrade();
-    if (!g) return;
+    if (!g || !fyInput || !fuInput) return;
     fyInput.value = fmt(g.fy, 0);
     fuInput.value = fmt(g.fu, 0);
     if (window.Born2BeSteel && typeof window.Born2BeSteel.setActiveMaterial === "function") {
@@ -1043,6 +1135,7 @@
   }
 
   function calcBoltDiameter() {
+    if (!nominalDia || !boltType || !boltDiaOut) return NaN;
     var n = num(nominalDia.value, 0);
     var out = boltType.value === "BOLT" ? n + 0.125 : n + 0.0625;
     boltDiaOut.value = fmt(out, 3);
@@ -1053,7 +1146,7 @@
     var key = mapUiConnectionToExcelKey(connectionSelect && connectionSelect.value);
     var u = TENSION_CONNECTION_U[key];
     if (u == null) u = TENSION_CONNECTION_U.WEB;
-    uOut.value = fmt(u, 2);
+    if (uOut) uOut.value = fmt(u, 2);
     return u;
   }
 
@@ -1078,7 +1171,8 @@
     if (method === "LRFD") {
       anReq = fu > 0 && u > 0 ? gov / (0.75 * fu * u) : NaN;
     } else {
-      anReq = fu > 0 && u > 0 ? (gov * 2) / (fu * u) : NaN;
+      /** ASD tensile rupture (Born2BeSteel / Excel Design sheet): required An = Ta·Ωt·U / Fu with Ωt = 2. */
+      anReq = fu > 0 && u > 0 ? (gov * 2 * u) / fu : NaN;
     }
     var boltDia = num(boltDiaOut.value, 0);
     if (!Number.isFinite(boltDia) || boltDia <= 0) boltDia = calcBoltDiameter();
@@ -1096,8 +1190,13 @@
     };
   }
 
-  /** Row i (0-based, first Excel data row) uses Design sheet cell P(38+i); only P38 and P48 are populated in the workbook. */
-  function excelSlendernessNumeratorRow(rowIndex0, rReq, anReq) {
+  /**
+   * Excel `Tension(Capacity and Demand )` row **n** (sheet row 12 = first): column **S** uses
+   * `'Tension Design'!P(n+26)` vs `rmin` (second argument of `AND` with `R<n><Ag`).
+   * So table row index **i** (0-based, row 12 → i=0) references **`P(38+i)`**.
+   * In this workbook **`P38`** = `J28*12/300` and **`P48`** = fracture **`An`** demand (`P48`); other **`P39`…`P47`, `P49`…** are blank → **0**.
+   */
+  function excelTensionDesignPForCapacityRowIndex(rowIndex0, rReq, anReq) {
     var pRow = 38 + rowIndex0;
     if (pRow === 38) return rReq;
     if (pRow === 48) return anReq;
@@ -1145,12 +1244,13 @@
     var ins = getTensionCapacityDemandInputs();
     cdCapacityTbody.innerHTML = "";
     cdDemandTbody.innerHTML = "";
-    if (!candidateSections.length) return;
+    var anglesOnly = tensionDesignAngleCatalog();
+    if (!anglesOnly.length) return;
 
     var fragCap = document.createDocumentFragment();
     var fragDem = document.createDocumentFragment();
 
-    candidateSections.forEach(function (s, i) {
+    anglesOnly.forEach(function (s, i) {
       var trC = document.createElement("tr");
       var rmin = s.rmin != null ? s.rmin : Math.min(s.rx, s.ry);
       var w = s.weightLbFt;
@@ -1178,11 +1278,11 @@
         "</td>";
       fragCap.appendChild(trC);
 
-      var ahole = ins.nGage * ins.boltDia * s.t;
+      var ahole = excelDesignAholeIn2(ins.nGage, ins.boltDia, s.t);
       var rDemand = ahole + ins.anReq;
-      var slip = excelSlendernessNumeratorRow(i, ins.rReq, ins.anReq);
+      var pSlendOrFrac = excelTensionDesignPForCapacityRowIndex(i, ins.rReq, ins.anReq);
       var okArea = Number.isFinite(ins.anReq) && rDemand < s.Ag;
-      var okSl = Number.isFinite(slip) && slip < rmin;
+      var okSl = Number.isFinite(pSlendOrFrac) && pSlendOrFrac < rmin;
       var safe = okArea && okSl;
 
       var trD = document.createElement("tr");
@@ -1238,28 +1338,185 @@
     if (analysisStagGageMirror) analysisStagGageMirror.value = analysisGageMirror ? analysisGageMirror.value : "";
   }
 
+  /**
+   * One-time defaults when opening **Analysis Calculator** (`NS -Tension Analysis`), matching workbook snapshot:
+   * LRFD, A992, DL 20 / LL 80 / length 12 ft, nominal bolt Ø 7/8 in, BOLT (+1/8), 6 fasteners × 2 gage lines,
+   * FLANGES & WEB, Lc 10 in, block shear 9 / 3 & 7.5 / 2.5, uniform tension stress, plate t = 0, shape L8×4×1.
+   * @returns {boolean} false if section catalog not ready (caller may retry on next navigation).
+   */
+  function applyExcelNsAnalysisCalculatorDefaults() {
+    if (!candidateSections || !candidateSections.length) return false;
+
+    if (methodSelect) methodSelect.value = "LRFD";
+    if (analysisMethodMirror) analysisMethodMirror.value = "LRFD";
+
+    var grades = window.Born2BeSteel && window.Born2BeSteel.steelGrades;
+    var gNs = grades && grades.find(function (g) { return g.astm === EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE; });
+    if (steelSelect && gNs) {
+      steelSelect.value = gNs.astm;
+      syncSteelFields();
+    }
+    if (analysisSteelMirror && gNs) analysisSteelMirror.value = gNs.astm;
+    if (analysisStagSteelMirror && gNs) analysisStagSteelMirror.value = gNs.astm;
+
+    if (dlInput) dlInput.value = "20";
+    if (llInput) llInput.value = "80";
+    if (lengthFt) lengthFt.value = "12";
+
+    if (nominalDia) nominalDia.value = "0.875";
+    if (boltType) boltType.value = "BOLT";
+
+    if (fastenersPerLine) fastenersPerLine.value = "6";
+    if (gageLines) gageLines.value = "2";
+
+    if (connectionSelect) connectionSelect.value = "FLANGE_WEB";
+    if (tensionNonStagConnectionSelect) tensionNonStagConnectionSelect.value = "FLANGE_WEB";
+    if (tensionStagConnectionSelect) tensionStagConnectionSelect.value = "FLANGE_WEB";
+
+    if (unsupportedLc) unsupportedLc.value = "10";
+    if (analysisStagUnsupportedLc) analysisStagUnsupportedLc.value = "10";
+
+    if (analysisBsLt) analysisBsLt.value = "9";
+    if (analysisBsNt) analysisBsNt.value = "3";
+    if (analysisBsLv) analysisBsLv.value = "7.5";
+    if (analysisBsNv) analysisBsNv.value = "2.5";
+    if (analysisStagBsLt && analysisBsLt) analysisStagBsLt.value = analysisBsLt.value;
+    if (analysisStagBsNt && analysisBsNt) analysisStagBsNt.value = analysisBsNt.value;
+    if (analysisStagBsLv && analysisBsLv) analysisStagBsLv.value = analysisBsLv.value;
+    if (analysisStagBsNv && analysisBsNv) analysisStagBsNv.value = analysisBsNv.value;
+
+    if (stressType) stressType.value = "1";
+    if (analysisStagStressType) analysisStagStressType.value = "1";
+
+    if (plateThickness) plateThickness.value = "0";
+    /** Stagger sheet plate `X45` stays independent; first visit to **Staggered** applies `S -Tension Analysis` thickness via `applyExcelStaggerAnalysisCalculatorDefaults`. */
+
+    function normShapeName(s) {
+      return String(s || "")
+        .toUpperCase()
+        .replace(/\s+/g, "")
+        .replace(/\u00d7/g, "X")
+        .replace(/×/g, "X");
+    }
+    var pick = candidateSections.find(function (s) {
+      return normShapeName(s.name) === "L8X4X1";
+    });
+    if (shapeSelect && pick) {
+      shapeSelect.value = pick.name;
+      renderNonStaggeredSelector();
+      rebuildStagShapeOptions({ prefer: pick.name });
+    }
+
+    calcBoltDiameter();
+    mirrorDesignToAnalysis();
+    return true;
+  }
+
+  /**
+   * First-time defaults for **`S -Tension Analysis`** (Excel snapshot): Q41 FLANGE, K41 3/4 in, K51 6, K53 2,
+   * AZ40 NON-UNIFORM, AC40/AG40/AK40 = 1 / 1.5 / 1.5, plate **X45 = 5** on stagger card only (`analysisStagPlateThickness`).
+   */
+  function applyExcelStaggerAnalysisCalculatorDefaults() {
+    if (!candidateSections || !candidateSections.length) return false;
+
+    if (connectionSelect) connectionSelect.value = "FLANGE";
+    if (tensionNonStagConnectionSelect) tensionNonStagConnectionSelect.value = "FLANGE";
+    if (tensionStagConnectionSelect) tensionStagConnectionSelect.value = "FLANGE";
+
+    if (nominalDia) nominalDia.value = "0.75";
+    if (boltType) boltType.value = "BOLT";
+
+    if (analysisStagPlateThickness) analysisStagPlateThickness.value = "5";
+
+    if (stressType) stressType.value = "0.5";
+    if (analysisStagStressType) analysisStagStressType.value = "0.5";
+
+    if (sg1) sg1.value = "1";
+    if (g1) g1.value = "1.5";
+    if (g2) g2.value = "1.5";
+
+    if (fastenersPerLine) fastenersPerLine.value = "6";
+    if (gageLines) gageLines.value = "2";
+
+    calcBoltDiameter();
+    mirrorDesignToAnalysis();
+    return true;
+  }
+
+  /**
+   * Design Calculator ASD defaults (Born2BeSteel Design workbook behavior shown in UI reference): A572 Gr. 65, ASD,
+   * DL/LL/length and bolt layout as below, connection WEB (U = 0.6). Yields Ta = 255 kips, fracture demand rows and
+   * lightest safe L5×5×7/16 when formulas match calcDemandAndAreas / getTensionCapacityDemandInputs.
+   */
+  function applyExcelTensionDesignCalculatorDefaults() {
+    if (!candidateSections || !candidateSections.length) return false;
+
+    if (methodSelect) methodSelect.value = "ASD";
+    if (analysisMethodMirror) analysisMethodMirror.value = "ASD";
+
+    var grades = tensionGradesList();
+    var gTd = grades && grades.find(function (g) { return g.astm === EXCEL_TENSION_DESIGN_STEEL_GRADE; });
+    if (steelSelect && gTd) {
+      steelSelect.value = gTd.astm;
+      syncSteelFields();
+    }
+    if (analysisSteelMirror && gTd) analysisSteelMirror.value = gTd.astm;
+    if (analysisStagSteelMirror && gTd) analysisStagSteelMirror.value = gTd.astm;
+
+    if (dlInput) dlInput.value = "115";
+    if (llInput) llInput.value = "140";
+    if (lengthFt) lengthFt.value = "12.02";
+
+    if (nominalDia) nominalDia.value = "0.75";
+    if (boltType) boltType.value = "BOLT";
+
+    if (fastenersPerLine) fastenersPerLine.value = "3";
+    if (gageLines) gageLines.value = "1";
+
+    if (connectionSelect) connectionSelect.value = "WEB";
+    if (tensionNonStagConnectionSelect) tensionNonStagConnectionSelect.value = "WEB";
+    if (tensionStagConnectionSelect) tensionStagConnectionSelect.value = "WEB";
+
+    calcBoltDiameter();
+    mirrorDesignToAnalysis();
+    return true;
+  }
+
   function calcDemandAndAreas() {
-    var fy = num(fyInput.value, 0);
-    var fu = num(fuInput.value, 0);
-    var dl = num(dlInput.value, 0);
-    var ll = num(llInput.value, 0);
-    var method = methodSelect.value;
+    if (
+      !methodSelect ||
+      !demandEq1 ||
+      !demandEq2 ||
+      !demandGov ||
+      !minROut ||
+      !agYieldOut ||
+      !anFractureOut ||
+      !agFractureOut
+    ) {
+      return { gov: NaN, reqAg: NaN };
+    }
+
+    var fy = num(fyInput && fyInput.value, 0);
+    var fu = num(fuInput && fuInput.value, 0);
+    var dl = num(dlInput && dlInput.value, 0);
+    var ll = num(llInput && llInput.value, 0);
+    var method = methodSelect.value || "ASD";
     var u = calcU();
     var tLoad1;
     var tLoad2;
     var gov;
 
     if (method === "LRFD") {
-      demandEq1Label.textContent = "Tu = 1.2DL + 1.6LL";
-      demandEq2Label.textContent = "Wu = 1.4DL";
-      demandGovLabel.textContent = "Tu";
+      if (demandEq1Label) demandEq1Label.textContent = "Tu = 1.2DL + 1.6LL";
+      if (demandEq2Label) demandEq2Label.textContent = "Wu = 1.4DL";
+      if (demandGovLabel) demandGovLabel.textContent = "Tu";
       tLoad1 = 1.2 * dl + 1.6 * ll;
       tLoad2 = 1.4 * dl;
       gov = Math.max(tLoad1, tLoad2);
     } else {
-      demandEq1Label.textContent = "Ta=DL+LL";
-      demandEq2Label.textContent = "-";
-      demandGovLabel.textContent = "Ta";
+      if (demandEq1Label) demandEq1Label.textContent = "Ta=DL+LL";
+      if (demandEq2Label) demandEq2Label.textContent = "-";
+      if (demandGovLabel) demandGovLabel.textContent = "Ta";
       tLoad1 = dl + ll;
       tLoad2 = 0;
       gov = tLoad1;
@@ -1268,7 +1525,7 @@
     demandEq2.value = method === "LRFD" ? fmt(tLoad2, 3) : "-";
     demandGov.value = fmt(gov, 3);
 
-    var lenFt = num(lengthFt.value, 0);
+    var lenFt = num(lengthFt && lengthFt.value, 0);
     var rReq = lenFt * 12 / 300;
     minROut.value = fmt(rReq, 4);
 
@@ -1279,44 +1536,50 @@
       anFracture = fu > 0 && u > 0 ? gov / (0.75 * fu * u) : NaN;
     } else {
       agYieldDisplay = fu > 0 && u > 0 ? (gov * 1.67 * u) / fu : NaN;
-      anFracture = fu > 0 && u > 0 ? (gov * 2) / (fu * u) : NaN;
+      /** ASD: required An = Ta·Ωt·U / Fu (Ωt = 2), matching Design Calculator fracture row + MINIFS scan. */
+      anFracture = fu > 0 && u > 0 ? (gov * 2 * u) / fu : NaN;
     }
     agYieldOut.value = Number.isFinite(agYieldDisplay) ? fmt(agYieldDisplay, 4) : "--";
     anFractureOut.value = Number.isFinite(anFracture) ? fmt(anFracture, 4) : "--";
     var agFractureDisplay = Number.isFinite(anFracture) ? anFracture / 0.85 : NaN;
     agFractureOut.value = Number.isFinite(agFractureDisplay) ? fmt(agFractureDisplay, 4) : "--";
 
-    var boltDia = num(boltDiaOut.value, 0);
+    var boltDia = num(boltDiaOut && boltDiaOut.value, 0);
     if (!Number.isFinite(boltDia) || boltDia <= 0) boltDia = calcBoltDiameter();
-    var nGage = Math.max(1, num(gageLines.value, 1));
+    var nGage = Math.max(1, num(gageLines && gageLines.value, 1));
     var anReq = anFracture;
 
-    function rowSafe(s) {
+    var anglesForDesign = tensionDesignAngleCatalog();
+
+    function rowSafe(s, idxInAngleTable) {
       if (!Number.isFinite(anReq) || !Number.isFinite(rReq) || !s) return false;
-      var ahole = nGage * boltDia * s.t;
+      var ahole = excelDesignAholeIn2(nGage, boltDia, s.t);
       var bigR = ahole + anReq;
       var rmin = s.rmin != null ? s.rmin : Math.min(s.rx, s.ry);
-      return bigR < s.Ag && rReq < rmin;
+      var pSecond = excelTensionDesignPForCapacityRowIndex(idxInAngleTable, rReq, anReq);
+      return bigR < s.Ag && pSecond < rmin;
     }
 
-    var minAg = null;
-    for (var si = 0; si < candidateSections.length; si++) {
-      if (!rowSafe(candidateSections[si])) continue;
-      var ag = candidateSections[si].Ag;
-      if (minAg === null || ag < minAg) minAg = ag;
+    var picked = null;
+    for (var si = 0; si < anglesForDesign.length; si++) {
+      var cand = anglesForDesign[si];
+      if (!rowSafe(cand, si)) continue;
+      if (!picked || cand.Ag < picked.Ag - 1e-9) picked = cand;
     }
 
-    if (minAg === null || !candidateSections.length) {
+    if (!picked || !anglesForDesign.length) {
       if (safeSectionOut) {
         if ("value" in safeSectionOut) safeSectionOut.value = "--";
         safeSectionOut.textContent = "--";
       }
       if (designSectionPreview) designSectionPreview.value = "--";
-      safeAgOut.value = "--";
-      safeRemarkOut.value = "NO SAFE SECTION";
-      if (safeRemarkOut && safeRemarkOut.classList) {
-        safeRemarkOut.classList.toggle("is-safe", false);
-        safeRemarkOut.classList.toggle("is-unsafe", true);
+      if (safeAgOut) safeAgOut.value = "--";
+      if (safeRemarkOut) {
+        safeRemarkOut.value = "NO SAFE SECTION";
+        if (safeRemarkOut.classList) {
+          safeRemarkOut.classList.toggle("is-safe", false);
+          safeRemarkOut.classList.toggle("is-unsafe", true);
+        }
       }
       dbg("post-fix", "H_non_comp", "tension-page-ui.js:calcDemandAndAreas", "Design demand / Excel tension capacity scan", {
         method: method,
@@ -1329,21 +1592,19 @@
       return { gov: gov, reqAg: NaN };
     }
 
-    var picked = candidateSections.find(function (s) {
-      return rowSafe(s) && Math.abs(s.Ag - minAg) < 1e-4;
-    });
-
     if (safeSectionOut) {
       if ("value" in safeSectionOut) safeSectionOut.value = picked.name;
       safeSectionOut.textContent = picked.name;
     }
     if (designSectionPreview) designSectionPreview.value = picked.name;
     if (designSectionSelect) designSectionSelect.value = picked.name;
-    safeAgOut.value = fmt(picked.Ag, 2);
-    safeRemarkOut.value = "SAFE";
-    if (safeRemarkOut && safeRemarkOut.classList) {
-      safeRemarkOut.classList.toggle("is-safe", true);
-      safeRemarkOut.classList.toggle("is-unsafe", false);
+    if (safeAgOut) safeAgOut.value = fmt(picked.Ag, 2);
+    if (safeRemarkOut) {
+      safeRemarkOut.value = "SAFE";
+      if (safeRemarkOut.classList) {
+        safeRemarkOut.classList.toggle("is-safe", true);
+        safeRemarkOut.classList.toggle("is-unsafe", false);
+      }
     }
     dbg("post-fix", "H_non_comp", "tension-page-ui.js:calcDemandAndAreas", "Design demand / Excel tension capacity scan", {
       method: method,
@@ -1353,12 +1614,12 @@
       u: u,
       rReq: rReq,
       anReq: anReq,
-      minSafeAg: minAg,
+      minSafeAg: picked.Ag,
       pickedSection: picked.name,
       pickedAg: picked.Ag,
     });
 
-    return { gov: gov, reqAg: minAg };
+    return { gov: gov, reqAg: picked.Ag };
   }
 
   function populateShapes() {
@@ -1369,14 +1630,15 @@
     var first = candidateSections[0] ? candidateSections[0].name : "";
     if (first) shapeSelect.value = first;
     if (designSectionSelect) {
+      var designAngles = tensionDesignAngleCatalog();
       designSectionSelect.innerHTML = "";
-      candidateSections.forEach(function (s) {
+      designAngles.forEach(function (s) {
         var opt = document.createElement("option");
         opt.value = s.name;
         opt.textContent = s.name;
         designSectionSelect.appendChild(opt);
       });
-      designSectionSelect.value = first || "";
+      designSectionSelect.value = designAngles[0] ? designAngles[0].name : first || "";
     }
     renderNonStaggeredSelector();
     rebuildStagShapeOptions({ prefer: shapeSelect.value });
@@ -1420,9 +1682,6 @@
     plateAg.value = fmt(agPlate, 3);
     if (analysisStagPlateLengthIn) {
       analysisStagPlateLengthIn.value = fmt(lengthIn, 3);
-    }
-    if (analysisStagPlateThickness && plateThickness && !isStaggeredAnalysisActive()) {
-      analysisStagPlateThickness.value = plateThickness.value;
     }
     if (analysisStagPlateAg) analysisStagPlateAg.value = fmt(agPlate, 3);
     if (analysisStagLengthIn) analysisStagLengthIn.value = lengthInOut.value;
@@ -1492,12 +1751,14 @@
     var omegaY = 1.67;
     var omegaR = 2.0;
     var yieldCap = method === "LRFD" ? phiY * fy * agUse : (fy * agUse) / omegaY;
-    /** NS fracture strength AI25 uses Fu×AM16 only — no tension stress-type multiplier on fracture. */
-    var fracCapStress = isStaggeredAnalysisActive() ? stressFactor : 1;
+    /**
+     * Fracture: NS `AI25` = φ×Fu×`AM16`; stagger `AX25` = φ×Fu×`BC15` (`BC15`=`AH52`×`Q48`).
+     * Excel does **not** apply tension stress-type (`AZ40`) to fracture — only block shear uses UNIFORM / NON-UNIFORM.
+     */
     var fracCap =
       method === "LRFD"
-        ? phiR * fu * aeUse * fracCapStress
-        : (fu * aeUse * fracCapStress) / omegaR;
+        ? phiR * fu * aeUse
+        : (fu * aeUse) / omegaR;
     var critAnForStag = criticalAn ? num(criticalAn.value, NaN) : NaN;
     var uConnStag = stagAnalysisConnU();
     var aeStaggeredDemand = Number.isFinite(critAnForStag)
@@ -1607,11 +1868,12 @@
     }
 
     var govCap = Math.min(yieldCap, fracCap, bsCap);
-    var isSafe = govCap >= demand && demand > 0;
+    /** `NS -Tension Analysis`!`AO57`: `IF(AH56>AF17,"SAFE!","UNSAFE :<")` — strict **greater than**. */
+    var isSafe = demand > 0 && govCap > demand;
     if (analysisGovEqLabelNon) analysisGovEqLabelNon.textContent = method === "LRFD" ? "Tu =" : "Ta =";
     if (analysisGoverningDisplay) analysisGoverningDisplay.textContent = demand === 0 ? "--" : fmt(govCap, 3);
     if (analysisSafetyStatus) {
-      analysisSafetyStatus.textContent = demand === 0 ? "--" : isSafe ? "SAFE" : "UNSAFE";
+      analysisSafetyStatus.textContent = demand === 0 ? "--" : isSafe ? "SAFE!" : "UNSAFE :<";
       if (demand === 0) {
         analysisSafetyStatus.classList.remove("is-safe", "is-unsafe");
       } else {
@@ -1622,11 +1884,11 @@
 
     // Staggered governing uses same fracture basis as the panel (fracCapStagPanel / aeStaggeredDemand).
     var govCapStag = Math.min(yieldCap, fracCapStagPanel, bsCap);
-    var safeStag = govCapStag >= demand && demand > 0;
+    var safeStag = demand > 0 && govCapStag > demand;
     if (analysisStagGovEqLabel) analysisStagGovEqLabel.textContent = method === "LRFD" ? "Tu =" : "Ta =";
     if (analysisGoverningDisplayStag) analysisGoverningDisplayStag.textContent = demand === 0 ? "--" : fmt(govCapStag, 3);
     if (analysisSafetyStatusStag) {
-      analysisSafetyStatusStag.textContent = demand === 0 ? "--" : (safeStag ? "SAFE" : "UNSAFE");
+      analysisSafetyStatusStag.textContent = demand === 0 ? "--" : (safeStag ? "SAFE!" : "UNSAFE :<");
       if (demand === 0) {
         analysisSafetyStatusStag.classList.remove("is-safe", "is-unsafe");
       } else {
@@ -1654,7 +1916,7 @@
       govCapIsMin: Math.abs(govCap - Math.min(yieldCap, fracCap, bsCap)) < 1e-9,
       demand: demand,
       safe: isSafe,
-      safeRuleOk: demand > 0 ? (isSafe === (govCap >= demand)) : true,
+      safeRuleOk: demand > 0 ? isSafe === (govCap > demand) : true,
       nonFiniteDetected: [plateLen, tPlate, agPlate, case1, case2, case8, uGov, anUse, aeUse, yieldCap, fracCap, bsCap, govCap, demand].some(function (v) { return !Number.isFinite(v); })
     });
     // #endregion
@@ -2150,7 +2412,7 @@
 
   function initSteelOptions() {
     if (!steelSelect) return;
-    var grades = window.Born2BeSteel && window.Born2BeSteel.steelGrades;
+    var grades = tensionGradesList();
     if (!grades || !grades.length) return;
     steelSelect.innerHTML = "";
     grades.forEach(function (g) {
@@ -2159,8 +2421,18 @@
       o.textContent = g.astm;
       steelSelect.appendChild(o);
     });
-    var selected = window.Born2BeSteel.getSelectedGrade && window.Born2BeSteel.getSelectedGrade();
-    steelSelect.value = selected ? selected.astm : grades[0].astm;
+    var selected =
+      window.Born2BeSteel &&
+      window.Born2BeSteel.getSelectedGrade &&
+      window.Born2BeSteel.getSelectedGrade();
+    var excelGrade = grades.find(function (g) {
+      return g.astm === EXCEL_TENSION_DESIGN_STEEL_GRADE;
+    });
+    steelSelect.value = excelGrade
+      ? excelGrade.astm
+      : selected
+        ? selected.astm
+        : grades[0].astm;
     if (analysisSteelMirror && analysisSteelMirror.tagName === "SELECT") {
       analysisSteelMirror.innerHTML = "";
       grades.forEach(function (g) {
@@ -2392,7 +2664,6 @@
     });
   }
 
-  initSteelOptions();
   wireNonStaggeredInputMirrors();
   wireStaggeredInputMirrors();
   enforceRequestedVisualLocks();
@@ -2402,16 +2673,97 @@
   wireArrowKeyNav(Array.prototype.slice.call(viewButtons));
   wireArrowKeyNav(Array.prototype.slice.call(analysisModeButtons));
 
-  loadTensionCatalog(function () {
-    hydrateNsMasterOptionsFromAiscDataset(function () {
-      populateShapes();
-      initStagSectionUi();
-      setView("design");
-      setAnalysisMode("non");
-      recomputeAll();
-      enforceAnalysisScrollLayout();
+  function runTensionCatalogAndExcelDefaultsPipeline() {
+    loadTensionCatalog(function () {
+      hydrateNsMasterOptionsFromAiscDataset(function () {
+        populateShapes();
+        initStagSectionUi();
+        /** Excel `NS -Tension Analysis` inputs as initial master state (matches workbook on load). */
+        if (applyExcelNsAnalysisCalculatorDefaults()) excelNsAnalysisCalculatorDefaultsApplied = true;
+        /** Excel `S -Tension Analysis` defaults applied at load so stagger inputs match workbook without opening the sub-tab. */
+        if (applyExcelStaggerAnalysisCalculatorDefaults()) excelStaggerAnalysisCalculatorDefaultsApplied = true;
+        /** Last: Design Calculator + Capacity and Demand (Tension Design shared inputs). */
+        if (applyExcelTensionDesignCalculatorDefaults()) {
+          excelTensionDesignCalculatorDefaultsApplied = true;
+          /** Shared fields were overwritten — allow one-time NS / stagger reapplies on those tabs. */
+          excelNsAnalysisCalculatorDefaultsApplied = false;
+          excelStaggerAnalysisCalculatorDefaultsApplied = false;
+        }
+        setView("design");
+        setAnalysisMode("non");
+        recomputeAll();
+        if (typeof window.requestAnimationFrame === "function") {
+          window.requestAnimationFrame(function () {
+            recomputeAll();
+          });
+        }
+        enforceAnalysisScrollLayout();
+      });
     });
-  });
+  }
+
+  /** Populate `#tensionSteelGrade`; retry fetch once if options are still empty after `ensureLoaded`. */
+  function bootstrapTensionModuleUi() {
+    initSteelOptions();
+    var hasOpts = steelSelect && steelSelect.options && steelSelect.options.length > 0;
+    if (!hasOpts && window.SteelGradesService && typeof window.SteelGradesService.reloadFromFetch === "function") {
+      window.SteelGradesService.reloadFromFetch().then(function () {
+        initSteelOptions();
+        runTensionCatalogAndExcelDefaultsPipeline();
+      }).catch(function () {
+        initSteelOptions();
+        runTensionCatalogAndExcelDefaultsPipeline();
+      });
+      return;
+    }
+    runTensionCatalogAndExcelDefaultsPipeline();
+  }
+
+  if (window.SteelGradesService && typeof window.SteelGradesService.onUpdate === "function") {
+    window.SteelGradesService.onUpdate(function () {
+      if (!steelSelect) return;
+      var grades = tensionGradesList();
+      if (!grades.length) return;
+      if (steelSelect.options.length === grades.length) return;
+      var keep = steelSelect.value;
+      initSteelOptions();
+      if (keep && [].some.call(steelSelect.options, function (o) { return o.value === keep; })) {
+        steelSelect.value = keep;
+      }
+      syncSteelFields();
+      recomputeAll();
+    });
+  }
+
+  function scheduleTensionModuleBootstrap() {
+    function kickoff() {
+      var svc = window.SteelGradesService;
+      if (svc && typeof svc.ensureLoaded === "function") {
+        svc.ensureLoaded().then(bootstrapTensionModuleUi).catch(bootstrapTensionModuleUi);
+      } else {
+        bootstrapTensionModuleUi();
+      }
+    }
+    if (typeof window !== "undefined" && typeof window.setTimeout === "function") {
+      window.setTimeout(kickoff, 0);
+    } else {
+      kickoff();
+    }
+  }
+  scheduleTensionModuleBootstrap();
+
+  if (typeof MutationObserver !== "undefined" && root) {
+    var __tensionActiveMo = new MutationObserver(function () {
+      if (!root.classList.contains("active-panel")) return;
+      recomputeAll();
+    });
+    __tensionActiveMo.observe(root, { attributes: true, attributeFilter: ["class"] });
+    if (root.classList.contains("active-panel") && typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(function () {
+        recomputeAll();
+      });
+    }
+  }
 
   window.addEventListener("resize", enforceAnalysisScrollLayout);
 })();

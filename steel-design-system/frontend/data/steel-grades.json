@@ -2,9 +2,9 @@
   "meta": {
     "sourceFile": "Born2BeSteel Final (2).xlsx",
     "sheet": "Steel Grade",
-    "headerExcelRow": 3,
-    "valueColumnsOffset": 31,
-    "exportedAt": "2026-04-30T03:04:00.145Z",
+    "headerExcelRow": 13,
+    "valueColumnsOffset": 6,
+    "exportedAt": "2026-05-01T13:00:15.301Z",
     "rowCount": 30
   },
   "grades": [
@@ -12,210 +12,210 @@
       "astm": "A36",
       "fy": 36,
       "fu": 58,
-      "notes": "General structural shapes, plates, bars",
+      "notes": "",
       "imgGroup": "carbon"
     },
     {
       "astm": "A992",
       "fy": 50,
       "fu": 65,
-      "notes": "W-shapes, seismic & wide-flange",
+      "notes": "",
       "imgGroup": "wshape"
     },
     {
       "astm": "A572 Gr. 42",
       "fy": 42,
       "fu": 60,
-      "notes": "High-strength low-alloy",
+      "notes": "",
       "imgGroup": "plate"
     },
     {
       "astm": "A572 Gr. 50",
       "fy": 50,
       "fu": 65,
-      "notes": "Common for beams & columns",
+      "notes": "",
       "imgGroup": "beam"
     },
     {
       "astm": "A572 Gr. 55",
       "fy": 55,
       "fu": 70,
-      "notes": "Higher strength",
+      "notes": "",
       "imgGroup": "heavy"
     },
     {
       "astm": "A572 Gr. 60",
       "fy": 60,
       "fu": 75,
-      "notes": "Bridge & building",
+      "notes": "",
       "imgGroup": "bridge"
     },
     {
       "astm": "A572 Gr. 65",
       "fy": 65,
       "fu": 80,
-      "notes": "Special high-strength",
+      "notes": "",
       "imgGroup": "heavy"
     },
     {
       "astm": "A53 Gr. B",
       "fy": 35,
       "fu": 60,
-      "notes": "Pipe, circular sections",
+      "notes": "",
       "imgGroup": "pipe"
     },
     {
       "astm": "A500 Gr. B",
       "fy": 42,
       "fu": 58,
-      "notes": "Cold-formed HSS",
+      "notes": "",
       "imgGroup": "hss"
     },
     {
       "astm": "A500 Gr. C",
       "fy": 46,
       "fu": 62,
-      "notes": "HSS, improved toughness",
+      "notes": "",
       "imgGroup": "hss"
     },
     {
       "astm": "A501 Gr. A",
       "fy": 36,
       "fu": 58,
-      "notes": "Hot-formed carbon steel pipe",
+      "notes": "",
       "imgGroup": "pipe"
     },
     {
       "astm": "A501 Gr. B",
       "fy": 50,
       "fu": 70,
-      "notes": "Higher strength pipe",
+      "notes": "",
       "imgGroup": "pipe"
     },
     {
       "astm": "A529 Gr. 50",
       "fy": 50,
       "fu": 65,
-      "notes": "Structural plates & angles",
+      "notes": "",
       "imgGroup": "angle"
     },
     {
       "astm": "A529 Gr. 55",
       "fy": 55,
       "fu": 70,
-      "notes": "High strength angles",
+      "notes": "",
       "imgGroup": "angle"
     },
     {
       "astm": "A709 36",
       "fy": 36,
       "fu": 58,
-      "notes": "Bridge steel (Grade 36)",
+      "notes": "",
       "imgGroup": "bridge"
     },
     {
       "astm": "A1043 36",
       "fy": 36,
       "fu": 58,
-      "notes": "Low yield-to-tensile ratio",
+      "notes": "",
       "imgGroup": "seismic"
     },
     {
       "astm": "A1043 50",
       "fy": 50,
       "fu": 65,
-      "notes": "Seismic applications",
+      "notes": "",
       "imgGroup": "seismic"
     },
     {
       "astm": "A1085 Gr. A",
       "fy": 50,
       "fu": 65,
-      "notes": "Acceptable for Round HSS · Rectangular HSS",
+      "notes": "",
       "imgGroup": "hss_modern"
     },
     {
       "astm": "A618 Gr. I, II",
       "fy": 50,
       "fu": 70,
-      "notes": "Hot-formed HSS",
+      "notes": "",
       "imgGroup": "hss"
     },
     {
       "astm": "A618 Gr. III",
       "fy": 50,
       "fu": 65,
-      "notes": "Hot-formed HSS",
+      "notes": "",
       "imgGroup": "hss"
     },
     {
       "astm": "A709 50",
       "fy": 50,
       "fu": 65,
-      "notes": "Bridge steel (Grade 50)",
+      "notes": "",
       "imgGroup": "bridge"
     },
     {
       "astm": "A709 50S",
       "fy": 50,
       "fu": 65,
-      "notes": "Bridge steel — Grade 50S",
+      "notes": "",
       "imgGroup": "bridge"
     },
     {
       "astm": "A709 50W",
       "fy": 50,
       "fu": 70,
-      "notes": "Weathering steel for bridges",
+      "notes": "",
       "imgGroup": "weather"
     },
     {
       "astm": "A913 50",
       "fy": 50,
       "fu": 65,
-      "notes": "Quenched & tempered shapes",
+      "notes": "",
       "imgGroup": "heavy"
     },
     {
       "astm": "A913 60",
       "fy": 60,
       "fu": 75,
-      "notes": "High strength shapes",
+      "notes": "",
       "imgGroup": "heavy"
     },
     {
       "astm": "A913 65",
       "fy": 65,
       "fu": 80,
-      "notes": "Extra high strength",
+      "notes": "",
       "imgGroup": "heavy"
     },
     {
       "astm": "A913 70",
       "fy": 70,
       "fu": 90,
-      "notes": "Ultra-high strength",
+      "notes": "",
       "imgGroup": "heavy"
     },
     {
       "astm": "A1065 Gr. 50",
       "fy": 50,
       "fu": 60,
-      "notes": "Cold-formed HSS",
+      "notes": "",
       "imgGroup": "hss"
     },
     {
       "astm": "A588",
       "fy": 50,
       "fu": 70,
-      "notes": "Weathering steel (Corten)",
+      "notes": "",
       "imgGroup": "weather"
     },
     {
       "astm": "A847",
       "fy": 50,
       "fu": 70,
-      "notes": "Cold-formed weathering",
+      "notes": "",
       "imgGroup": "weather"
     }
   ]

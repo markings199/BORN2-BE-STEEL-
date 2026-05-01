@@ -42,11 +42,15 @@
       --space-4: 0.58rem;
       --space-5: 0.72rem;
       --focus: rgba(90, 155, 181, 0.25);
+      /* Fixed chrome: navbar + sidebar alignment (updated in media queries) */
+      --app-header-height: 5.25rem;
+      --app-sidebar-width: 230px;
     }
 
     html {
       width: 100%;
       min-height: 100%;
+      height: 100%;
       margin: 0;
       padding: 0;
       -webkit-text-size-adjust: 100%;
@@ -65,6 +69,13 @@
       color: #1a3a4f;
       overflow-x: hidden;
       overflow-y: auto; /* page scroll when inner regions cannot absorb height */
+    }
+    /* App shell: viewport-locked; chrome stays fixed, inner regions scroll */
+    body:has(> .steel-dashboard) {
+      height: 100dvh;
+      min-height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
     }
     /* Steel Grade row can exceed viewport width — allow horizontal scroll instead of clipping the ASTM guide */
     body:has(.dashboard-main.steel-grade-active) {
@@ -92,7 +103,7 @@
     /* main container — edge-to-edge viewport shell (tall content grows; page scrolls on body) */
     .steel-dashboard {
       flex: 1 1 auto;
-      min-height: 100dvh;
+      min-height: 0;
       width: 100%;
       max-width: none;
       margin: 0;
@@ -100,21 +111,36 @@
       border-radius: 0;
       box-shadow: none;
       overflow-x: hidden;
-      overflow-y: visible;
+      overflow-y: hidden;
       display: flex;
       flex-direction: column;
+      height: 100%;
+      max-height: 100dvh;
+      /* Reserve space for fixed navbar; padding does not scroll with main content */
+      padding-top: var(--app-header-height);
+      box-sizing: border-box;
     }
     .steel-dashboard:has(.dashboard-main.steel-grade-active) {
       overflow-x: auto;
+      overflow-y: hidden;
     }
 
     /* header - compact tier + reference-style fade line */
     .page-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      z-index: 400;
       flex: 0 0 auto;
+      flex-shrink: 0;
       background: linear-gradient(180deg, #1a2433 0%, #0f1720 100%);
-      padding: 0.06rem 0.5rem 0.05rem;
+      padding: 0.32rem 0.62rem 0.22rem;
       border-bottom: 1px solid #2a3d52;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.22),
+        0 1px 0 rgba(255, 255, 255, 0.05) inset;
       display: flex;
       flex-direction: column;
       align-items: stretch;
@@ -125,28 +151,35 @@
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 0.45rem;
+      gap: 0.48rem;
     }
     .bu-section {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      background: rgba(255, 255, 255, 0.08);
-      padding: 0.02rem 0.7rem 0.02rem 0.28rem;
+      gap: 0.48rem;
+      background: rgba(255, 255, 255, 0.085);
+      padding: 0.22rem 0.72rem 0.22rem 0.32rem;
       border-radius: 30px;
       border-left: 2px solid #83cbeb;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+      box-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
     /* Circle frame + contain: avoids cover-crop blur on tall seal artwork */
     .bu-logo-wrap {
-      width: 60px;
-      height: 60px;
+      width: 52px;
+      height: 52px;
       flex-shrink: 0;
       border-radius: 50%;
       overflow: hidden;
       background: #ffffff;
-      border: 1px solid rgba(131, 203, 235, 0.55);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+      border: 1px solid rgba(131, 203, 235, 0.58);
+      box-shadow:
+        0 3px 14px rgba(0, 0, 0, 0.32),
+        0 0 0 1px rgba(255, 255, 255, 0.42) inset,
+        0 0 0 4px rgba(131, 203, 235, 0.08);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -168,25 +201,30 @@
     }
     /* Highlight association text without increasing header height */
     .bu-text {
-      padding: 0.05rem 0.55rem;
-      border-radius: 10px;
-      background: rgba(131, 203, 235, 0.12);
-      box-shadow: inset 0 0 0 1px rgba(193, 229, 245, 0.18);
+      padding: 0.28rem 0.52rem;
+      border-radius: 12px;
+      background: rgba(131, 203, 235, 0.13);
+      box-shadow:
+        inset 0 0 0 1px rgba(193, 229, 245, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
     .bu-text .assoc-main {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 800;
-      color: #d8f0fc;
-      letter-spacing: 0.03em;
+      color: #e8f6fc;
+      letter-spacing: 0.045em;
       text-transform: uppercase;
-      line-height: 1.02;
+      line-height: 1.12;
       white-space: nowrap;
     }
     .bu-text .assoc-sub {
-      font-size: 0.62rem;
-      color: #b5d4ea;
-      line-height: 1.02;
+      font-size: 0.6rem;
+      font-weight: 500;
+      color: rgba(181, 212, 234, 0.95);
+      line-height: 1.18;
+      letter-spacing: 0.015em;
       white-space: nowrap;
+      margin-top: 0.06rem;
     }
     .bu-text .assoc-main,
     .bu-text .assoc-sub {
@@ -195,6 +233,7 @@
     /* Top-right: metallic badge only */
     .header-meta-top {
       flex: 0 0 auto;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
@@ -209,34 +248,38 @@
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      padding-top: 0.06rem;
+      flex-shrink: 0;
+      padding: 0.1rem 0 0.08rem;
     }
     /* Metallic pill badge (reference) — cool silver, no yellow tones */
     .header-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.38rem;
-      background: linear-gradient(180deg, #eef2f6 0%, #d4dbe3 38%, #b8c2ce 100%);
-      color: #1a2332;
-      font-size: 0.58rem;
+      background: linear-gradient(180deg, #f2f5f8 0%, #dce3eb 36%, #bac6d2 100%);
+      color: #151d2b;
+      font-size: 0.595rem;
       font-weight: 800;
-      padding: 0.2rem 0.72rem 0.2rem 0.55rem;
+      padding: 0.22rem 0.78rem 0.22rem 0.55rem;
       border-radius: 999px;
-      border: 1px solid rgba(30, 40, 55, 0.35);
-      letter-spacing: 0.02em;
+      border: 1px solid rgba(28, 38, 52, 0.38);
+      letter-spacing: 0.022em;
       white-space: nowrap;
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.92),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-        0 1px 5px rgba(0, 0, 0, 0.22);
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+        0 2px 8px rgba(0, 0, 0, 0.26),
+        0 1px 0 rgba(255, 255, 255, 0.35);
     }
     .header-badge-rivet {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       flex-shrink: 0;
-      background: radial-gradient(circle at 32% 32%, #f3f4f6, #9ca3af 55%, #4b5563);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      background: radial-gradient(circle at 32% 32%, #f6f7f8, #a8b0bc 52%, #4a5563);
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
     }
     /*
      * Reference line: thin, subtle; invisible/soft on the left, strongest toward the right
@@ -245,60 +288,85 @@
     .header-meta-divider {
       width: 100%;
       height: 1px;
-      margin: 0.22rem 0 0.1rem;
+      margin: 0.2rem 0 0.05rem;
       flex-shrink: 0;
       border: none;
       border-radius: 0;
       background: linear-gradient(
         90deg,
         rgba(193, 229, 245, 0) 0%,
-        rgba(193, 229, 245, 0) 28%,
-        rgba(193, 229, 245, 0.22) 42%,
-        rgba(193, 229, 245, 0.65) 62%,
-        rgba(193, 229, 245, 0.92) 82%,
-        rgba(131, 203, 235, 0.85) 100%
+        rgba(193, 229, 245, 0) 26%,
+        rgba(193, 229, 245, 0.25) 40%,
+        rgba(193, 229, 245, 0.68) 60%,
+        rgba(193, 229, 245, 0.94) 80%,
+        rgba(131, 203, 235, 0.88) 100%
       );
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.38);
     }
     .header-links {
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      gap: 0.38rem;
+      gap: 0.48rem;
       flex-wrap: wrap;
     }
     .header-link {
       display: inline-flex;
       align-items: center;
-      gap: 0.28rem;
-      color: #cbd5e1;
-      font-size: 0.54rem;
+      gap: 0.32rem;
+      color: #d8e2ee;
+      font-size: 0.575rem;
       font-weight: 650;
-      letter-spacing: 0.02em;
-      background: transparent;
-      border: 1px solid rgba(203, 213, 225, 0.38);
+      letter-spacing: 0.024em;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(203, 213, 225, 0.42);
       border-radius: 999px;
-      padding: 0.14rem 0.44rem 0.14rem 0.38rem;
+      padding: 0.22rem 0.52rem 0.22rem 0.46rem;
       text-decoration: none;
-      line-height: 1.15;
-      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      line-height: 1.2;
+      box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      transition:
+        color 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
     }
     .header-link-icon {
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      opacity: 0.92;
+      opacity: 0.94;
+      transition: opacity 0.2s ease, transform 0.2s ease;
     }
     .header-link-icon svg {
       width: 13px;
       height: 13px;
       display: block;
+      stroke-width: 1.65;
     }
     .header-link:hover {
-      color: #f1f5f9;
-      border-color: rgba(131, 203, 235, 0.55);
-      background: rgba(15, 25, 40, 0.65);
+      color: #f8fafc;
+      border-color: rgba(131, 203, 235, 0.62);
+      background: rgba(12, 22, 38, 0.72);
+      box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.28),
+        0 0 0 1px rgba(131, 203, 235, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+    .header-link:hover .header-link-icon {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+    .header-link:active {
+      transform: translateY(0);
+      box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     /* 3-col layout — fills space below header; vertical overflow scrolls via .center-panel or body */
@@ -309,57 +377,141 @@
       flex: 1 1 auto;
       min-height: 0;
       overflow-x: hidden;
-      overflow-y: visible;
+      overflow-y: hidden;
     }
     /* Steel Grade: give the main row a definite viewport height so #materialCardPro can fill (flex-only layout often stays content-sized). */
     .dashboard-main.steel-grade-active {
       flex: 1 1 auto;
       align-self: stretch;
-      min-height: calc(100dvh - 152px);
+      min-height: calc(100dvh - var(--app-header-height));
       overflow-x: auto;
       min-width: 0;
     }
-    /* LEFT SIDEBAR (restyled to soft-blue glassmorphism) */
+    /* LEFT SIDEBAR — light rail + stacked pills (reference dashboard) */
     .left-nav {
-      flex: 0 0 230px;
-      max-width: 230px;
-      min-width: 210px;
+      flex: 0 0 var(--app-sidebar-width);
+      max-width: var(--app-sidebar-width);
+      min-width: min(210px, var(--app-sidebar-width));
       background:
-        radial-gradient(240px 240px at 40% 20%, rgba(255,255,255,0.55), rgba(255,255,255,0) 70%),
-        linear-gradient(180deg, rgba(203, 231, 246, 0.95) 0%, rgba(159, 204, 226, 0.92) 100%);
-      border-right: 1px solid rgba(136, 187, 212, 0.55);
+        radial-gradient(180px 320px at 50% 0%, rgba(255, 255, 255, 0.42), transparent 55%),
+        linear-gradient(180deg, #dcedf8 0%, #c5e2f2 45%, #b7d9eb 100%);
+      border-right: 1px solid rgba(100, 160, 190, 0.45);
       padding: 0;
       border-bottom-right-radius: 0;
       border-top-right-radius: 0;
       display: flex;
       flex-direction: column;
       align-self: stretch;
-      min-height: 100%;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: hidden;
       box-shadow: inset -1px 0 0 rgba(255,255,255,0.45);
     }
+    /* Wide screens: pin sidebar under fixed navbar; offset main row */
+    @media (min-width: 1101px) {
+      .left-nav {
+        position: fixed;
+        top: var(--app-header-height);
+        left: 0;
+        bottom: 0;
+        height: calc(100dvh - var(--app-header-height));
+        max-height: calc(100dvh - var(--app-header-height));
+        width: var(--app-sidebar-width);
+        max-width: var(--app-sidebar-width);
+        min-width: var(--app-sidebar-width);
+        flex: 0 0 var(--app-sidebar-width);
+        z-index: 360;
+        overflow-x: hidden;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        box-shadow:
+          inset -1px 0 0 rgba(255, 255, 255, 0.45),
+          4px 0 22px rgba(6, 18, 32, 0.14);
+      }
+      .left-nav .nav-section {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+      /* Offset main row under fixed sidebar (explicit width avoids flex stretch + margin overlap) */
+      .steel-dashboard > .dashboard-main {
+        margin-left: var(--app-sidebar-width) !important;
+        width: calc(100% - var(--app-sidebar-width)) !important;
+        max-width: calc(100% - var(--app-sidebar-width)) !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+      }
+      /* Beat later no-card min-height:100% rules — fixed rail uses top/bottom for height */
+      .steel-dashboard .dashboard-main > .left-nav {
+        min-height: 0 !important;
+        height: auto !important;
+      }
+    }
     .left-brand-wrap {
-      background: linear-gradient(180deg, #1c2a3c 0%, #0f1b2b 100%);
-      border-bottom: 1px solid #2c415b;
-      padding: 0.5rem 0.5rem 0.42rem;
+      flex: 0 0 auto;
+      position: relative;
+      isolation: isolate;
+      background:
+        radial-gradient(140px 56px at 50% 42%, rgba(131, 203, 235, 0.09) 0%, transparent 72%),
+        linear-gradient(180deg, #1c2a3c 0%, #101b2b 52%, #0f1b2b 100%);
+      border-bottom: 1px solid rgba(44, 65, 91, 0.92);
+      padding: clamp(0.52rem, 1.35vw, 0.72rem) clamp(0.48rem, 2vw, 0.65rem);
       display: flex;
       justify-content: center;
       align-items: center;
+      min-height: clamp(3.95rem, 10vw, 4.95rem);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.065),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.38),
+        0 3px 14px rgba(0, 0, 0, 0.14);
+    }
+    .left-brand-wrap::after {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      bottom: 0;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(131, 203, 235, 0.28) 22%,
+        rgba(193, 229, 245, 0.42) 50%,
+        rgba(131, 203, 235, 0.28) 78%,
+        transparent 100%
+      );
+      opacity: 0.85;
+      pointer-events: none;
+      z-index: 1;
     }
     .sidebar-steel-logo {
+      position: relative;
+      z-index: 2;
       width: 100%;
+      max-width: 204px;
+      margin-inline: auto;
       display: flex;
       justify-content: center;
       align-items: center;
+      padding-inline: clamp(0.22rem, 1.5vw, 0.38rem);
     }
     /* Black baked into PNG → screen blend drops black to show gradient behind */
     .sidebar-steel-logo img {
       width: 100%;
-      max-width: 200px;
+      max-width: min(196px, 100%);
       height: auto;
       object-fit: contain;
+      object-position: center;
       display: block;
       mix-blend-mode: screen;
-      filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.35));
+      filter:
+        drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45))
+        drop-shadow(0 6px 18px rgba(0, 0, 0, 0.28));
     }
     .brand-nav { display: none; }
 
@@ -367,59 +519,89 @@
       display: none;
     }
 
-    .nav-list {
-      list-style: none;
-      margin-bottom: 0.9rem;
-      padding: 0.78rem 0.7rem 0.86rem;
+    /*
+     * Main sidebar nav: CSS Grid + row-gap (spacing cannot collapse like stacked margins).
+     */
+    .left-nav .nav-section {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .nav-list li {
+    .left-nav ul#mainNavList.nav-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.88rem 0.62rem 1.05rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      align-content: stretch;
+      align-self: stretch;
+      flex-shrink: 0;
+      flex-grow: 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .left-nav ul#mainNavList.nav-list > li {
       position: relative;
-      padding: 0.7rem 0.9rem;
-      font-size: 0.95rem;
+      z-index: 1;
+      isolation: isolate;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 0.62rem 0.75rem;
+      margin: 0;
+      flex-shrink: 0;
+      font-size: 0.9rem;
       font-weight: 650;
-      color: #17384e;
-      transition: 0.2s ease;
+      letter-spacing: 0.02em;
+      color: #13394d;
+      transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
       cursor: pointer;
-      margin-bottom: 0.35rem;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.55);
-      min-height: 46px;
+      border-radius: 999px;
+      border: 1px solid rgba(82, 145, 178, 0.42);
+      min-height: 44px;
+      height: auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.30));
+      text-align: center;
+      line-height: 1.35;
+      background: linear-gradient(180deg, #eaf6fc 0%, #d5eaf6 55%, #c9e4f3 100%);
       box-shadow:
-        0 10px 22px rgba(17, 55, 75, 0.10),
-        inset 0 1px 0 rgba(255,255,255,0.65);
-      backdrop-filter: blur(10px);
+        0 2px 5px rgba(17, 55, 75, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
     }
 
-    .nav-list li::before {
-      display: none;
+    .left-nav ul#mainNavList.nav-list > li::before {
+      display: none !important;
+      content: none !important;
     }
 
-    .nav-list li.active-nav {
-      background:
-        linear-gradient(135deg, rgba(134, 212, 243, 0.95) 0%, rgba(103, 184, 221, 0.92) 100%);
-      color: #0f3144;
+    .left-nav ul#mainNavList.nav-list > li.active-nav {
+      z-index: 2;
+      background: linear-gradient(180deg, #4fa8cf 0%, #3491bd 48%, #2d82ae 100%);
+      color: #ffffff;
       font-weight: 800;
-      border-color: rgba(255,255,255,0.65);
+      border-color: rgba(255, 255, 255, 0.38);
       box-shadow:
-        0 14px 26px rgba(35, 120, 155, 0.18),
-        inset 0 1px 0 rgba(255,255,255,0.75);
+        0 4px 14px rgba(28, 110, 150, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
     }
 
-    .nav-list li:not(.active-nav):hover {
-      transform: translateY(-1px);
-      background: linear-gradient(180deg, rgba(255,255,255,0.66), rgba(255,255,255,0.38));
-      border-color: rgba(255,255,255,0.7);
-      color: #12384d;
-    }
-
-    .nav-list li + li {
-      border-top: none;
+    .left-nav ul#mainNavList.nav-list > li:not(.active-nav):hover {
+      background: linear-gradient(180deg, #f4fafd 0%, #e2f2fa 100%);
+      border-color: rgba(61, 125, 154, 0.48);
+      color: #0f3144;
+      box-shadow: 0 3px 10px rgba(17, 55, 75, 0.09);
     }
 
     /* CENTER PANEL: primary vertical scroll region when content exceeds viewport */
@@ -450,6 +632,9 @@
       flex: 1 1 auto;
       min-height: 0;
       height: auto;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     /* Calculation pages: allow shell content-driven height */
@@ -1215,25 +1400,16 @@
       flex: 1 1 auto;
       height: auto;
       overflow-x: hidden;
-      overflow-y: visible;
+      overflow-y: hidden;
     }
 
-    .dashboard-main.no-card .left-nav {
-      min-height: 100%;
-      height: auto;
-      align-self: stretch;
-    }
     .dashboard-main.no-card.overview-active {
       min-height: 0;
       flex: 1 1 auto;
       height: auto;
       overflow-x: hidden;
-      overflow-y: visible;
+      overflow-y: hidden;
     }
-    .dashboard-main.no-card.overview-active .left-nav {
-      min-height: 100%;
-    }
-
     /* ==============================
        No-card layout height (Overview + Section Properties + design modules)
        Goal:
@@ -1247,7 +1423,7 @@
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
-      overflow-y: visible;
+      overflow-y: hidden;
     }
     .steel-dashboard:has(.dashboard-main.no-card) .dashboard-main {
       flex: 1 1 auto;
@@ -1255,12 +1431,7 @@
       display: flex;
       align-items: stretch;
       overflow-x: hidden;
-      overflow-y: visible;
-    }
-    .steel-dashboard:has(.dashboard-main.no-card) .left-nav {
-      align-self: stretch;
-      height: auto;
-      min-height: 100%;
+      overflow-y: hidden;
     }
     .steel-dashboard:has(.dashboard-main.no-card) .center-panel {
       flex: 1 1 auto;
@@ -1284,12 +1455,8 @@
       flex: 1 1 auto;
       height: auto;
       overflow-x: hidden;
-      overflow-y: visible;
+      overflow-y: hidden;
     }
-    .dashboard-main.no-card.section-props-active .left-nav {
-      min-height: 100%;
-    }
-
     .dashboard-main.no-card .content-panel {
       display: none;
     }
@@ -1527,28 +1694,87 @@
       border-top: 1px solid #e6f0f6;
     }
 
+    @media (max-height: 760px) and (min-width: 901px) {
+      :root {
+        --app-header-height: 4.85rem;
+      }
+    }
+    @media (max-width: 900px) {
+      :root {
+        --app-header-height: 9.35rem;
+      }
+    }
+    @media (max-width: 900px) and (max-height: 760px) {
+      :root {
+        --app-header-height: 6.95rem;
+      }
+    }
+
     /* responsive */
     @media (max-width: 1100px) {
       .dashboard-main {
         flex-direction: column;
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
-      .steel-dashboard {
-        flex: 1 1 auto;
-        min-height: 100dvh;
-        height: auto;
-        max-height: none;
-      }
-      .dashboard-main.no-card {
-        flex-wrap: wrap;
-        min-height: auto;
+      .steel-dashboard > .dashboard-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
       }
       .left-nav {
+        position: relative;
+        top: auto;
+        left: auto;
+        bottom: auto;
+        right: auto;
+        z-index: auto;
+        width: 100%;
+        overflow-x: hidden;
+        overflow-y: visible;
+        box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.45);
         border-right: none;
         border-bottom: 1px solid #dceaf2;
         max-width: 100%;
         min-width: 0;
         flex-basis: auto;
         border-bottom-right-radius: 0;
+      }
+      .left-nav .nav-section {
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+      .center-panel {
+        overflow-y: visible;
+      }
+      .steel-dashboard {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        max-height: 100dvh;
+      }
+      .dashboard-main.no-card {
+        flex-wrap: wrap;
+        min-height: auto;
+      }
+      .dashboard-main.no-card > .left-nav {
+        min-height: 100%;
+        height: auto;
+        align-self: stretch;
+      }
+      .dashboard-main.no-card.overview-active > .left-nav {
+        min-height: 100%;
+      }
+      .dashboard-main.no-card.section-props-active > .left-nav {
+        min-height: 100%;
       }
       .center-panel {
         border-right: none;
@@ -1566,10 +1792,14 @@
     }
 
     @media (max-width: 1400px) {
-      .left-nav {
-        flex: 0 0 220px;
-        max-width: 220px;
-        min-width: 200px;
+      :root {
+        --app-sidebar-width: 220px;
+      }
+      .sidebar-steel-logo {
+        max-width: min(194px, 100%);
+      }
+      .sidebar-steel-logo img {
+        max-width: min(186px, 100%);
       }
       .right-panel {
         flex: 0 0 450px;
@@ -1596,20 +1826,27 @@
     }
 
     @media (max-width: 1250px) {
-      .left-nav {
-        flex: 0 0 200px;
-        max-width: 200px;
-        min-width: 180px;
+      :root {
+        --app-sidebar-width: 200px;
       }
-      .nav-list li {
+      .left-brand-wrap {
+        padding: clamp(0.46rem, 1.2vw, 0.62rem) clamp(0.42rem, 1.8vw, 0.52rem);
+        min-height: clamp(4rem, 10vw, 4.85rem);
+      }
+      .sidebar-steel-logo {
+        max-width: min(178px, 100%);
+      }
+      .sidebar-steel-logo img {
+        max-width: min(170px, 100%);
+      }
+      .left-nav ul#mainNavList.nav-list {
+        row-gap: 0.58rem;
+      }
+      .left-nav ul#mainNavList.nav-list > li {
         min-height: 42px;
-        padding-left: 2.7rem;
-        font-size: 0.84rem;
-      }
-      .nav-list li::before {
-        width: 24px;
-        height: 24px;
-        left: 0.66rem;
+        padding: 0.55rem 0.58rem;
+        margin: 0;
+        font-size: 0.82rem;
       }
       .center-panel {
         padding: 0.9rem 0.72rem;
@@ -1661,7 +1898,7 @@
         border-radius: 0;
       }
       .page-header {
-        padding: 0.32rem 0.45rem 0.28rem;
+        padding: 0.32rem 0.48rem 0.26rem;
       }
       .header-container {
         flex-direction: column;
@@ -1683,7 +1920,18 @@
         justify-content: flex-start;
       }
       .left-brand-wrap {
-        padding: 0.44rem 0.4rem 0.36rem;
+        padding: 0.52rem 0.72rem 0.46rem;
+        min-height: auto;
+      }
+      .left-brand-wrap::after {
+        left: 8%;
+        right: 8%;
+      }
+      .sidebar-steel-logo {
+        max-width: min(210px, 82vw);
+      }
+      .sidebar-steel-logo img {
+        max-width: min(198px, 82vw);
       }
       .center-panel {
         padding: 0.68rem 0.52rem;
@@ -1711,6 +1959,15 @@
       .stress-filters {
         grid-template-columns: 1fr;
       }
+      .left-brand-wrap {
+        padding: 0.46rem 0.56rem 0.4rem;
+      }
+      .sidebar-steel-logo {
+        max-width: min(188px, 78vw);
+      }
+      .sidebar-steel-logo img {
+        max-width: min(176px, 78vw);
+      }
       .center-panel {
         padding: 0.5rem;
       }
@@ -1729,6 +1986,12 @@
     }
 
     @media (max-width: 480px) {
+      .left-brand-wrap {
+        padding: 0.4rem 0.48rem 0.34rem;
+      }
+      .sidebar-steel-logo img {
+        max-width: min(158px, 88vw);
+      }
       .grade-table {
         min-width: 300px;
         font-size: 0.55rem;
@@ -1756,12 +2019,25 @@
         padding: 0;
       }
       .page-header {
-        padding: 0.24rem 0.5rem 0.22rem;
+        padding: 0.26rem 0.52rem 0.2rem;
       }
-      .sidebar-steel-logo img { max-width: 170px; }
+      .left-brand-wrap {
+        padding: 0.42rem 0.48rem 0.36rem;
+        min-height: auto;
+      }
+      .sidebar-steel-logo img {
+        max-width: min(158px, 100%);
+      }
       .header-link {
-        font-size: 0.55rem;
-        padding: 0.14rem 0.38rem;
+        font-size: 0.56rem;
+        padding: 0.18rem 0.44rem;
+        gap: 0.28rem;
+      }
+      .bu-section {
+        padding: 0.22rem 0.68rem 0.22rem 0.32rem;
+      }
+      .bu-text {
+        padding: 0.3rem 0.52rem;
       }
       .center-panel {
         padding: 0.5rem;
@@ -1788,7 +2064,7 @@
         flex: 0 0 500px;
         max-width: 500px;
         min-width: 440px;
-        min-height: calc(100dvh - 160px);
+        min-height: calc(100dvh - var(--app-header-height) - 12px);
       }
       .mat-visual-wrap {
         padding: 0.68rem 0.68rem 0.2rem;
@@ -2015,11 +2291,11 @@
     #sectionPropsSection.active-panel {
       /* Section Properties should behave like a wide dashboard */
       height: auto;
-      overflow: visible;
-    }
-    #sectionPropsSection .section-props-dashboard {
-      height: auto;
-      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: visible;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
     #overviewSection .retro-grid {
       /* top row scrolls when viewport is short */
@@ -2776,35 +3052,61 @@
       background: linear-gradient(180deg, #dbe9f3 0%, #cfe1ee 100%);
       border: 1px solid #b8d3e4;
       border-radius: 18px;
-      padding: 20px;
+      padding: clamp(14px, 1.5vw, 20px) clamp(12px, 1.35vw, 18px);
       width: 100%;
-      max-width: none;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: clamp(22px, 2vw, 32px);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      overflow-x: hidden;
     }
 
     /* strict 3-column grid for top section */
     #sectionPropsSection .sp-top-grid {
       display: grid;
-      grid-template-columns: 1fr 1.18fr 0.9fr;
-      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr) minmax(0, 0.9fr);
+      gap: clamp(12px, 1.35vw, 20px);
       align-items: stretch;
-      /* ensure equal-height cards */
-      grid-auto-rows: 1fr;
+      grid-auto-rows: minmax(268px, auto);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
-    /* Match reference screenshot: fixed, equal-height top containers */
+    /* Equal-height top row without clipping inner content */
     #sectionPropsSection .sp-top-grid .sp-card {
-      height: 300px;
+      min-height: 268px;
+      height: 100%;
     }
 
     /* lower: geometry | search+computed | guide (reference layout) */
     #sectionPropsSection .sp-lower-grid {
       display: grid;
       grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr) minmax(0, 0.9fr);
-      gap: 20px;
-      align-items: start;
+      gap: clamp(12px, 1.35vw, 20px);
+      align-items: stretch;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    #sectionPropsSection .sp-top-grid > *,
+    #sectionPropsSection .sp-lower-grid > * {
+      min-width: 0;
+    }
+    #sectionPropsSection img {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    #sectionPropsSection .sp-lower-grid > form.sp-geometry-card,
+    #sectionPropsSection .sp-lower-grid > .sp-computed-column,
+    #sectionPropsSection .sp-lower-grid > .sp-guide-table-card {
+      height: 100%;
+      min-height: 0;
+      align-self: stretch;
     }
     @media (max-width: 1100px) {
       #sectionPropsSection .sp-lower-grid {
@@ -2875,6 +3177,9 @@
       border-radius: 10px;
       padding: 10px;
       margin-bottom: 10px;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     #sectionPropsSection .sp-visual-wrap .sp-main-image {
       margin-bottom: 0;
@@ -2895,15 +3200,20 @@
     #sectionPropsSection .sp-computed-column {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       min-width: 0;
+      min-height: 0;
     }
     #sectionPropsSection .sp-computed-card {
       background: linear-gradient(180deg, #e8f3fa 0%, #dbeaf5 100%);
       border: 1px solid #aecadd;
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 14px 16px;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
     #sectionPropsSection .sp-computed-card .sp-computed-title {
       margin: 0 0 8px;
@@ -2918,7 +3228,8 @@
       letter-spacing: 0.02em;
     }
     #sectionPropsSection .sp-computed-card .sp-field-col {
-      gap: 6px;
+      gap: 10px;
+      flex: 1 1 auto;
     }
     #sectionPropsSection .sp-computed-card h5 {
       margin: 0;
@@ -2927,7 +3238,7 @@
       background: #f8fbff;
       border: 1px solid #c8dceb;
       border-radius: 12px;
-      padding: 16px;
+      padding: clamp(14px, 1.35vw, 18px);
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -2991,12 +3302,15 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-shrink: 0;
+      padding-top: 2px;
+      margin-bottom: 2px;
     }
     #sectionPropsSection .sp-search-row input {
       flex: 1 1 auto;
       border: 1px solid #aacadd;
       border-radius: 8px;
-      padding: 0.44rem 0.62rem;
+      padding: 0.48rem 0.72rem;
       font-size: 0.82rem;
       color: #0f3144;
       background: #ffffff;
@@ -3093,12 +3407,14 @@
       padding: 0;
       display: flex;
       align-items: stretch;
+      overflow: hidden;
     }
     #sectionPropsSection .sp-guide-table-image {
       width: 100%;
-      height: 100%;
+      max-width: 100%;
+      height: auto;
       max-height: none;
-      object-fit: cover;
+      object-fit: contain;
       object-position: center;
       display: block;
       border-radius: 10px;
@@ -3108,48 +3424,49 @@
 
 
     #sectionPropsSection .sp-fields {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       background: linear-gradient(180deg, #d8e9f6 0%, #cee2f1 100%);
       border-radius: 12px;
-      padding: 8px 10px;
+      padding: 14px 16px;
       border: 1px solid #aecadd;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
       width: 100%;
+      box-sizing: border-box;
     }
     #sectionPropsSection .sp-fields h5 {
-      grid-column: 1;
       font-size: 0.95rem;
       color: #073047;
       font-weight: 900;
-      margin-bottom: 0;
+      margin: 0 0 0.15rem;
       letter-spacing: 0.01em;
+      flex-shrink: 0;
     }
     #sectionPropsSection .sp-field-col {
       display: grid;
-      gap: 6px;
+      gap: 10px;
     }
     #sectionPropsSection .sp-field {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 88px 42px;
+      grid-template-columns: minmax(0, 1fr) minmax(88px, 96px) 46px;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
       color: #072f43;
       font-weight: 800;
-      font-size: 0.74rem;
-      line-height: 1.12;
+      font-size: 0.76rem;
+      line-height: 1.22;
     }
     #sectionPropsSection .sp-field input {
       border: 1px solid #9fbdcf;
       background: #edf4f9;
       border-radius: 6px;
-      padding: 0.24rem 0.32rem;
+      padding: 0.3rem 0.4rem;
       font-size: 0.76rem;
       font-weight: 800;
       color: #17384e;
       text-align: center;
-      height: 26px;
+      height: 30px;
       width: 100%;
       box-sizing: border-box;
     }
@@ -3157,15 +3474,15 @@
     /* Fit Section Properties on shorter laptop screens (no scrolling) */
     @media (max-height: 820px) {
       #sectionPropsSection .section-props-dashboard {
-        padding: 16px;
-        gap: 16px;
+        padding: 14px;
+        gap: 22px;
       }
       #sectionPropsSection .sp-top-grid,
       #sectionPropsSection .sp-lower-grid {
-        gap: 16px;
+        gap: 14px;
       }
       #sectionPropsSection .sp-card {
-        padding: 14px;
+        padding: 13px;
       }
       #sectionPropsSection .sp-main-image {
         max-height: 170px;
@@ -3177,20 +3494,20 @@
         max-height: 220px;
       }
       #sectionPropsSection .sp-fields {
-        padding: 8px 10px;
+        padding: 12px 14px;
         gap: 12px;
       }
       #sectionPropsSection .sp-field-col {
-        gap: 4px;
+        gap: 8px;
       }
       #sectionPropsSection .sp-field {
-        grid-template-columns: minmax(200px, 1fr) 84px 40px;
-        gap: 6px;
+        grid-template-columns: minmax(0, 1fr) 82px 42px;
+        gap: 8px;
         font-size: 0.72rem;
-        line-height: 1.1;
+        line-height: 1.18;
       }
       #sectionPropsSection .sp-field input {
-        height: 24px;
+        height: 28px;
         font-size: 0.72rem;
       }
       #sectionPropsSection .sp-field span {
@@ -3316,19 +3633,19 @@
         height: 32px;
       }
       #sectionPropsSection .sp-fields {
-        padding: 8px 10px;
-        gap: 10px;
+        padding: 11px 12px;
+        gap: 11px;
       }
       #sectionPropsSection .sp-field-col {
-        gap: 4px;
+        gap: 7px;
       }
       #sectionPropsSection .sp-field {
-        grid-template-columns: minmax(0, 1fr) 78px 38px;
-        gap: 6px;
+        grid-template-columns: minmax(0, 1fr) 74px 40px;
+        gap: 7px;
         font-size: 0.69rem;
       }
       #sectionPropsSection .sp-field input {
-        height: 22px;
+        height: 26px;
         font-size: 0.69rem;
       }
       #sectionPropsSection .sp-field span {
@@ -3342,13 +3659,15 @@
         font-size: 0.84rem;
       }
     }
-    /* Final hard override to guarantee reference top-card sizing */
+    /* Wide desktop: equal top row + stretched visuals — avoid fixed heights that clip rows */
     @media (min-width: 1101px) {
       #sectionPropsSection .sp-top-grid .sp-card {
-        height: 280px !important;
+        min-height: 268px;
+        height: 100%;
       }
       #sectionPropsSection .sp-guide-table-card {
-        height: 280px !important;
+        min-height: 0;
+        height: 100%;
       }
       #sectionPropsSection .sp-main-card,
       #sectionPropsSection .sp-guide-card {
@@ -3378,28 +3697,34 @@
     }
     .sp-db-panel {
       display: none;
-      grid-area: db;
       position: fixed;
       inset: 0;
-      z-index: 50;
-      padding: 1rem;
-      background: rgba(6, 40, 58, 0.45);
-      backdrop-filter: blur(3px);
+      z-index: 450;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .sp-db-panel.is-open {
-      display: grid;
-      place-items: center;
+      display: block;
     }
     .sp-db-backdrop {
-      position: absolute;
+      position: fixed;
       inset: 0;
+      z-index: 0;
       cursor: pointer;
+      background: rgba(15, 23, 42, 0.58);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
     .sp-db-dialog {
       position: relative;
       z-index: 1;
-      width: min(1060px, calc(100vw - 2rem));
-      max-height: calc(100dvh - 2rem);
+      width: min(1024px, calc(100vw - 40px));
+      max-height: min(calc(100dvh - var(--app-header-height, 5.25rem) - 40px), 88vh);
+      margin: calc(var(--app-header-height, 5.25rem) + 16px) auto 28px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -3637,12 +3962,6 @@
       font-weight: 700;
     }
 
-    /* Modal centering polish */
-    .sp-db-panel.is-open {
-      place-items: center;
-      align-content: center;
-    }
-
     /* Focus + hover (a11y & affordance) */
     .sp-btn:focus,
     .sp-search-btn:focus,
@@ -3667,8 +3986,7 @@
           "hero"
           "main"
           "guide"
-          "fields"
-          "db";
+          "fields";
       }
       .sp-hero,
       .sp-main-card,
@@ -6624,10 +6942,13 @@
     /* Keep calculator shells stretching + scrollable on short viewports */
     #tensionSection .tension-shell,
     #compressionSection .tension-shell,
-    #tensionRodSection .tension-shell,
     #bendingSection .tension-shell,
     #shearSection .tension-shell {
       overflow: auto;
+    }
+    /* Tension Rod: sheet height is content-driven; `.center-panel` owns vertical scroll */
+    #tensionRodSection .tension-shell {
+      overflow: visible !important;
     }
 
     /* ── Design Calculator: 2-panel master layout ─────────────────────── */
@@ -7085,7 +7406,13 @@
     }
 
     /* Unstyled mode only for Tension Rod, Bending (non-dashboard), and Shear pages */
-    #tensionRodSection .tension-shell,
+    #tensionRodSection .tension-shell {
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      gap: 0 !important;
+    }
     #shearSection .tension-shell {
       background: transparent !important;
       border: 0 !important;
@@ -9548,66 +9875,83 @@
     }
 
     /* ── Tension Rod: ENGINEERING SHEET layout (scoped) ────────────────── */
+    /*
+     * Scroll model: only `.center-panel` scrolls (no-card layout). Let this panel
+     * grow to content height — nested overflow:auto here was clipping diagrams / bottom band.
+     */
+    .dashboard-main.no-card #tensionRodSection.content-panel.active-panel {
+      flex: 0 0 auto !important;
+      min-height: auto !important;
+      height: auto !important;
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
+    }
     #tensionRodSection.content-panel.active-panel {
-      flex: 1 1 auto;
-      min-height: 0;
-      height: auto;
-      overflow-x: hidden;
-      overflow-y: auto;
       display: flex;
       flex-direction: column;
       padding: 0 !important;
     }
-    /* Reduce center-panel padding only for Tension Rod (prevents bottom clip) */
+    /* Section Properties: inset from viewport + prevent horizontal bleed past main column */
+    .dashboard-main.section-props-active .center-panel {
+      padding: clamp(12px, 1.25vw, 20px) clamp(14px, 2.25vw, 32px) clamp(16px, 1.45vw, 26px) !important;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
     .dashboard-main.tension-rod-active .center-panel {
-      padding-top: 24px !important;
-      padding-bottom: 8px !important;
+      padding: clamp(10px, 1.15vw, 18px) clamp(10px, 1.05vw, 18px) clamp(14px, 1.35vw, 24px) !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
     }
     #tensionRodSection .tension-shell,
     #tensionRodSection form#formTensionRod,
     #tensionRodSection .tension-view.is-active {
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       min-height: 0;
       height: auto;
       overflow-x: hidden !important;
-      overflow-y: auto !important;
+      overflow-y: visible !important;
       display: flex;
       flex-direction: column;
     }
 
     #tensionRodSection .trsheet {
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       min-height: 0;
       height: auto;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: visible;
       -webkit-overflow-scrolling: touch;
       display: flex;
       flex-direction: column;
-      gap: clamp(3px, 0.45vw, 6px);
-      padding: clamp(2px, 0.35vw, 4px);
+      gap: clamp(8px, 0.85vw, 14px);
+      padding: clamp(8px, 0.82vw, 14px);
       box-sizing: border-box;
-      font-size: clamp(11px, 0.9vw, 14px);
-      line-height: 1.1;
+      font-size: clamp(10px, 0.8vw, 12px);
+      line-height: 1.22;
       color: #0f2b3d;
     }
 
     /* Top strip (sheet header) — title / legend / considerations */
     #tensionRodSection .trsheet-top {
       display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-      gap: clamp(8px, 1vw, 14px);
-      align-items: stretch;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(8px, 0.85vw, 14px);
+      align-items: start;
       min-height: 0;
       overflow: visible;
-      padding-top: 4px;
+      padding-top: 0;
+      position: relative;
+      z-index: 2;
     }
     #tensionRodSection .trsheet-consider-aside {
-      border-radius: 12px;
+      border-radius: 10px;
       border: 1px solid #a7c5d7;
       background: linear-gradient(180deg, #f8fdff 0%, #f0f8fd 100%);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-      padding: clamp(6px, 0.65vw, 10px);
+      padding: clamp(8px, 0.78vw, 11px);
       min-width: 0;
     }
     #tensionRodSection .trsheet-consider-aside-head {
@@ -9616,23 +9960,28 @@
       font-weight: 1000;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      font-size: clamp(10px, 0.82vw, 12px);
-      padding: clamp(4px, 0.5vw, 7px);
-      margin: calc(-1 * clamp(6px, 0.65vw, 10px)) calc(-1 * clamp(6px, 0.65vw, 10px)) clamp(6px, 0.55vw, 8px);
+      font-size: clamp(9px, 0.72vw, 11px);
+      padding: clamp(6px, 0.55vw, 9px) clamp(8px, 0.72vw, 11px);
+      margin: calc(-1 * clamp(8px, 0.78vw, 11px)) calc(-1 * clamp(8px, 0.78vw, 11px)) clamp(7px, 0.62vw, 9px);
       border-bottom: 1px solid #a8cadf;
       text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      min-height: clamp(28px, 2.4vw, 36px);
     }
     #tensionRodSection .trsheet-consider-aside-list {
       margin: 0;
       padding-left: 1.1rem;
       font-weight: 800;
-      font-size: clamp(9px, 0.78vw, 11px);
-      line-height: 1.35;
+      font-size: clamp(8px, 0.68vw, 10px);
+      line-height: 1.32;
     }
     #tensionRodSection .trsheet-top-left {
       display: flex;
       flex-direction: column;
-      gap: clamp(4px, 0.5vw, 8px);
+      gap: clamp(6px, 0.65vw, 10px);
       min-width: 0;
     }
     #tensionRodSection .trsheet-grade-line {
@@ -9640,10 +9989,11 @@
       flex-wrap: wrap;
       align-items: center;
       gap: clamp(6px, 0.65vw, 10px);
+      min-height: clamp(26px, 2.1vw, 32px);
     }
     #tensionRodSection .trsheet-grade-line label {
       font-weight: 950;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       white-space: nowrap;
     }
     #tensionRodSection .trsheet-grade-line select {
@@ -9651,41 +10001,48 @@
       min-width: min(220px, 100%);
       max-width: 100%;
       box-sizing: border-box;
-      height: 1.45rem;
+      height: 1.22rem;
       font-weight: 850;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       border-radius: 8px;
       padding: 0.1rem 0.35rem;
     }
     #tensionRodSection .trsheet-title {
       font-weight: 1000;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      font-size: clamp(12px, 1.05vw, 15px);
+      font-size: clamp(10px, 0.88vw, 13px);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: clamp(6px, 0.85vw, 10px) clamp(14px, 1.4vw, 22px);
+      padding: clamp(6px, 0.65vw, 9px) clamp(10px, 1.1vw, 16px);
       background: linear-gradient(180deg, #d8eef9 0%, #add8e6 100%);
       border: 1px solid #8eb8d4;
-      border-radius: 12px;
+      border-radius: 10px;
       color: #0f2b3d;
+      box-sizing: border-box;
+      min-height: clamp(28px, 2.4vw, 36px);
+      width: 100%;
+      max-width: 100%;
     }
 
-    /* Main reference grid: left/center top+middle, right spans full height */
+    /* Main reference grid: balanced columns; bottom band aligns with col 1–2 */
     #tensionRodSection .trsheet-main {
       min-height: 0;
       overflow: visible;
       display: grid;
-      grid-template-columns: 1fr 1.2fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       grid-template-rows: auto auto auto;
-      gap: clamp(8px, 1vw, 14px);
+      gap: clamp(10px, 1vw, 16px);
       align-items: stretch;
-      flex: 0 1 auto;
+      flex: 0 0 auto;
       height: auto;
+      position: relative;
+      z-index: 1;
+      margin-top: 0;
     }
     #tensionRodSection .trcol {
       min-width: 0;
@@ -9693,8 +10050,22 @@
       overflow: visible;
       display: grid;
       grid-auto-rows: min-content;
-      gap: clamp(4px, 0.55vw, 8px);
+      gap: clamp(7px, 0.75vw, 11px);
       align-content: start;
+    }
+    /* Center stack: design method auto height; demand card fills remaining column height */
+    #tensionRodSection .trcol.trcenter {
+      grid-template-rows: auto 1fr;
+      align-content: stretch;
+    }
+    #tensionRodSection .trcenter > .trbox:last-child {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(6px, 0.65vw, 10px);
+      min-height: 0;
+    }
+    #tensionRodSection .trcenter > .trbox:last-child .tr-dem-row {
+      margin-top: auto;
     }
 
     /* Place panels to match the reference image */
@@ -9718,9 +10089,9 @@
     #tensionRodSection .trbox {
       background: linear-gradient(180deg, #f8fdff 0%, #f0f8fd 100%);
       border: 1px solid #a7c5d7;
-      border-radius: 12px;
+      border-radius: 10px;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-      padding: clamp(6px, 0.6vw, 10px);
+      padding: clamp(8px, 0.78vw, 11px);
       min-height: 0;
       overflow: visible;
       flex: 0 1 auto;
@@ -9728,13 +10099,13 @@
     #tensionRodSection .trhead {
       background: linear-gradient(180deg, #d8eef9 0%, #b8dff0 100%);
       border-bottom: 1px solid #a8cadf;
-      border-radius: 8px 8px 0 0;
-      margin: calc(-1 * clamp(6px, 0.6vw, 10px)) calc(-1 * clamp(6px, 0.6vw, 10px)) clamp(6px, 0.55vw, 8px);
-      padding: clamp(5px, 0.5vw, 8px);
+      border-radius: 7px 7px 0 0;
+      margin: calc(-1 * clamp(8px, 0.78vw, 11px)) calc(-1 * clamp(8px, 0.78vw, 11px)) clamp(7px, 0.62vw, 9px);
+      padding: clamp(6px, 0.52vw, 8px) clamp(8px, 0.62vw, 10px);
       font-weight: 1000;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       color: #11384f;
     }
 
@@ -9743,7 +10114,7 @@
       display: grid;
       grid-template-columns: auto 1fr;
       align-items: stretch;
-      column-gap: clamp(6px, 0.75vw, 10px);
+      column-gap: clamp(5px, 0.55vw, 8px);
     }
     #tensionRodSection .tr-vert-label {
       writing-mode: vertical-rl;
@@ -9753,10 +10124,11 @@
       font-weight: 1000;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      padding: clamp(8px, 1vw, 12px) clamp(6px, 0.7vw, 10px);
+      padding: clamp(6px, 0.75vw, 9px) clamp(5px, 0.55vw, 8px);
       text-align: center;
       user-select: none;
       align-self: stretch;
+      font-size: clamp(9px, 0.74vw, 11px);
     }
     #tensionRodSection .trleft-body {
       min-width: 0;
@@ -9764,39 +10136,35 @@
       overflow: visible;
       display: grid;
       grid-template-rows: repeat(4, min-content);
-      gap: clamp(4px, 0.55vw, 8px);
+      gap: clamp(7px, 0.72vw, 11px);
       align-content: start;
-    }
-
-    #tensionRodSection .trcenter > .trbox:first-child {
-      align-self: start;
     }
 
     /* Rows */
     #tensionRodSection .trrow {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(88px, 38%) auto;
-      gap: clamp(4px, 0.55vw, 8px);
+      gap: clamp(6px, 0.58vw, 9px);
       align-items: center;
-      margin-bottom: clamp(3px, 0.45vw, 6px);
+      margin-bottom: clamp(5px, 0.52vw, 8px);
       font-weight: 900;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
     }
     #tensionRodSection .trrow:last-child { margin-bottom: 0; }
     #tensionRodSection .unit {
       font-weight: 1000;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       white-space: nowrap;
     }
     #tensionRodSection .trrow input {
       width: 100%;
-      height: clamp(22px, 1.8vw, 28px);
+      height: clamp(22px, 1.72vw, 26px);
       border: 1px solid #9eb8cb;
-      border-radius: 8px;
+      border-radius: 7px;
       box-shadow: none;
       text-align: center;
       font-weight: 1000;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(8px, 0.68vw, 10px);
       padding: 0 6px;
       font-variant-numeric: tabular-nums;
     }
@@ -9838,9 +10206,9 @@
     }
 
     #tensionRodSection .tr-demand-line {
-      margin: 0 0 clamp(4px, 0.5vw, 8px);
+      margin: 0 0 clamp(3px, 0.38vw, 6px);
       font-weight: 1000;
-      font-size: clamp(10px, 0.88vw, 13px);
+      font-size: clamp(9px, 0.76vw, 11px);
       text-align: center;
       line-height: 1.35;
       word-wrap: break-word;
@@ -9858,12 +10226,13 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: clamp(8px, 0.75vw, 12px);
-      margin-top: clamp(2px, 0.35vw, 6px);
+      gap: clamp(6px, 0.58vw, 9px);
+      margin-top: clamp(2px, 0.28vw, 5px);
+      min-height: clamp(26px, 2.05vw, 32px);
     }
     #tensionRodSection .tr-method-dropdown-row label {
       font-weight: 950;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       white-space: nowrap;
     }
     #tensionRodSection .tr-method-select {
@@ -9871,11 +10240,11 @@
       min-width: min(160px, 100%);
       max-width: 100%;
       box-sizing: border-box;
-      height: clamp(26px, 2vw, 32px);
+      height: clamp(22px, 1.65vw, 27px);
       font-weight: 900;
-      font-size: clamp(11px, 0.9vw, 13px);
-      border-radius: 8px;
-      padding: 0.15rem 0.45rem;
+      font-size: clamp(9px, 0.78vw, 11px);
+      border-radius: 7px;
+      padding: 0.12rem 0.38rem;
     }
     #tensionRodSection .trgrid2 {
       display: grid;
@@ -9886,46 +10255,46 @@
       background: #ffffff;
       padding: clamp(4px, 0.55vw, 8px);
       font-weight: 1000;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       margin-bottom: clamp(4px, 0.55vw, 8px);
     }
     #tensionRodSection .tr-dem-row {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: clamp(4px, 0.55vw, 8px);
+      gap: clamp(7px, 0.68vw, 10px);
       align-items: stretch;
     }
     #tensionRodSection .trmini {
       border: 1px solid rgba(31, 43, 52, 0.75);
       background: #ffffff;
-      padding: clamp(4px, 0.55vw, 8px);
+      padding: clamp(6px, 0.58vw, 9px);
       display: grid;
-      gap: 6px;
+      gap: clamp(5px, 0.52vw, 8px);
       align-content: start;
     }
     #tensionRodSection .trmini.is-demand-pair,
     #tensionRodSection .trmini-demand {
       background: #f5cfd9;
       border-color: #c49aab;
-      border-radius: 10px;
+      border-radius: 8px;
     }
     #tensionRodSection .tr-governing-large {
       display: flex;
       flex-wrap: wrap;
       align-items: baseline;
       justify-content: center;
-      gap: clamp(6px, 0.65vw, 10px);
-      margin-bottom: clamp(6px, 0.75vw, 10px);
+      gap: clamp(5px, 0.52vw, 8px);
+      margin-bottom: clamp(5px, 0.58vw, 8px);
       font-weight: 1000;
-      font-size: clamp(11px, 0.95vw, 13px);
+      font-size: clamp(9px, 0.82vw, 11px);
     }
     #tensionRodSection .tr-governing-large .tr-gov-num {
-      border-radius: 10px;
-      padding: clamp(6px, 0.75vw, 10px) clamp(12px, 1.2vw, 18px);
-      font-size: clamp(16px, 2.2vw, 26px);
+      border-radius: 8px;
+      padding: clamp(6px, 0.62vw, 9px) clamp(10px, 1vw, 14px);
+      font-size: clamp(12px, 1.35vw, 17px);
       font-weight: 1000;
       font-variant-numeric: tabular-nums;
-      line-height: 1;
+      line-height: 1.15;
     }
     #tensionRodSection .tr-governing-large .tr-gov-num:not(.out-green) {
       background: #ffffff;
@@ -9933,12 +10302,12 @@
     }
     #tensionRodSection .tr-governing-large .unit {
       font-weight: 950;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
     }
     #tensionRodSection .trmini-lbl {
       font-weight: 1000;
       text-transform: none;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       letter-spacing: 0.02em;
       line-height: 1.3;
     }
@@ -9948,12 +10317,12 @@
     }
     #tensionRodSection .trmini-val {
       border: 1px solid #9eb8cb;
-      border-radius: 8px;
+      border-radius: 7px;
       background: #ffffff;
       text-align: center;
       font-weight: 1000;
-      padding: clamp(4px, 0.55vw, 8px);
-      font-size: clamp(11px, 1.0vw, 14px);
+      padding: clamp(3px, 0.45vw, 6px);
+      font-size: clamp(9px, 0.82vw, 11px);
     }
     #tensionRodSection .trmini-val.out-green {
       border-color: #7aba94;
@@ -9961,7 +10330,7 @@
     }
     #tensionRodSection .trmini-unit {
       font-weight: 1000;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
     }
 
     /* RIGHT specifics */
@@ -9969,18 +10338,18 @@
       margin: 0;
       padding-left: 1.1rem;
       font-weight: 950;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
       line-height: 1.15;
     }
     #tensionRodSection .trformula {
       border: 1px solid #b0bec5;
       background: linear-gradient(180deg, #eceff1 0%, #dfe6e9 100%);
-      padding: clamp(6px, 0.6vw, 9px);
+      padding: clamp(6px, 0.58vw, 9px);
       font-weight: 1000;
-      font-size: clamp(11px, 0.92vw, 13px);
-      line-height: 1.35;
-      margin-bottom: clamp(4px, 0.55vw, 8px);
-      border-radius: 8px;
+      font-size: clamp(9px, 0.78vw, 11px);
+      line-height: 1.32;
+      margin-bottom: clamp(6px, 0.58vw, 9px);
+      border-radius: 7px;
     }
     #tensionRodSection .trformula sub,
     #tensionRodSection .trformula sup {
@@ -9989,15 +10358,15 @@
     #tensionRodSection .trreq {
       display: grid;
       grid-template-columns: 1fr auto auto;
-      gap: clamp(4px, 0.55vw, 8px);
+      gap: clamp(6px, 0.58vw, 9px);
       align-items: center;
       font-weight: 1000;
     }
     #tensionRodSection .trreq-val {
       border: 1px solid rgba(31, 43, 52, 0.75);
       border-radius: 0 !important;
-      padding: clamp(4px, 0.55vw, 8px);
-      min-width: clamp(80px, 8vw, 110px);
+      padding: clamp(5px, 0.52vw, 8px);
+      min-width: clamp(72px, 7vw, 96px);
       text-align: center;
       font-weight: 1000;
       font-variant-numeric: tabular-nums;
@@ -10023,41 +10392,41 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
       margin-bottom: clamp(4px, 0.55vw, 8px);
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
     }
 
     #tensionRodSection .tr-diam {
       display: flex;
       flex-direction: column;
       min-height: 0;
-      overflow: hidden;
-      gap: clamp(4px, 0.5vw, 8px);
+      overflow: visible;
+      gap: clamp(6px, 0.55vw, 9px);
     }
     #tensionRodSection .trdiam-head {
       background: linear-gradient(180deg, #d8eef9 0%, #b8dff0 100%);
       color: #11384f;
       border-bottom: 1px solid #a8cadf;
-      border-radius: 8px 8px 0 0;
-      margin: calc(-1 * clamp(6px, 0.6vw, 10px)) calc(-1 * clamp(6px, 0.6vw, 10px)) 0;
-      padding: clamp(5px, 0.5vw, 8px);
+      border-radius: 7px 7px 0 0;
+      margin: calc(-1 * clamp(8px, 0.78vw, 11px)) calc(-1 * clamp(8px, 0.78vw, 11px)) 0;
+      padding: clamp(6px, 0.52vw, 8px);
       font-weight: 1000;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       text-align: center;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
     }
     #tensionRodSection .trdiam-diagram {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: clamp(4px, 0.5vw, 8px) 0;
+      margin: clamp(3px, 0.38vw, 6px) 0;
       min-height: 0;
     }
     #tensionRodSection .trdiam-img {
       width: auto;
-      max-width: min(100%, 260px);
+      max-width: min(100%, 220px);
       height: auto;
-      max-height: clamp(128px, 24vh, 220px);
+      max-height: clamp(100px, 18vh, 170px);
       object-fit: contain;
       display: block;
       margin: 0 auto;
@@ -10066,27 +10435,27 @@
       font-weight: 1000;
       text-transform: uppercase;
       text-align: center;
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
     }
     /* Ø (in): yellow workbook cell — user verifies/selects rod size vs computed minimum. */
     #tensionRodSection .trdiam-value {
       width: 100%;
       box-sizing: border-box;
       font-weight: 1000;
-      font-size: clamp(13px, 1.7vw, 24px);
+      font-size: clamp(11px, 1.35vw, 18px);
       text-align: center;
-      padding: clamp(8px, 1vw, 12px);
+      padding: clamp(6px, 0.72vw, 9px);
       font-variant-numeric: tabular-nums;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: default;
       color: #0f2b3d;
     }
     #tensionRodSection .trdiam-footer-banner {
       margin-top: auto;
-      margin-left: calc(-1 * clamp(6px, 0.6vw, 10px));
-      margin-right: calc(-1 * clamp(6px, 0.6vw, 10px));
-      margin-bottom: calc(-1 * clamp(6px, 0.6vw, 10px));
-      padding: clamp(6px, 0.65vw, 10px);
+      margin-left: calc(-1 * clamp(8px, 0.78vw, 11px));
+      margin-right: calc(-1 * clamp(8px, 0.78vw, 11px));
+      margin-bottom: calc(-1 * clamp(8px, 0.78vw, 11px));
+      padding: clamp(6px, 0.58vw, 9px);
       background: #f1948a;
       border-top: 1px solid #c95c52;
       color: #2d1210;
@@ -10094,8 +10463,8 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
       text-align: center;
-      font-size: clamp(10px, 0.85vw, 12px);
-      border-radius: 0 0 10px 10px;
+      font-size: clamp(9px, 0.74vw, 11px);
+      border-radius: 0 0 8px 8px;
     }
 
     /* Bottom band: col1 = load path + user guide; col2 = assembly (row-span 2) */
@@ -10105,14 +10474,14 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: auto auto;
-      gap: clamp(8px, 0.9vw, 12px);
+      gap: clamp(10px, 0.9vw, 15px);
       align-items: stretch;
       height: auto;
       align-self: stretch;
       max-height: none;
-      padding: clamp(4px, 0.55vw, 8px);
+      padding: clamp(6px, 0.55vw, 9px) 0 0;
       box-sizing: border-box;
-      margin-top: 0;
+      margin-top: clamp(3px, 0.28vw, 6px);
     }
     #tensionRodSection .tr-bottom-load-path {
       grid-column: 1;
@@ -10136,7 +10505,7 @@
       border-bottom: 1px solid #8fb8d1;
       color: #0f3a57;
       margin-bottom: 0;
-      padding: clamp(6px, 0.55vw, 9px) clamp(12px, 1vw, 18px);
+      padding: clamp(5px, 0.45vw, 7px) clamp(9px, 0.82vw, 13px);
       font-weight: 900;
       letter-spacing: 0.035em;
     }
@@ -10146,8 +10515,8 @@
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      gap: clamp(8px, 0.75vw, 12px);
-      padding: clamp(10px, 0.9vw, 14px) clamp(12px, 1.05vw, 16px);
+      gap: clamp(6px, 0.58vw, 9px);
+      padding: clamp(7px, 0.68vw, 10px) clamp(9px, 0.82vw, 12px);
       margin: 0;
       background: #f3f9fd;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -10161,8 +10530,8 @@
       min-width: 0;
     }
     #tensionRodSection .tr-bottom-user-guide .tr-bottom-ug-swatch {
-      width: 16px;
-      height: 16px;
+      width: 13px;
+      height: 13px;
       border-radius: 4px;
       border: 1px solid rgba(31, 43, 52, 0.35);
       box-sizing: border-box;
@@ -10179,8 +10548,8 @@
     #tensionRodSection .tr-bottom-user-guide .tr-bottom-ug-text {
       margin: 0;
       min-width: 0;
-      font-size: clamp(11px, 0.88vw, 13px);
-      line-height: 1.35;
+      font-size: clamp(9px, 0.76vw, 11px);
+      line-height: 1.3;
       color: #17384e;
     }
     #tensionRodSection .tr-bottom-user-guide .tr-bottom-ug-label {
@@ -10205,14 +10574,15 @@
     #tensionRodSection .trsheet-bottom .trhead {
       padding: clamp(3px, 0.45vw, 6px);
       margin: calc(-1 * clamp(4px, 0.55vw, 8px)) calc(-1 * clamp(4px, 0.55vw, 8px)) clamp(4px, 0.55vw, 8px);
-      font-size: clamp(10px, 0.85vw, 12px);
+      font-size: clamp(9px, 0.74vw, 11px);
     }
     #tensionRodSection .trsheet-bottom .trbox {
-      padding: clamp(4px, 0.55vw, 8px);
+      padding: clamp(3px, 0.42vw, 6px);
       background: #ffffff;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: clamp(4px, 0.55vw, 8px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(5px, 0.48vw, 7px);
+      min-height: 0;
     }
     #tensionRodSection .trsheet-bottom .trimg {
       padding: 0;
@@ -10221,16 +10591,16 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
-      overflow: hidden;
-      flex: 1 1 auto;
+      overflow: visible;
+      flex: 0 0 auto;
     }
     #tensionRodSection .trimg {
       width: 100%;
-      height: 100%;
+      height: auto;
       min-height: 0;
       object-fit: contain;
       object-position: center;
-      max-height: clamp(120px, 18vh, 180px);
+      max-height: clamp(120px, 22vh, 200px);
       border: 1px solid rgba(31, 43, 52, 0.75);
       border-radius: 0 !important;
       background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
@@ -10238,7 +10608,7 @@
       box-sizing: border-box;
     }
     #tensionRodSection .trimg--assembly-tall {
-      max-height: clamp(160px, 32vh, 280px);
+      max-height: clamp(150px, 28vh, 260px);
     }
 
     @media (max-width: 900px) {
@@ -15464,6 +15834,31 @@
       color: #12384d !important;
     }
 
+    /* Sidebar main nav: late lock — strict column stack with non-shrinking items */
+    html body .steel-dashboard .left-nav ul#mainNavList.nav-list {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.85rem !important;
+      align-content: stretch !important;
+      align-self: stretch !important;
+      flex-shrink: 0 !important;
+      flex-grow: 0 !important;
+      min-height: max-content !important;
+    }
+    html body .steel-dashboard .left-nav ul#mainNavList.nav-list > li {
+      margin: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: 0 0 auto !important;
+      flex-shrink: 0 !important;
+      box-sizing: border-box !important;
+    }
+    @media (max-width: 1250px) {
+      html body .steel-dashboard .left-nav ul#mainNavList.nav-list {
+        gap: 0.72rem !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -15764,46 +16159,6 @@
               <img class="sp-guide-table-image" src="assets/section-properties/how-to-read-aisc-shapes-bottom.png" alt="How to read AISC shapes details" loading="lazy">
             </aside>
           </div>
-
-          <div class="sp-db-panel" id="aiscDbPanel">
-            <div class="sp-db-backdrop" data-close-db aria-hidden="true"></div>
-            <div class="sp-db-dialog" role="dialog" aria-modal="true" aria-label="AISC shapes properties">
-              <div class="sp-db-top">
-                <div class="sp-chip-group" id="aiscShapeFilterChips"></div>
-                <input id="aiscDbSearchInput" type="search" placeholder="Filter designation...">
-                <button type="button" class="sp-btn" id="backToSectionDashboardBtn">SECTION PROPERTIES DASHBOARD</button>
-              </div>
-              <div class="sp-db-filters">
-                <select id="spDbFilterShape" aria-label="Filter by shape">
-                  <option value="">Shapes</option>
-                </select>
-                <select id="spDbFilterType" aria-label="Filter by type">
-                  <option value="">Type</option>
-                </select>
-                <input id="spDbFilterLabel" type="search" placeholder="AISC_Manual_Label">
-                <button type="button" class="sp-db-filter-reset" id="spDbFilterReset">RESET FILTERS</button>
-              </div>
-              <div class="sp-db-meta">
-                <span id="spDbResultCount">0 results</span>
-              </div>
-              <div class="steel-table-wrapper">
-                <table class="grade-table" id="aiscDbTable">
-                  <thead>
-                    <tr>
-                      <th>Shapes</th>
-                      <th>Type</th>
-                      <th>AISC_Manual_Label</th>
-                      <th>Weight</th>
-                      <th>A</th>
-                      <th>d</th>
-                      <th>bf</th>
-                    </tr>
-                  </thead>
-                  <tbody id="aiscDbTableBody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -15856,18 +16211,18 @@
 
               <div class="tension-card design-loads-card">
                 <h4>Design Loads</h4>
-                <div class="t-row t-row-unit"><span>Dead Load, DL</span><input id="tensionDL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="115"><span class="t-unit">kips/ft</span></div>
-                <div class="t-row t-row-unit"><span>Live Load, LL</span><input id="tensionLL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="140"><span class="t-unit">kips/ft</span></div>
+                <div class="t-row t-row-unit"><span>Dead Load, DL</span><input id="tensionDL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="115"><span class="t-unit">kips</span></div>
+                <div class="t-row t-row-unit"><span>Live Load, LL</span><input id="tensionLL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="140"><span class="t-unit">kips</span></div>
                 <div class="t-row t-row-unit"><span>Length</span><input id="tensionLengthFt" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="12.02"><span class="t-unit">ft</span></div>
               </div>
               <div class="tension-card shear-lag-card">
                 <h4>Shear Lag Factor, U</h4>
                 <div class="t-row sl-row-type"><span>Type of Connection</span><input id="tensionTypeConnection" class="out-white" value="BOLTED" readonly></div>
-                <div class="t-row sl-row-connection"><span>Connection</span><select id="tensionConnection" class="in-yellow"><option value="WEB">WEB</option><option value="FLANGE">FLANGE</option><option value="FLANGE_WEB" selected>FLANGES &amp; WEB</option></select></div>
+                <div class="t-row sl-row-connection"><span>Connection</span><select id="tensionConnection" class="in-yellow"><option value="WEB" selected>WEB</option><option value="FLANGE">FLANGE</option><option value="FLANGE_WEB">FLANGES &amp; WEB</option></select></div>
                 <div class="t-row sl-row-u"><span>Shear Lag Factor, U</span><input id="tensionU" class="out-green" readonly></div>
               </div>
               <aside class="tension-card tension-connection-card" aria-label="Connection detail">
-                <img id="tensionConnectionImage" class="tension-connection-image" src="assets/tension-page/tension-detail-3.png" alt="Tension connection detail" loading="lazy">
+                <img id="tensionConnectionImage" class="tension-connection-image" src="assets/tension-page/tension-detail-2.png" alt="Tension connection detail" loading="lazy">
               </aside>
 
               <div class="tension-card design-demand-card">
@@ -17357,6 +17712,61 @@
   </div>
 </div>
 
+  <!-- AISC shapes DB modal at body level so backdrop stacks above sidebar/header; MUST precede section-properties-ui.js -->
+  <div class="sp-db-panel" id="aiscDbPanel">
+    <div class="sp-db-backdrop" data-close-db aria-hidden="true"></div>
+    <div class="sp-db-dialog" role="dialog" aria-modal="true" aria-label="AISC shapes properties">
+      <div class="sp-db-top">
+        <div class="sp-chip-group" id="aiscShapeFilterChips"></div>
+        <input id="aiscDbSearchInput" type="search" placeholder="Filter designation...">
+        <button type="button" class="sp-btn" id="backToSectionDashboardBtn">SECTION PROPERTIES DASHBOARD</button>
+      </div>
+      <div class="sp-db-filters">
+        <select id="spDbFilterShape" aria-label="Filter by shape">
+          <option value="">Shapes</option>
+        </select>
+        <select id="spDbFilterType" aria-label="Filter by type">
+          <option value="">Type</option>
+        </select>
+        <input id="spDbFilterLabel" type="search" placeholder="AISC_Manual_Label">
+        <button type="button" class="sp-db-filter-reset" id="spDbFilterReset">RESET FILTERS</button>
+      </div>
+      <div class="sp-db-meta">
+        <span id="spDbResultCount">0 results</span>
+      </div>
+      <div class="steel-table-wrapper">
+        <table class="grade-table" id="aiscDbTable">
+          <thead>
+            <tr>
+              <th>Shapes</th>
+              <th>Type</th>
+              <th>AISC_Manual_Label</th>
+              <th>Weight</th>
+              <th>A</th>
+              <th>d</th>
+              <th>bf</th>
+            </tr>
+          </thead>
+          <tbody id="aiscDbTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function syncFixedChromeOffsets() {
+      function applyHeaderOffset() {
+        const header = document.querySelector('.page-header');
+        if (!header) return;
+        const headerHeight = Math.ceil(header.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`);
+      }
+      window.addEventListener('load', applyHeaderOffset);
+      window.addEventListener('resize', applyHeaderOffset);
+      window.addEventListener('orientationchange', applyHeaderOffset);
+      applyHeaderOffset();
+    })();
+  </script>
   <script src="js/utils.js"></script>
   <script src="js/steel-grades-embed.js"></script>
   <script src="js/steel-grades-service.js"></script>
