@@ -440,7 +440,7 @@
   bindSubmit("formCompression", SC.compression.bind(SC), "resultCompression");
   /* Tension Rod: Excel-accurate logic + UI live in `tension-rod-ui.js` (no legacy API submit). */
   /* Bending design: Excel-backed workflow in `bending-design-ui.js`. */
-  bindSubmit("formShear", SC.shear.bind(SC), "resultShear");
+  bindSubmit("formShearLegacy", SC.shear.bind(SC), "resultShear");
 
   document.querySelectorAll("[data-fill-steel]").forEach(function (btn) {
     btn.addEventListener("click", function () {

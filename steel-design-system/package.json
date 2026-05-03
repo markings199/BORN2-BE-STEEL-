@@ -8,10 +8,13 @@
     "dev": "nodemon server.js",
     "export:steel-grades": "node scripts/export-steel-grades.js",
     "export:aisc-sections": "node scripts/export-aisc-sections.js",
+    "export:shear-design-order": "node scripts/export-shear-design-order.js",
     "export:tension-angles": "node scripts/export-tension-angles.js",
     "export:bending-capacity-benchmarks": "node scripts/extract-bending-capacity-benchmarks.js scripts/bending-capacity-benchmarks.json",
     "test:bending-design": "node scripts/bending-design-regression.js",
-    "test:bending-analysis": "node scripts/bending-analysis-regression.js"
+    "test:bending-analysis": "node scripts/bending-analysis-regression.js",
+    "test:shear-design": "node scripts/shear-design-regression.js",
+    "test:shear-analysis": "node scripts/shear-analysis-regression.js"
   },
   "keywords": [
     "steel",
