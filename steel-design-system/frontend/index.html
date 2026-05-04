@@ -392,10 +392,8 @@
       flex: 0 0 var(--app-sidebar-width);
       max-width: var(--app-sidebar-width);
       min-width: min(210px, var(--app-sidebar-width));
-      background:
-        radial-gradient(180px 320px at 50% 0%, rgba(255, 255, 255, 0.42), transparent 55%),
-        linear-gradient(180deg, #dcedf8 0%, #c5e2f2 45%, #b7d9eb 100%);
-      border-right: 1px solid rgba(100, 160, 190, 0.45);
+      background: linear-gradient(180deg, #1a2433 0%, #0f1720 100%);
+      border-right: 1px solid rgba(131, 203, 235, 0.28);
       padding: 0;
       border-bottom-right-radius: 0;
       border-top-right-radius: 0;
@@ -405,7 +403,7 @@
       min-height: 0;
       overflow-x: hidden;
       overflow-y: hidden;
-      box-shadow: inset -1px 0 0 rgba(255,255,255,0.45);
+      box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.08);
     }
     /* Wide screens: pin sidebar under fixed navbar; offset main row */
     @media (min-width: 1101px) {
@@ -562,11 +560,11 @@
       font-size: 0.9rem;
       font-weight: 650;
       letter-spacing: 0.02em;
-      color: #13394d;
+      color: #e6f2fa;
       transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
       cursor: pointer;
       border-radius: 999px;
-      border: 1px solid rgba(82, 145, 178, 0.42);
+      border: 1px solid rgba(131, 203, 235, 0.35);
       min-height: 44px;
       height: auto;
       display: flex;
@@ -574,10 +572,10 @@
       justify-content: center;
       text-align: center;
       line-height: 1.35;
-      background: linear-gradient(180deg, #eaf6fc 0%, #d5eaf6 55%, #c9e4f3 100%);
+      background: linear-gradient(180deg, rgba(131, 203, 235, 0.18) 0%, rgba(45, 77, 110, 0.22) 100%);
       box-shadow:
-        0 2px 5px rgba(17, 55, 75, 0.07),
-        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
 
     .left-nav ul#mainNavList.nav-list > li::before {
@@ -587,10 +585,10 @@
 
     .left-nav ul#mainNavList.nav-list > li.active-nav {
       z-index: 2;
-      background: linear-gradient(180deg, #4fa8cf 0%, #3491bd 48%, #2d82ae 100%);
+      background: linear-gradient(180deg, #83cbeb 0%, #5eaed3 48%, #4699c0 100%);
       color: #ffffff;
       font-weight: 800;
-      border-color: rgba(255, 255, 255, 0.38);
+      border-color: rgba(255, 255, 255, 0.55);
       box-shadow:
         0 4px 14px rgba(28, 110, 150, 0.28),
         inset 0 1px 0 rgba(255, 255, 255, 0.28);
@@ -598,10 +596,10 @@
     }
 
     .left-nav ul#mainNavList.nav-list > li:not(.active-nav):hover {
-      background: linear-gradient(180deg, #f4fafd 0%, #e2f2fa 100%);
-      border-color: rgba(61, 125, 154, 0.48);
-      color: #0f3144;
-      box-shadow: 0 3px 10px rgba(17, 55, 75, 0.09);
+      background: linear-gradient(180deg, rgba(131, 203, 235, 0.3) 0%, rgba(56, 97, 136, 0.42) 100%);
+      border-color: rgba(131, 203, 235, 0.58);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
     }
 
     /* CENTER PANEL: primary vertical scroll region when content exceeds viewport */
@@ -10351,10 +10349,10 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
       gap: clamp(8px, 0.75vw, 12px);
-      align-items: stretch;
+      align-items: start;
     }
     #bendingSection .bending-analysis-view .bend-analysis-grid-bottom > .bend-a-card, #shearSection .bending-analysis-view .bend-analysis-grid-bottom > .bend-a-card {
-      height: 100%;
+      height: auto;
     }
     #bendingSection .bending-analysis-view .bend-analysis-results-stack, #shearSection .bending-analysis-view .bend-analysis-results-stack {
       display: flex;
@@ -11024,7 +11022,7 @@
       flex-wrap: wrap;
       align-items: center;
       gap: clamp(6px, 0.65vw, 10px);
-      min-height: clamp(26px, 2.1vw, 32px);
+      min-height: clamp(32px, 2.5vw, 40px);
     }
     #tensionRodSection .trsheet-grade-line label {
       font-weight: 950;
@@ -11036,11 +11034,13 @@
       min-width: min(220px, 100%);
       max-width: 100%;
       box-sizing: border-box;
-      height: 1.22rem;
+      min-height: clamp(34px, 2.6vw, 42px);
+      height: auto;
       font-weight: 850;
       font-size: clamp(9px, 0.74vw, 11px);
       border-radius: 8px;
-      padding: 0.1rem 0.35rem;
+      padding: 0.45rem 0.55rem;
+      line-height: 1.25;
     }
     #tensionRodSection .trsheet-title {
       font-weight: 1000;
@@ -17435,6 +17435,426 @@
       }
     }
 
+    /* ===== System Overview Page ===== */
+    #overviewSection {
+      --ov-max-width: 1120px;
+      --ov-space-1: 0.5rem;
+      --ov-space-2: 0.75rem;
+      --ov-space-3: 1rem;
+      --ov-space-4: 1.5rem;
+      --ov-section-pad-x: 1rem;
+      --ov-section-gap-y: 1rem;
+      --ov-title-content-gap: 0.9rem;
+      --ov-grid-gap-x: 1rem;
+      --ov-grid-gap-y: 1rem;
+    }
+    #overviewSection {
+      padding: 0;
+      height: 100%;
+      min-height: 0;
+    }
+    #overviewSection.active-panel {
+      display: block;
+      height: auto;
+      overflow: visible;
+      padding-bottom: 0;
+    }
+    #overviewSection .sys-overview {
+      height: 100%;
+      min-height: 0;
+      overflow: auto;
+      background: #f2f4f8;
+      border: 1px solid #d5dbe4;
+      border-radius: 14px;
+      padding-bottom: 0.5rem;
+    }
+    #overviewSection .sys-hero {
+      min-height: clamp(225px, 29vw, 300px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: clamp(1.35rem, 2.1vw, 2rem) 1rem;
+      color: #ffffff;
+      background:
+        linear-gradient(180deg, rgba(14, 27, 46, 0.52) 0%, rgba(9, 18, 34, 0.72) 100%),
+        url("assets/overview/hero-structure.png") center center / cover no-repeat;
+      border-bottom: 1px solid #cfd5df;
+    }
+    #overviewSection .sys-hero-content {
+      max-width: 840px;
+      padding-inline: 0.4rem;
+    }
+    #overviewSection .sys-hero h1 {
+      font-size: clamp(2rem, 4vw, 3.42rem);
+      line-height: 1.08;
+      letter-spacing: 0.02em;
+      font-weight: 900;
+      text-transform: uppercase;
+      text-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+      margin-bottom: 0.78rem;
+    }
+    #overviewSection .sys-hero p {
+      font-size: clamp(1rem, 1.22vw, 1.35rem);
+      font-weight: 500;
+      color: rgba(244, 248, 254, 0.97);
+      margin-bottom: 1.32rem;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+    }
+    #overviewSection .sys-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0.72rem 1.7rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.96rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      color: #e9f2fc;
+      border: 1px solid rgba(156, 198, 236, 0.85);
+      background: linear-gradient(180deg, #4f9ddb 0%, #2f6c98 100%);
+      box-shadow: 0 8px 18px rgba(7, 32, 63, 0.42);
+      transition: transform 0.22s ease, filter 0.22s ease, box-shadow 0.22s ease;
+    }
+    #overviewSection .sys-cta:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+      box-shadow: 0 12px 24px rgba(7, 32, 63, 0.5);
+    }
+    #overviewSection .sys-cta:focus-visible {
+      outline: 2px solid #9ec5e7;
+      outline-offset: 2px;
+    }
+    #overviewSection .sys-section {
+      padding: 1rem var(--ov-section-pad-x);
+      background: #f7f8fb;
+      border-top: 1px solid #dbe0e8;
+    }
+    #overviewSection .sys-section--value {
+      background: #f6f8fb;
+      border-top: 1px solid #dbe1e9;
+      padding: 1rem var(--ov-section-pad-x);
+    }
+    #overviewSection .sys-section--modules {
+      background: #f6f8fb;
+      border-top: 1px solid #dbe1e9;
+      padding: 1rem var(--ov-section-pad-x);
+    }
+    #overviewSection .sys-section-title {
+      text-align: center;
+      font-size: clamp(1.35rem, 2.1vw, 2rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      color: #1f2732;
+      margin-bottom: var(--ov-title-content-gap);
+      line-height: 1.1;
+      max-width: var(--ov-max-width);
+      margin-inline: auto;
+    }
+    #overviewSection .sys-section-title--value {
+      margin-bottom: var(--ov-title-content-gap);
+      line-height: 1.08;
+    }
+    #overviewSection .sys-section-title--modules {
+      margin-bottom: var(--ov-title-content-gap);
+      line-height: 1.08;
+    }
+    #overviewSection .sys-featured-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--ov-grid-gap-y) var(--ov-grid-gap-x);
+      align-items: stretch;
+      max-width: var(--ov-max-width);
+      margin-inline: auto;
+      margin-bottom: 0.1rem;
+    }
+    #overviewSection .sys-card {
+      background: #ffffff;
+      border: 1px solid #d7dee8;
+      border-radius: 8px;
+      box-shadow: 0 2px 7px rgba(14, 25, 43, 0.11);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0.82rem 0.82rem 0.82rem;
+      min-height: 188px;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      overflow: hidden;
+    }
+    #overviewSection .sys-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 18px rgba(14, 25, 43, 0.2);
+    }
+    #overviewSection .sys-card-art {
+      width: 100%;
+      height: 84px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 0.48rem;
+      overflow: hidden;
+    }
+    #overviewSection .sys-card-art img {
+      width: auto;
+      height: auto;
+      max-height: 88px;
+      max-width: 88%;
+      object-fit: contain;
+      display: block;
+    }
+    #overviewSection .sys-card:nth-child(3) .sys-card-art img {
+      max-height: 78px;
+      max-width: 78px;
+    }
+    #overviewSection .sys-card h3 {
+      color: #1f2731;
+      font-size: clamp(0.92rem, 1.08vw, 1.26rem);
+      line-height: 1.05;
+      font-weight: 900;
+      margin-bottom: 0.3rem;
+    }
+    #overviewSection .sys-card p {
+      color: #3e4653;
+      font-size: 0.78rem;
+      line-height: 1.25;
+      max-width: 190px;
+      margin: 0 auto;
+      min-height: 2.5em;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    #overviewSection .sys-value-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--ov-grid-gap-y) var(--ov-grid-gap-x);
+      align-items: center;
+      max-width: var(--ov-max-width);
+      margin-inline: auto;
+      margin-bottom: 0.1rem;
+    }
+    #overviewSection .sys-value-item {
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      grid-template-rows: 84px auto;
+      gap: 0.52rem;
+      color: #25303d;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.008em;
+      min-height: 174px;
+      line-height: 1.1;
+      padding: 0.82rem 0.82rem 0.82rem;
+      background: #ffffff;
+      border: 1px solid #d7dee8;
+      border-radius: 8px;
+      box-shadow: 0 2px 7px rgba(14, 25, 43, 0.11);
+      overflow: hidden;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, color 0.2s ease;
+    }
+    #overviewSection .sys-value-label {
+      display: inline-block;
+      text-align: center;
+      white-space: normal;
+      max-width: 96%;
+    }
+    #overviewSection .sys-value-icon {
+      width: 58px;
+      height: 58px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #6f7d8e;
+      box-sizing: border-box;
+    }
+    #overviewSection .sys-value-icon svg {
+      width: 52px;
+      height: 52px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.55;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #overviewSection .sys-value-item:hover {
+      transform: translateY(-3px);
+      color: #1a4f78;
+      box-shadow: 0 10px 18px rgba(14, 25, 43, 0.2);
+    }
+    #overviewSection .sys-modules {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--ov-grid-gap-y) var(--ov-grid-gap-x);
+      max-width: var(--ov-max-width);
+      margin-inline: auto;
+      align-items: stretch;
+      margin-bottom: 0.05rem;
+    }
+    #overviewSection .sys-module-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: #202934;
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 650;
+      min-height: 48px;
+      height: 48px;
+      padding: 0.62rem 0.95rem;
+      border: 1px solid #d8dfe8;
+      border-radius: 8px;
+      background: #ffffff;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      box-shadow: 0 2px 7px rgba(14, 25, 43, 0.11);
+      transition: color 0.22s ease, background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    #overviewSection .sys-module-icon {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #6c798a;
+      flex-shrink: 0;
+    }
+    #overviewSection .sys-module-icon svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    #overviewSection .sys-module-label {
+      display: inline-block;
+      line-height: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      text-align: center;
+    }
+    #overviewSection .sys-module-link:hover {
+      color: #15496f;
+      border-color: #c4d2df;
+      background: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px rgba(14, 25, 43, 0.2);
+    }
+    #overviewSection .sys-module-link.is-active {
+      background: #ffffff;
+      color: #202934;
+      border: 1px solid #d8dfe8;
+      height: 48px;
+      min-height: 48px;
+      padding: 0.62rem 0.95rem;
+      transform: none;
+      box-shadow: 0 2px 7px rgba(14, 25, 43, 0.11);
+    }
+    #overviewSection .sys-module-link.is-active .sys-module-icon {
+      color: #6c798a;
+    }
+    #overviewSection .sys-module-link:focus-visible {
+      outline: 2px solid #8eb8dd;
+      outline-offset: 1px;
+    }
+    #overviewSection .sys-footer {
+      padding: 0.42rem 0.9rem;
+      background: #1d2f47;
+      color: #dfe6ef;
+      text-align: center;
+      font-size: 0.7rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+      width: 100%;
+      max-width: none;
+      margin: 0.7rem 0 0;
+      border-radius: 0 0 10px 10px;
+    }
+    @media (max-width: 1240px) {
+      #overviewSection {
+        --ov-grid-gap-x: 0.85rem;
+        --ov-grid-gap-y: 0.85rem;
+      }
+      #overviewSection .sys-featured-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 1100px) {
+      #overviewSection {
+        --ov-grid-gap-x: 0.75rem;
+        --ov-grid-gap-y: 0.75rem;
+      }
+      #overviewSection .sys-modules {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 860px) {
+      #overviewSection {
+        --ov-section-pad-x: 0.85rem;
+        --ov-title-content-gap: 0.75rem;
+        --ov-grid-gap-x: 0.65rem;
+        --ov-grid-gap-y: 0.65rem;
+      }
+      #overviewSection .sys-hero {
+        min-height: 240px;
+      }
+      #overviewSection .sys-section {
+        padding-top: 0.9rem;
+        padding-bottom: 0.9rem;
+      }
+      #overviewSection .sys-featured-grid,
+      #overviewSection .sys-value-row,
+      #overviewSection .sys-modules {
+        grid-template-columns: 1fr;
+      }
+      #overviewSection .sys-section-title--value,
+      #overviewSection .sys-section-title--modules,
+      #overviewSection .sys-section-title {
+        margin-bottom: var(--ov-title-content-gap);
+      }
+      #overviewSection .sys-card {
+        min-height: 0;
+        padding-block: 0.9rem;
+      }
+      #overviewSection .sys-module-link {
+        justify-content: flex-start;
+      }
+    }
+    @media (max-width: 560px) {
+      #overviewSection {
+        --ov-section-pad-x: 0.72rem;
+        --ov-title-content-gap: 0.62rem;
+        --ov-grid-gap-x: 0.55rem;
+        --ov-grid-gap-y: 0.55rem;
+      }
+      #overviewSection .sys-hero {
+        padding: 1.3rem 0.8rem;
+      }
+      #overviewSection .sys-hero h1 {
+        font-size: 1.55rem;
+      }
+      #overviewSection .sys-cta {
+        width: 100%;
+        max-width: 320px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -17467,7 +17887,7 @@
           </span>
           <span>Academic reference</span>
         </a>
-        <a class="header-link" href="#" data-section="steelGradeSection">
+        <a class="header-link" href="#" data-section="tensionSection">
           <span class="header-link-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           </span>
@@ -17508,113 +17928,93 @@
     <!-- CENTER PANEL: Steel Grade Table -->
     <div class="center-panel">
       <div id="overviewSection" class="content-panel active-panel">
-        <section class="retro-overview" aria-label="Born2BeSteel overview (retro dashboard)">
-          <div class="overview-content">
-            <div class="retro-grid">
-            <!-- HERO (left) -->
-            <div class="ov-hero">
-              <div class="retro-computing" aria-label="Computing status">
-                <div class="retro-loadbar" aria-hidden="true"><span></span></div>
-                <div>COMPUTING...</div>
-              </div>
+        <section class="sys-overview" aria-label="System overview page">
+          <section class="sys-hero" aria-label="Hero section">
+            <div class="sys-hero-content">
+              <h1>BORN 2 BE STEEL<br>DESIGN CALCULATOR</h1>
+              <p>Precision tools for every steel design challenge</p>
+              <a class="sys-cta" href="#overviewModulesSection" data-scroll-target="overviewModulesSection">START CALCULATING NOW</a>
+            </div>
+          </section>
 
-              <div class="retro-hero-art">
-                <div class="retro-connection" aria-label="Central steel structure illustration">
-                  <svg viewBox="0 0 140 140" fill="none" aria-hidden="true">
-                    <defs>
-                      <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0" stop-color="#e9f3f8"/>
-                        <stop offset="0.55" stop-color="#9eb9c8"/>
-                        <stop offset="1" stop-color="#6b8797"/>
-                      </linearGradient>
-                      <linearGradient id="gB" x1="0" y1="1" x2="1" y2="0">
-                        <stop offset="0" stop-color="#7a95a5"/>
-                        <stop offset="1" stop-color="#d6e7ef"/>
-                      </linearGradient>
-                    </defs>
-                    <!-- vertical column -->
-                    <path d="M66 18 L86 28 L86 122 L66 112 Z" fill="url(#gA)" stroke="#4e6b7c" stroke-width="2"/>
-                    <path d="M54 24 L66 18 L66 112 L54 118 Z" fill="url(#gB)" stroke="#4e6b7c" stroke-width="2"/>
-                    <!-- beams crossing -->
-                    <path d="M28 56 L88 32 L108 44 L48 68 Z" fill="url(#gA)" stroke="#4e6b7c" stroke-width="2"/>
-                    <path d="M32 78 L92 54 L112 66 L52 90 Z" fill="url(#gB)" stroke="#4e6b7c" stroke-width="2"/>
-                    <!-- gusset/plate hint -->
-                    <path d="M58 56 L86 44 L86 76 L58 88 Z" fill="rgba(255,255,255,0.28)" stroke="#5a7a8d" stroke-width="1.6"/>
-                    <!-- bolt rows -->
-                    <g fill="#4e6b7c" opacity="0.85">
-                      <circle cx="72" cy="54" r="2.2"/><circle cx="79" cy="51" r="2.2"/>
-                      <circle cx="72" cy="64" r="2.2"/><circle cx="79" cy="61" r="2.2"/>
-                      <circle cx="72" cy="74" r="2.2"/><circle cx="79" cy="71" r="2.2"/>
-                    </g>
-                    <!-- outline highlight -->
-                    <path d="M54 24 L66 18 L86 28 L86 122 L66 112 L54 118 Z" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2"/>
-                  </svg>
+          <section class="sys-section" aria-label="Featured calculators">
+            <h2 class="sys-section-title">FEATURED CALCULATORS</h2>
+            <div class="sys-featured-grid">
+              <article class="sys-card">
+                <div class="sys-card-art" aria-hidden="true">
+                  <img src="assets/overview/beam-design.png" alt="">
                 </div>
-              </div>
-
-              <div class="pixel-title" aria-label="Steel design title">
-                <span class="pixel-steel">STEEL</span><span class="pixel-design">design</span>
-              </div>
-              <div class="retro-subtitle">ADVANCED STEEL CALCULATOR ←</div>
-
-              <div class="retro-body">
-                Welcome to your engineering hub for steel structure design. Whether you are mastering fundamentals or streamlining complex calculations, this platform provides the tools, data, and visual guides you need for modern steel engineering projects.
-              </div>
-
-              <div class="retro-pill" aria-label="Steel Experts Engineering Hub">
-                Steel Experts <span aria-hidden="true">|</span> Engineering Hub
-              </div>
-
-            </div>
-
-            <!-- ABOUT (right) -->
-            <div>
-              <div class="retro-card">
-                <div class="retro-card-head">ABOUT Born2BeSteel</div>
-                <div class="retro-card-body">
-                  <div id="overviewTools" aria-hidden="true"></div>
-                  <div style="display:flex;align-items:flex-start;gap:0.75rem;justify-content:space-between;">
-                    <div style="flex:1 1 auto;">
-                      <div class="retro-about-intro">
-                        Explore our extensive knowledge base and tools tailored to help you build safer and more efficient structures:
-                      </div>
-                      <div class="retro-about-grid" aria-label="About features list">
-                        <ul>
-                          <li>Introduction to Steel Grades</li>
-                          <li>Introduction to Structural Shapes</li>
-                          <li>Tension Member Analysis and Design</li>
-                          <li>Compression Member Analysis and Design</li>
-                          <li>Specialized Tension Rod System</li>
-                        </ul>
-                        <ul>
-                          <li>Bending/Flexural Member Analysis and Design</li>
-                          <li>Connection Analysis and Design</li>
-                          <li>Shear Force Analysis and Design</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style="display:flex;justify-content:flex-end;margin-top:0.65rem;">
-                    <a class="retro-explore-btn" href="#steelGradeSection" data-goto="steelGradeSection">EXPLORE TOOLS <span aria-hidden="true">^_^</span></a>
-                  </div>
+                <h3>Beam Design</h3>
+                <p>Calculate first precision tool: tne a steel design calculation.</p>
+              </article>
+              <article class="sys-card">
+                <div class="sys-card-art" aria-hidden="true">
+                  <img src="assets/overview/column-design.png" alt="">
                 </div>
+                <h3>Column Design</h3>
+                <p>Calculate a column calculator for every iug hollow sections.</p>
+              </article>
+              <article class="sys-card">
+                <div class="sys-card-art" aria-hidden="true">
+                  <img src="assets/overview/connection-design.png" alt="">
+                </div>
+                <h3>CONNECTION DESIGN</h3>
+                <p>Integrated connection checks and detailing support.</p>
+              </article>
+              <article class="sys-card">
+                <div class="sys-card-art" aria-hidden="true">
+                  <img src="assets/overview/truss-design.png" alt="">
+                </div>
+                <h3>Truss Design</h3>
+                <p>Truss design crass and calculation and prepenrial steel system.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="sys-section sys-section--value" aria-label="Why choose our suite">
+            <h2 class="sys-section-title sys-section-title--value">WHY CHOOSE OUR SUITE?</h2>
+            <div class="sys-value-row">
+              <div class="sys-value-item">
+                <span class="sys-value-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>
+                </span>
+                <span class="sys-value-label">ACCURACY</span>
+              </div>
+              <div class="sys-value-item">
+                <span class="sys-value-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.2-2.8 7.2-7 9-4.2-1.8-7-4.8-7-9V6l7-3z"></path><path d="M8.5 12.2l2.2 2.2 4.8-4.8"></path></svg>
+                </span>
+                <span class="sys-value-label">AISC/EUROCODE COMPLIANT</span>
+              </div>
+              <div class="sys-value-item">
+                <span class="sys-value-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"></circle><path d="M12 8v4l3 2"></path><path d="M3 12h2M19 12h2M12 3v2"></path></svg>
+                </span>
+                <span class="sys-value-label">FAST REPORTS</span>
+              </div>
+              <div class="sys-value-item">
+                <span class="sys-value-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M14.5 5.8a2.2 2.2 0 0 1 3.1 0c.9.9.9 2.3 0 3.2L15 11.6l-2.6-2.6a2.2 2.2 0 0 1 0-3.2 2.2 2.2 0 0 1 3.1 0z"></path><path d="M3.5 14.2h4.1l2.2-1.4c.8-.5 1.8-.5 2.6 0l2 1.2h3c1.2 0 2.1 1 2.1 2.1v.2H11l-2.7 1.9H3.5z"></path></svg>
+                </span>
+                <span class="sys-value-label">USER-FRIENDLY</span>
               </div>
             </div>
-          </div>
-          </div>
+          </section>
 
-          <div id="overviewQuickNav" class="ov-bottom-nav" aria-label="Overview tabs">
-            <div class="ov-bottom-tabs" aria-hidden="true">
-              <span class="is-active" data-goto="overviewSection" role="button" tabindex="0">About</span>
-              <span data-goto="steelGradeSection" role="button" tabindex="0">Steel Grade</span>
-              <span data-goto="sectionPropsSection" role="button" tabindex="0">Section Properties</span>
+          <section id="overviewModulesSection" class="sys-section sys-section--modules" aria-label="Comprehensive design modules">
+            <h2 class="sys-section-title sys-section-title--modules">COMPREHENSIVE DESIGN MODULES</h2>
+            <div class="sys-modules">
+              <a class="sys-module-link" href="#steelGradeSection" data-goto="steelGradeSection"><span class="sys-module-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 8h7l2 2h9v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M3 8V6a2 2 0 0 1 2-2h5l2 2h4"></path></svg></span><span class="sys-module-label">Steel Grade</span></a>
+              <a class="sys-module-link" href="#sectionPropsSection" data-goto="sectionPropsSection"><span class="sys-module-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7"></rect><rect x="14" y="4" width="7" height="16"></rect><rect x="3" y="13" width="7" height="7"></rect></svg></span><span class="sys-module-label">Section Properties</span></a>
+              <a class="sys-module-link" href="#tensionSection" data-goto="tensionSection"><span class="sys-module-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17l10-10"></path><path d="M8 20l10-10"></path><path d="M3 12l9 9M12 3l9 9"></path></svg></span><span class="sys-module-label">TENSION</span></a>
+              <a class="sys-module-link is-active" href="#compressionSection" data-goto="compressionSection"><span class="sys-module-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v16"></path><path d="M6 8l-2 4 2 4M18 8l2 4-2 4"></path></svg></span><span class="sys-module-label">Compression</span></a>
+              <a class="sys-module-link" href="#tensionRodSection" data-goto="tensionRodSection"><span class="sys-module-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 14l6-6 10 10-6 6z"></path><path d="M10 8l2-2 2 2-2 2zM14 18l2-2 2 2-2 2z"></path></svg></span><span class="sys-module-label">Tension Rod</span></a>
+              <a class="sys-module-link" href="#bendingSection" data-goto="bendingSection"><span class="sys-module-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17l10-10"></path><path d="M8 20l10-10"></path><path d="M3 12l9 9M12 3l9 9"></path></svg></span><span class="sys-module-label">Bending</span></a>
+              <a class="sys-module-link" href="#shearSection" data-goto="shearSection"><span class="sys-module-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17l10-10"></path><path d="M8 20l10-10"></path><path d="M3 12l9 9M12 3l9 9"></path></svg></span><span class="sys-module-label">Shear</span></a>
             </div>
-            <div class="ov-bottom-brand" aria-label="Born2BeSteel brand">
-              <img src="assets/branding/born2be-steel-main.png" alt="Born2BeSteel logo" loading="lazy">
-              <span>BORN2BE STEEL</span>
-            </div>
-          </div>
+          </section>
+
+          <footer class="sys-footer">Francis Joseph Bombita / fjbb2023-8878-21283@bicol-u.edu.ph | Samantha Mae Lagahit / smhl2023-3279-66812@bicol-u.edu.ph | 2026 Born 2 Be Steel. AISC</footer>
         </section>
       </div>
 
@@ -19168,7 +19568,6 @@
                         <span class="bend-a-unit bend-capacity-unit">kip·in</span>
                       </div>
                     </div>
-                    <p class="bend-footnote bend-results-stack-footnote"><em>M</em><sub>n</sub> and <em>M</em><sub>a</sub>/<em>M</em><sub>u</sub> follow <strong>Bending Analysis</strong> U33 / U38 (kip·inch): compact <em>M</em><sub>p</sub> uses Design <em>F</em><sub>y</sub> (workbook FN19 / X10), non-compact <em>M</em><sub>r</sub> uses Analysis <em>F</em><sub>y</sub> (W10), and λ<sub>pf</sub>/λ<sub>rf</sub> for interpolation come from Analysis <em>E</em>/<em>F</em><sub>y</sub>. Flange class (FN17) compares λ<sub>f</sub> to λ<sub>pf</sub>/λ<sub>rf</sub> from the <strong>Design calculator</strong> <em>E</em> and <em>F</em><sub>y</sub> (blank or invalid Design inputs ⇒ 0 ⇒ slender branch, matching empty Excel cells).</p>
                   </div>
                 </div>
               </div>

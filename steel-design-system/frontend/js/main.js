@@ -640,6 +640,18 @@
         }
       });
     });
+
+    // Overview in-page smooth scrolling (e.g., CTA to modules section).
+    overviewSectionEl.querySelectorAll("[data-scroll-target]").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        var targetId = el.getAttribute("data-scroll-target");
+        if (!targetId) return;
+        var targetEl = document.getElementById(targetId);
+        if (!targetEl) return;
+        if (e && typeof e.preventDefault === "function") e.preventDefault();
+        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
   }
 
   document.querySelectorAll(".header-link[data-section]").forEach(function (link) {
@@ -649,6 +661,12 @@
       if (id) {
         history.pushState(null, "", "#" + id);
         activateSection(id);
+        if (id === "overviewSection") {
+          var overviewRoot = document.querySelector("#overviewSection .sys-overview");
+          if (overviewRoot && typeof overviewRoot.scrollTo === "function") {
+            overviewRoot.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }
       }
     });
   });
