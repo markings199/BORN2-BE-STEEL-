@@ -492,11 +492,101 @@
     return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   }
 
-  var connectionImageByType = {
-    // Use the clearest reference image for design-view visibility.
-    WEB: "assets/tension-page/tension-detail-2.png",
-    FLANGE: "assets/tension-page/tension-detail-1.png",
-    FLANGE_WEB: "assets/tension-page/tension-detail-3.png",
+  /**
+   * Shear-lag illustrations for single angles (AISC 360 Table D3.1 Case 8 style: U = 1 − x̄/L).
+   * Inline SVG avoids missing PNG assets and matches client sketches: web-only uses horizontal x̄ from the
+   * vertical leg faying surface; flange-only uses vertical x̄ from the horizontal leg bearing plane.
+   * Fasteners are drawn large and explicit — **three bolts in one line** per Case 8 / “No. of Fasteners per line”.
+   */
+  function shearLagAngleConnectionSvgDataUrl(kind) {
+    var k = String(kind || "WEB").toUpperCase();
+
+    /** Hex bolt head + washer — reads clearly at panel scale (client requested 3 visible fasteners). */
+    function boltAt(cx, cy) {
+      return (
+        '<g transform="translate(' +
+        cx +
+        "," +
+        cy +
+        ')">' +
+        '<circle cx="0" cy="0" r="10" fill="#94a3b8" stroke="#1e293b" stroke-width="2"/>' +
+        '<polygon points="0,-7 6,-3.5 6,3.5 0,7 -6,3.5 -6,-3.5" fill="#cbd5e1" stroke="#475569" stroke-width="1.2"/>' +
+        '<circle cx="0" cy="0" r="3.5" fill="#334155"/>' +
+        "</g>"
+      );
+    }
+
+    var svg;
+    if (k === "WEB") {
+      svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 248">' +
+        '<defs><marker id="ahW" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1f4f68"/></marker></defs>' +
+        '<rect width="400" height="248" fill="#f7fbff"/>' +
+        '<rect x="8" y="8" width="384" height="232" rx="10" fill="#ffffff" stroke="#9bb5c5" stroke-width="2"/>' +
+        '<rect x="16" y="16" width="368" height="30" rx="6" fill="#e4f2fa"/>' +
+        '<text x="200" y="37" text-anchor="middle" font-size="14" font-weight="700" fill="#1f4f68">WEB LEG ONLY (vertical leg to gusset)</text>' +
+        '<text x="200" y="54" text-anchor="middle" font-size="11" font-weight="600" fill="#0f766e">3 bolts in one vertical line — fasteners per line = 3</text>' +
+        '<rect x="38" y="66" width="30" height="150" fill="#c5d4dc" stroke="#5e7787" stroke-width="2"/>' +
+        '<polygon points="68,66 68,188 238,188 238,204 68,204" fill="#d8e4ec" stroke="#5e7787" stroke-width="2"/>' +
+        boltAt(74, 96) +
+        boltAt(74, 138) +
+        boltAt(74, 180) +
+        '<line x1="138" y1="66" x2="138" y2="204" stroke="#7a9aad" stroke-width="1.5" stroke-dasharray="5,4"/>' +
+        '<circle cx="138" cy="150" r="5" fill="#111827"/>' +
+        '<line x1="68" y1="66" x2="68" y2="210" stroke="#1f4f68" stroke-width="2"/>' +
+        '<line x1="68" y1="78" x2="138" y2="78" stroke="#1f4f68" stroke-width="1.5" marker-end="url(#ahW)" marker-start="url(#ahW)"/>' +
+        '<text x="102" y="72" text-anchor="middle" font-size="15" font-weight="700" fill="#0c4a6e">x̄</text>' +
+        '<text x="200" y="232" text-anchor="middle" font-size="11" fill="#3b677f">U = 1 − x̄/L · x̄ from gusset face to centroid</text>' +
+        "</svg>";
+    } else if (k === "FLANGE") {
+      svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 248">' +
+        '<defs><marker id="avF" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#1f4f68"/></marker></defs>' +
+        '<rect width="400" height="248" fill="#f7fbff"/>' +
+        '<rect x="8" y="8" width="384" height="232" rx="10" fill="#ffffff" stroke="#9bb5c5" stroke-width="2"/>' +
+        '<rect x="16" y="16" width="368" height="30" rx="6" fill="#e4f2fa"/>' +
+        '<text x="200" y="37" text-anchor="middle" font-size="14" font-weight="700" fill="#1f4f68">FLANGE LEG ONLY (horizontal leg bearing)</text>' +
+        '<text x="200" y="54" text-anchor="middle" font-size="11" font-weight="600" fill="#0f766e">3 bolts in one horizontal line on bearing leg</text>' +
+        '<rect x="36" y="176" width="280" height="20" fill="#c5d4dc" stroke="#5e7787" stroke-width="2"/>' +
+        '<polygon points="96,176 96,88 124,88 124,176 264,176 264,192 96,192" fill="#d8e4ec" stroke="#5e7787" stroke-width="2"/>' +
+        boltAt(128, 164) +
+        boltAt(180, 164) +
+        boltAt(232, 164) +
+        '<line x1="308" y1="96" x2="308" y2="176" stroke="#7a9aad" stroke-width="1.5" stroke-dasharray="5,4"/>' +
+        '<circle cx="308" cy="130" r="5" fill="#111827"/>' +
+        '<line x1="308" y1="176" x2="308" y2="130" stroke="#1f4f68" stroke-width="1.5" marker-end="url(#avF)" marker-start="url(#avF)"/>' +
+        '<text x="318" y="156" text-anchor="start" font-size="15" font-weight="700" fill="#0c4a6e">x̄</text>' +
+        '<text x="200" y="232" text-anchor="middle" font-size="11" fill="#3b677f">x̄ is vertical ( ⊥ to horizontal faying surface )</text>' +
+        "</svg>";
+    } else {
+      svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 248">' +
+        '<rect width="400" height="248" fill="#f7fbff"/>' +
+        '<rect x="8" y="8" width="384" height="232" rx="10" fill="#ffffff" stroke="#9bb5c5" stroke-width="2"/>' +
+        '<rect x="16" y="16" width="368" height="30" rx="6" fill="#e4f2fa"/>' +
+        '<text x="200" y="37" text-anchor="middle" font-size="14" font-weight="700" fill="#1f4f68">WEB &amp; FLANGE (both legs fastened)</text>' +
+        '<text x="200" y="54" text-anchor="middle" font-size="11" font-weight="600" fill="#0f766e">3 bolts on web · 3 bolts on flange (each line)</text>' +
+        '<rect x="32" y="74" width="26" height="118" fill="#c5d4dc" stroke="#5e7787" stroke-width="2"/>' +
+        '<rect x="44" y="184" width="220" height="16" fill="#c5d4dc" stroke="#5e7787" stroke-width="2"/>' +
+        '<polygon points="58,74 58,184 234,184 234,200 58,200" fill="#d8e4ec" stroke="#5e7787" stroke-width="2"/>' +
+        boltAt(50, 102) +
+        boltAt(50, 136) +
+        boltAt(50, 170) +
+        boltAt(105, 192) +
+        boltAt(150, 192) +
+        boltAt(195, 192) +
+        '<circle cx="138" cy="138" r="5" fill="#111827"/>' +
+        '<text x="200" y="228" text-anchor="middle" font-size="12" font-weight="600" fill="#166534">Both legs connected — U = 1.0 (this module)</text>' +
+        "</svg>";
+    }
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  }
+
+  /** Client reference renders (`assets/tension-page/shear-lag-*.png`). SVG diagrams used only if a PNG fails to load. */
+  var SHEAR_LAG_CONNECTION_IMAGES = {
+    WEB: "assets/tension-page/shear-lag-web-leg.png",
+    FLANGE: "assets/tension-page/shear-lag-flange-leg.png",
+    FLANGE_WEB: "assets/tension-page/shear-lag-both-legs.png",
   };
 
   /** Sheet2 `N3:N5` → `O3:O5` (matches `Tension Design`!`V28`). */
@@ -1987,18 +2077,25 @@
   function renderConnectionImage() {
     if (!connImage) return;
     var key = connectionSelect && connectionSelect.value ? connectionSelect.value : "WEB";
-    var src = connectionImageByType[key] || connectionImageByType.WEB;
+    var src =
+      (SHEAR_LAG_CONNECTION_IMAGES && SHEAR_LAG_CONNECTION_IMAGES[key]) ||
+      SHEAR_LAG_CONNECTION_IMAGES.WEB;
     // #region agent log
     dbg("post-fix", "H_conn_img", "tension-page-ui.js:renderConnectionImage", "Connection image mapping snapshot", {
       selectedConnection: key,
-      mappedSrc: src,
-      availableKeys: Object.keys(connectionImageByType || {})
+      clientAsset: src
     });
     // #endregion
     connImage.onerror = function () {
       connImage.onerror = null;
-      connImage.src = connectionSvgData(key + " CONNECTION", "Fallback diagram");
+      connImage.src = shearLagAngleConnectionSvgDataUrl(key);
     };
+    connImage.alt =
+      key === "FLANGE"
+        ? "Single angle: horizontal leg (flange) bearing — x̄ perpendicular to faying surface"
+        : key === "FLANGE_WEB"
+          ? "Single angle: both legs fastened — U = 1.0"
+          : "Single angle: vertical leg (web) to gusset — x̄ from connection plane to centroid";
     connImage.src = src;
   }
 

@@ -218,6 +218,16 @@ assert(catalog.length > 100, "catalog should load W-shapes");
 
 /* ── Fixture F: strict capacity row parity for benchmark sections ── */
 (function fixtureCapacityRowParityBenchmarks() {
+  var workbookPath = path.join(root, "Born2BeSteel Final (2).xlsx");
+  if (!fs.existsSync(workbookPath)) {
+    console.warn(
+      "bending-design-regression: skipping Excel row parity (missing " +
+        path.basename(workbookPath) +
+        "). Copy the workbook into steel-design-system/ to run those checks."
+    );
+    return;
+  }
+
   var sec0 = {
     fy: 60,
     E: 29000,
@@ -233,10 +243,7 @@ assert(catalog.length > 100, "catalog should load W-shapes");
     beamWeightNorm: "consider beam weight",
   };
 
-  var expected = Bench.extractBenchmarks(
-    path.join(root, "Born2BeSteel Final (2).xlsx"),
-    Bench.DEFAULT_LABELS
-  );
+  var expected = Bench.extractBenchmarks(workbookPath, Bench.DEFAULT_LABELS);
 
   var rowsNo = WB.capacityAnalysisRowsWithoutDeflection(
     catalog,
