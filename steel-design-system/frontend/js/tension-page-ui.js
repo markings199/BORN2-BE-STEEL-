@@ -99,7 +99,7 @@
     analysisStag: document.getElementById("tensionViewAnalysisStag"),
   };
   var tensionShell = root.querySelector(".tension-shell");
-  /** Apply `NS -Tension Analysis` workbook defaults once when user opens the Analysis Calculator tab (distinct from `Tension Design`). */
+  /** Apply `NS -Tension Analysis` workbook defaults once when user opens the **Analysis Calculator** tab (`data-tension-view="analysisStag"`; not Capacity & Demand). */
   var excelNsAnalysisCalculatorDefaultsApplied = false;
   /** Apply `S -Tension Analysis` workbook defaults once when user opens **Tension — Staggered** (plate `X45` is stagger-only; decoupled from non-stagger plate). */
   var excelStaggerAnalysisCalculatorDefaultsApplied = false;
@@ -195,10 +195,7 @@
     dbg("pre-fix", "H0", "tension-page-ui.js:setView", "Tension top view changed", { view: name });
     // #endregion
     enforceAnalysisScrollLayout();
-    if (
-      (name === "analysisNon" || name === "analysisStag") &&
-      !excelNsAnalysisCalculatorDefaultsApplied
-    ) {
+    if (name === "analysisStag" && !excelNsAnalysisCalculatorDefaultsApplied) {
       if (applyExcelNsAnalysisCalculatorDefaults()) excelNsAnalysisCalculatorDefaultsApplied = true;
     }
     if (name === "analysisStag" || name === "analysisNon") recomputeAll();
@@ -285,8 +282,6 @@
   var anFractureOut = byId("tensionAnFracture");
   var agFractureOut = byId("tensionAgFracture");
   var safeSectionOut = byId("tensionSafeSection");
-  var designSectionSelect = byId("tensionDesignSectionSelect");
-  var designSectionPreview = byId("tensionDesignSectionPreview");
   var safeAgOut = byId("tensionSafeAg");
   var safeRemarkOut = byId("tensionSafeRemark");
   var cdCapacityTbody = byId("cdCapacityTbody");
@@ -420,6 +415,38 @@
   var analysisStagGovEqLabel = byId("analysisStagGovEqLabel");
   var analysisGovEqLabelNon = byId("analysisGovEqLabelNon");
 
+  /** `%P` band (`I64`/`I66`, `R64`/`R66`, `V64`, `AA64`, `AL64`, `AL66`) on `NS -Tension Analysis` — five separate tiles. */
+  var analysisNsDlPct = byId("analysisNsDlPct");
+  var analysisNsLlPct = byId("analysisNsLlPct");
+  var analysisNsR64Label = byId("analysisNsR64Label");
+  var analysisNsR66Label = byId("analysisNsR66Label");
+  var analysisNsR64 = byId("analysisNsR64");
+  var analysisNsR66 = byId("analysisNsR66");
+  var analysisNsPctGovFactor = byId("analysisNsPctGovFactor");
+  var analysisNsYieldPct = byId("analysisNsYieldPct");
+  var analysisNsFracPct = byId("analysisNsFracPct");
+  var analysisNsMaxP = byId("analysisNsMaxP");
+  var analysisNsPctYieldEq = byId("analysisNsPctYieldEq");
+  var analysisNsPctFracEq = byId("analysisNsPctFracEq");
+  var analysisNsPctGovTitle = byId("analysisNsPctGovTitle");
+  var analysisNsPctMaxTitle = byId("analysisNsPctMaxTitle");
+
+  /** `%P` band on **`S -Tension Analysis`** (`I64`/`I66`, demand factors, capacities, max load) — mirrors NS layout. */
+  var analysisStagDlPct = byId("analysisStagDlPct");
+  var analysisStagLlPct = byId("analysisStagLlPct");
+  var analysisStagR64Label = byId("analysisStagR64Label");
+  var analysisStagR66Label = byId("analysisStagR66Label");
+  var analysisStagR64 = byId("analysisStagR64");
+  var analysisStagR66 = byId("analysisStagR66");
+  var analysisStagPctGovFactor = byId("analysisStagPctGovFactor");
+  var analysisStagYieldPct = byId("analysisStagYieldPct");
+  var analysisStagFracPct = byId("analysisStagFracPct");
+  var analysisStagMaxP = byId("analysisStagMaxP");
+  var analysisStagPctYieldEq = byId("analysisStagPctYieldEq");
+  var analysisStagPctFracEq = byId("analysisStagPctFracEq");
+  var analysisStagPctGovTitle = byId("analysisStagPctGovTitle");
+  var analysisStagPctMaxTitle = byId("analysisStagPctMaxTitle");
+
   function enforceRequestedVisualLocks() {
     // Hard-apply styles in case cached/native select rendering ignores CSS.
     if (methodSelect) {
@@ -449,7 +476,7 @@
       el.readOnly = true;
       el.setAttribute("aria-readonly", "true");
     });
-    var userInputs = nonRoot.querySelectorAll("input.in-yellow, select.in-yellow");
+    var userInputs = nonRoot.querySelectorAll("input.in-yellow:not([readonly]), select.in-yellow");
     userInputs.forEach(function (el) {
       if (el.tagName === "INPUT") el.readOnly = false;
       el.removeAttribute("aria-readonly");
@@ -464,7 +491,7 @@
       el.readOnly = true;
       el.setAttribute("aria-readonly", "true");
     });
-    var userInputs = stagRoot.querySelectorAll("input.in-yellow, select.in-yellow");
+    var userInputs = stagRoot.querySelectorAll("input.in-yellow:not([readonly]), select.in-yellow");
     userInputs.forEach(function (el) {
       if (el.tagName === "INPUT") el.readOnly = false;
       el.removeAttribute("aria-readonly");
@@ -603,10 +630,18 @@
   var EXCEL_TENSION_DESIGN_STEEL_GRADE = "A572 Gr. 65";
 
   /**
-   * `NS -Tension Analysis` sample inputs (`Born2BeSteel Final (3).xlsx`), distinct from `Tension Design` defaults.
-   * Steel designation column `I25` resolves via lookup table to Fy/Fu (e.g. A36 → 36/58 ksi).
+   * `NS -Tension Analysis` initial grade `I25` (`Born2BeSteel Final (8).xlsx`), distinct from `Tension Design` defaults.
    */
-  var EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE = "A36";
+  var EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE = "A572 Gr. 50";
+
+  /** `S -Tension Analysis` initial grade when applying staggered calculator defaults (`Born2BeSteel Final (8).xlsx` `I25`). */
+  var EXCEL_STAG_TENSION_ANALYSIS_STEEL_GRADE = "A36";
+
+  /** `S -Tension Analysis` / `Tension-pivot` default row (`Born2BeSteel Final (8).xlsx`). */
+  var EXCEL_STAG_TENSION_PIVOT_SHAPE = "L8X4X1";
+
+  /** `NS -Tension Analysis` / `Tension-pivot` default `AISC_Manual_Label` (`Born2BeSteel Final (8).xlsx`, e.g. `A6`). */
+  var EXCEL_NS_TENSION_ANALYSIS_DEFAULT_SHAPE = "L8X4X1";
 
   /**
    * Last-resort grades when `SteelGradesService` / `Born2BeSteel` are still empty (e.g. `main.js` exited early
@@ -649,6 +684,8 @@
   }
 
   var FALLBACK_ANGLE_SECTIONS = [
+    { name: "L8X4X1", family: "ANGLE", Ag: 11.1, weightLbFt: 37.4, rx: 2.51, ry: 1.03, rmin: 1.03, t: 1, xbar: 1.04, ybar: 3.03 },
+    { name: "L5X3X3/8", family: "ANGLE", Ag: 2.86, weightLbFt: 9.8, rx: 1.6, ry: 0.838, rmin: 0.838, t: 0.375, xbar: 0.698, ybar: 1.69 },
     { name: "L4X4X3/8", family: "ANGLE", Ag: 2.88, weightLbFt: null, rx: 1.2, ry: 0.79, rmin: 0.79, t: 0.375, xbar: 1.16, ybar: 1.16 },
     { name: "L5X5X1/2", family: "ANGLE", Ag: 4.75, weightLbFt: null, rx: 1.5, ry: 1.0, rmin: 1.0, t: 0.5, xbar: 1.4, ybar: 1.4 },
     { name: "L6X6X1/2", family: "ANGLE", Ag: 5.75, weightLbFt: null, rx: 1.75, ry: 1.16, rmin: 1.16, t: 0.5, xbar: 1.64, ybar: 1.64 },
@@ -665,8 +702,25 @@
   var tensionCapacityAnglesOrdered = [];
   var currentNsShapeFilter = "all";
   var currentNsTypeFilter = "all";
-  var nsMasterShapeOptions = ["all", "ANGLE", "W", "HSS", "CHANNEL", "TEE", "PIPE", "OTHER"];
-  var nsMasterTypeOptions = ["all", "L", "2L"];
+  /**
+   * Family chips for Section Selection — ids match `sectionFamily()` / `nsFamilyFromType()` (`Born2BeSteel Final (7).xlsx` `Key Geometric Properties` row order until catalog loads).
+   */
+  var nsMasterShapeOptions = ["all", "W", "CHANNEL", "ANGLE", "TEE", "HSS", "PIPE"];
+  /**
+   * Type chips — every distinct **Type** column value from the workbook (plus `all`). Populated from `candidateSections` in sheet order via `deriveNsMasterOptionsFromCandidateSections`.
+   */
+  var nsMasterTypeOptions = ["all", "W", "M", "S", "HP", "C", "MC", "L", "WT", "MT", "ST", "2L", "HSS", "PIPE"];
+  /** Display labels for **Shapes** / family chips (Excel column **Shapes** maps to these families). */
+  var NS_SHAPE_FAMILY_LABELS = {
+    all: "All",
+    ANGLE: "L / ∠",
+    W: "W (I)",
+    HSS: "HSS",
+    CHANNEL: "C / MC",
+    TEE: "WT / ST / MT",
+    PIPE: "PIPE",
+    OTHER: "Other",
+  };
 
   function mapUiConnectionToExcelKey(val) {
     if (val === "FLANGE_WEB") return "FLANGES & WEB";
@@ -762,10 +816,12 @@
             };
           })
           .filter(function (row) { return !!row; });
+        deriveNsMasterOptionsFromCandidateSections();
       })
       .catch(function () {
         candidateSections = FALLBACK_ANGLE_SECTIONS.slice();
         tensionCapacityAnglesOrdered = [];
+        deriveNsMasterOptionsFromCandidateSections();
       })
       .finally(function () {
         if (typeof done === "function") done();
@@ -808,35 +864,38 @@
     return "OTHER";
   }
 
+  /**
+   * Builds **Shapes** (family) and **Type** chip lists from the loaded catalog — same distinct values as Excel `Key Geometric Properties`
+   * (sheet row order). Avoids a second fetch and fixes stale `["all","L","2L"]` defaults before hydration.
+   */
+  function deriveNsMasterOptionsFromCandidateSections() {
+    var rows = candidateSections || [];
+    if (!rows.length) return;
+    var famSeen = { all: true };
+    var typeSeen = { all: true };
+    var famOut = ["all"];
+    var typeOut = ["all"];
+    for (var i = 0; i < rows.length; i++) {
+      var sec = rows[i];
+      var type = String(sec && sec.type || "").toUpperCase().trim();
+      if (type && !typeSeen[type]) {
+        typeSeen[type] = true;
+        typeOut.push(type);
+      }
+      var fam = sec && sec.family ? sec.family : nsFamilyFromType(type);
+      if (fam && !famSeen[fam]) {
+        famSeen[fam] = true;
+        famOut.push(fam);
+      }
+    }
+    nsMasterTypeOptions = typeOut;
+    nsMasterShapeOptions = famOut;
+  }
+
+  /** @deprecated name kept for call sites — derives from `candidateSections` only (same source as `data/aisc-sections.json`). */
   function hydrateNsMasterOptionsFromAiscDataset(done) {
-    fetch("data/aisc-sections.json")
-      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("bad response")); })
-      .then(function (payload) {
-        var rows = (payload && payload.sections) || [];
-        if (!rows.length) return;
-        var famSeen = { all: true };
-        var typeSeen = { all: true };
-        var famOut = ["all"];
-        var typeOut = ["all"];
-        rows.forEach(function (row) {
-          var type = String(row && row.type || "").toUpperCase().trim();
-          if (type && !typeSeen[type]) {
-            typeSeen[type] = true;
-            typeOut.push(type);
-          }
-          var fam = nsFamilyFromType(type);
-          if (fam && !famSeen[fam]) {
-            famSeen[fam] = true;
-            famOut.push(fam);
-          }
-        });
-        nsMasterTypeOptions = typeOut;
-        nsMasterShapeOptions = famOut;
-      })
-      .catch(function () {})
-      .finally(function () {
-        if (typeof done === "function") done();
-      });
+    deriveNsMasterOptionsFromCandidateSections();
+    if (typeof done === "function") done();
   }
 
   function nsShapeOptionsFromData() {
@@ -877,9 +936,8 @@
     if (!shapeSelect || !candidateSections.length) return;
 
     if (nsShapeIcons) {
-      var shapeLabels = { all: "All", ANGLE: "L / ∠", W: "W", HSS: "HSS", OTHER: "Other" };
       var shapeButtons = nsMasterShapeOptions.map(function (id) {
-        return { id: id, label: shapeLabels[id] || id };
+        return { id: id, label: NS_SHAPE_FAMILY_LABELS[id] || id };
       });
       if (!shapeButtons.some(function (b) { return b.id === currentNsShapeFilter; })) {
         currentNsShapeFilter = "all";
@@ -940,6 +998,8 @@
       list.forEach(function (s) {
         var b = document.createElement("button");
         b.type = "button";
+        b.setAttribute("role", "option");
+        b.setAttribute("aria-selected", s.name === shapeSelect.value ? "true" : "false");
         b.className = "ns-aisc-btn" + (s.name === shapeSelect.value ? " is-active" : "");
         b.textContent = s.name;
         b.addEventListener("click", function () {
@@ -1001,41 +1061,26 @@
     return num(s.Ag, 0);
   }
 
-  /**
-   * Sheet2 connection U for Analysis stagger path (`XLOOKUP` N9:N11 → O9:O11).
-   * Differs from Design sheet `TENSION_CONNECTION_U` (N3:N5).
-   */
-  var STAG_ANALYSIS_CONNECTION_U = {
-    FLANGE: 0.909,
-    WEB: 0.909,
-    "FLANGES & WEB": 1,
-  };
-  var STAG_ANALYSIS_CASE2 = 0.909;
-
-  function stagAnalysisConnU() {
-    var key = mapUiConnectionToExcelKey(connectionSelect && connectionSelect.value);
-    var u = STAG_ANALYSIS_CONNECTION_U[key];
-    return u != null ? u : STAG_ANALYSIS_CONNECTION_U.WEB;
-  }
-
-  /** Sheet2 T3/T2 via `IF(K51=3,T3,T2)` on S -Tension Analysis. */
+  /** Sheet2 T3/T2 via `IF(K51=3,T3,T2)` on S -Tension Analysis (Case 8 / R53). */
   function stagAnalysisCase8U() {
     var nf = Math.max(1, Math.round(num(fastenersPerLine.value, 3)));
     return nf <= 3 ? 0.6 : 0.8;
   }
 
-  function governingUStaggerAnalysis() {
-    return Math.max(stagAnalysisConnU(), STAG_ANALYSIS_CASE2, stagAnalysisCase8U());
+  /**
+   * Staggered `S -Tension Analysis` mirrors NS: N53 = `1 − U31/S45` (Case 2), R53 = Case 8.
+   * Sheet2 `O13`/`O14` for single-angle pivot (`Tension-pivot` B5 = "L"): `MAX(N53,R53)`.
+   * `Q48` = `XLOOKUP(Q41, Sheet2!N13:N15, O13:O15)` → use `nsFractureEffectiveFactor(case2, case8)`.
+   */
+  /** Connection type for NS analysis: prefer the analysis-tab control when present. */
+  function activeNsTensionConnectionValue() {
+    if (isStaggeredAnalysisActive()) return connectionSelect ? connectionSelect.value : "WEB";
+    if (tensionNonStagConnectionSelect) return tensionNonStagConnectionSelect.value;
+    return connectionSelect ? connectionSelect.value : "WEB";
   }
 
-  /**
-   * `NS -Tension Analysis` fracture demand area uses AM16 = AM13×Q48 where Q48 =
-   * XLOOKUP(connection, Sheet2!N9:N11, O9:O11). For angles, O9/O10 both evaluate to
-   * MAX(N53, R53) with N53 = Case 2 chain (Sheet2 T4) and R53 = IF(K51=3,T3,T2).
-   * FLANGES & WEB maps to O11 = 1.
-   */
   function nsFractureEffectiveFactor(case2, case8) {
-    if (!connectionSelect || connectionSelect.value === "FLANGE_WEB") return 1;
+    if (activeNsTensionConnectionValue() === "FLANGE_WEB") return 1;
     return Math.max(case2, case8);
   }
 
@@ -1086,6 +1131,8 @@
       list.forEach(function (s) {
         var b = document.createElement("button");
         b.type = "button";
+        b.setAttribute("role", "option");
+        b.setAttribute("aria-selected", s.name === shapeSelectStag.value ? "true" : "false");
         b.className = "ns-aisc-btn" + (s.name === shapeSelectStag.value ? " is-active" : "");
         b.textContent = s.name;
         b.addEventListener("click", function () {
@@ -1145,14 +1192,13 @@
   function initStagSectionUi() {
     if (!shapeSelectStag) return;
     if (stagShapeIcons) {
-      var shapeLabels = { all: "All", ANGLE: "L / ∠", W: "W", HSS: "HSS", OTHER: "Other" };
       stagShapeIcons.innerHTML = "";
       nsMasterShapeOptions.forEach(function (id) {
         var b = document.createElement("button");
         b.type = "button";
         b.className = "ns-chip-btn";
         b.setAttribute("data-stag-shape-filter", id);
-        b.textContent = shapeLabels[id] || id;
+        b.textContent = NS_SHAPE_FAMILY_LABELS[id] || id;
         stagShapeIcons.appendChild(b);
       });
     }
@@ -1178,15 +1224,15 @@
       syncShapeFromStagToNon();
       recomputeAll();
     });
-    currentStagShapeFilter = "all";
-    currentStagTypeFilter = "all";
     root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-shape-filter]").forEach(function (el) {
       var f = el.getAttribute("data-stag-shape-filter");
-      el.classList.toggle("is-active", f === "all");
+      var on = f === currentStagShapeFilter || (currentStagShapeFilter === "all" && f === "all");
+      el.classList.toggle("is-active", on);
     });
     root.querySelectorAll("#analysisCalcStag .ns-chip-btn[data-stag-type-filter]").forEach(function (el) {
       var t = el.getAttribute("data-stag-type-filter");
-      el.classList.toggle("is-active", t === "all");
+      var on = t === currentStagTypeFilter || (currentStagTypeFilter === "all" && t === "all");
+      el.classList.toggle("is-active", on);
     });
     rebuildStagShapeOptions({ prefer: shapeSelect && shapeSelect.value });
   }
@@ -1441,21 +1487,24 @@
   }
 
   /**
-   * **`NS -Tension Analysis`** / `Born2BeSteel Final (3).xlsx` — Non-Staggered Analysis master inputs (LRFD path shown in workbook + UI reference):
-   * A36 (`I25`), DL `I29`=15 / LL `I31`=40 / length `I33`=15 ft, plate basis `X41`=`I33`×12 → **180** in when plates used (`X45`=0 → section Ag governs),
-   * nominal bolt `K41`=3/4 in **BOLT** (+1/8 hole → **0.875** in), fasteners **5** / gage **1** (workbook input layout + reference screenshot),
-   * connection **FLANGES & WEB**, unsupported length **`S45`=8** in (Case 2 = 1 − x̄/Lc matches spreadsheet),
-   * block shear tension/shear lengths & hole counts **0** (`AC50`=0 → governing MIN skips block shear like Excel),
-   * **UNIFORM** tension stress (`AK40`), angle **L7×4×1/2** (Ag = 5.26 in²).
+   * **`NS -Tension Analysis`** / `Born2BeSteel Final (8).xlsx` — Non-Staggered Analysis initial state (`G15` LRFD, `I25` A572 Gr. 50,
+   * `I29`/`I31`/`I33` 15/40/15, `X41`=180 in / `X45`=0, nominal dia **7/8** in **BOLT** → hole dia `K47` = **1.0** in,
+   * `K51`/`K53` = **3** / **3**, `Q41` FLANGES & WEB, `S45`=8, block shear inputs **0**, `AK40` UNIFORM,
+   * angle **`Tension-pivot` A6** (**L8X4X1**), optional `%P` loads `I64`/`I66` = **25** / **75**.
    * @returns {boolean} false if section catalog not ready (caller may retry on next navigation).
    */
   function applyExcelNsAnalysisCalculatorDefaults() {
     if (!candidateSections || !candidateSections.length) return false;
 
-    if (methodSelect) methodSelect.value = "LRFD";
-    if (analysisMethodMirror) analysisMethodMirror.value = "LRFD";
+    /**
+     * Workbook shows `G15 = LRFD`, but in the app the Analysis calculator shares one global method selector
+     * (`#tensionMethod`) across views. When users are already in ASD, applying NS defaults should not
+     * silently flip them back to LRFD (it breaks the “ASD default state” parity in the UI screenshots).
+     */
+    var activeMethod = methodSelect && methodSelect.value ? methodSelect.value : "LRFD";
+    if (analysisMethodMirror) analysisMethodMirror.value = activeMethod;
 
-    var grades = window.Born2BeSteel && window.Born2BeSteel.steelGrades;
+    var grades = tensionGradesList();
     var gNs = grades && grades.find(function (g) { return g.astm === EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE; });
     if (steelSelect && gNs) {
       steelSelect.value = gNs.astm;
@@ -1468,11 +1517,11 @@
     if (llInput) llInput.value = "40";
     if (lengthFt) lengthFt.value = "15";
 
-    if (nominalDia) nominalDia.value = "0.75";
+    if (nominalDia) nominalDia.value = "0.875";
     if (boltType) boltType.value = "BOLT";
 
-    if (fastenersPerLine) fastenersPerLine.value = "5";
-    if (gageLines) gageLines.value = "1";
+    if (fastenersPerLine) fastenersPerLine.value = "3";
+    if (gageLines) gageLines.value = "3";
 
     if (connectionSelect) connectionSelect.value = "FLANGE_WEB";
     if (tensionNonStagConnectionSelect) tensionNonStagConnectionSelect.value = "FLANGE_WEB";
@@ -1505,14 +1554,23 @@
         .replace(/\u00d7/g, "X")
         .replace(/×/g, "X");
     }
+    var targetNorm = normShapeName(EXCEL_NS_TENSION_ANALYSIS_DEFAULT_SHAPE);
     var pick = candidateSections.find(function (s) {
-      return normShapeName(s.name) === "L7X4X1/2";
+      return normShapeName(s.name) === targetNorm;
     });
+    /** Unequal-leg L: lock chips to **L / ∠** + **L** so the Manual Label grid lists the angle family. */
+    if (pick) {
+      currentNsShapeFilter = "ANGLE";
+      currentNsTypeFilter = "L";
+    }
     if (shapeSelect && pick) {
       shapeSelect.value = pick.name;
       renderNonStaggeredSelector();
       rebuildStagShapeOptions({ prefer: pick.name });
     }
+
+    if (analysisNsDlPct) analysisNsDlPct.value = "25";
+    if (analysisNsLlPct) analysisNsLlPct.value = "75";
 
     calcBoltDiameter();
     mirrorDesignToAnalysis();
@@ -1520,19 +1578,20 @@
   }
 
   /**
-   * First-time defaults for **`S -Tension Analysis`** (`Born2BeSteel Final (6).xlsx`):
-   * method ASD, steel A36, DL/LL/L = 20/80/10.5, Q41 FLANGE, K41 3/4 in BOLT,
-   * K51/K53 = 2/3, S45=10, AZ40 NON-UNIFORM, AC40/AG40/AK40 = 2/3/3.5,
-   * plate length/thickness X41/X45 = 126/0.
+   * First-time defaults for **`S -Tension Analysis`** (`Born2BeSteel Final (8).xlsx`):
+   * `G15` **LRFD**, `I25` A36, `I29`/`I31`/`I33` 20/80/10.5, `Q41` FLANGE, `K41` 3/4 in **BOLT** → `K47` 0.875 in,
+   * `K51`/`K53` = **2** / **3**, `S45` = **10**, `AZ40` NON-UNIFORM (`0.5`), `AC40`/`AG40`/`AK40` = **2** / **3** / **3.5**,
+   * `X41` = `I33`×12 = **126** in, `X45` = **0**, `%P` `I64`/`I66` = **25** / **75**, pivot **`Tension-pivot`** row **L8X4X1** (`P29`…).
    */
   function applyExcelStaggerAnalysisCalculatorDefaults() {
     if (!candidateSections || !candidateSections.length) return false;
 
-    if (methodSelect) methodSelect.value = "ASD";
-    if (analysisMethodMirror) analysisMethodMirror.value = "ASD";
+    if (methodSelect) methodSelect.value = "LRFD";
+    if (analysisMethodMirror) analysisMethodMirror.value = "LRFD";
+    if (analysisStagMethodMirror) analysisStagMethodMirror.value = "LRFD";
 
     var grades = tensionGradesList();
-    var gStag = grades && grades.find(function (g) { return g.astm === EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE; });
+    var gStag = grades && grades.find(function (g) { return g.astm === EXCEL_STAG_TENSION_ANALYSIS_STEEL_GRADE; });
     if (steelSelect && gStag) {
       steelSelect.value = gStag.astm;
       syncSteelFields();
@@ -1561,12 +1620,51 @@
     if (stressType) stressType.value = "0.5";
     if (analysisStagStressType) analysisStagStressType.value = "0.5";
 
+    if (analysisBsLt) analysisBsLt.value = "0";
+    if (analysisBsNt) analysisBsNt.value = "0";
+    if (analysisBsLv) analysisBsLv.value = "0";
+    if (analysisBsNv) analysisBsNv.value = "0";
+    if (analysisStagBsLt && analysisBsLt) analysisStagBsLt.value = analysisBsLt.value;
+    if (analysisStagBsNt && analysisBsNt) analysisStagBsNt.value = analysisBsNt.value;
+    if (analysisStagBsLv && analysisBsLv) analysisStagBsLv.value = analysisBsLv.value;
+    if (analysisStagBsNv && analysisBsNv) analysisStagBsNv.value = analysisBsNv.value;
+
     if (sg1) sg1.value = "2";
     if (g1) g1.value = "3";
     if (g2) g2.value = "3.5";
 
     if (fastenersPerLine) fastenersPerLine.value = "2";
     if (gageLines) gageLines.value = "3";
+
+    if (analysisStagDlPct) analysisStagDlPct.value = "25";
+    if (analysisStagLlPct) analysisStagLlPct.value = "75";
+
+    function normShapeNameStag(s) {
+      return String(s || "")
+        .toUpperCase()
+        .replace(/\s+/g, "")
+        .replace(/\u00d7/g, "X")
+        .replace(/×/g, "X");
+    }
+    var pivotNorm = normShapeNameStag(EXCEL_STAG_TENSION_PIVOT_SHAPE);
+    var pickStag = candidateSections.find(function (s) {
+      return normShapeNameStag(s.name) === pivotNorm;
+    });
+    if (pickStag) {
+      currentNsShapeFilter = "ANGLE";
+      currentNsTypeFilter = "L";
+      currentStagShapeFilter = "ANGLE";
+      currentStagTypeFilter = "L";
+    } else {
+      currentStagShapeFilter = "all";
+      currentStagTypeFilter = "all";
+    }
+    if (shapeSelect && pickStag) shapeSelect.value = pickStag.name;
+    rebuildStagShapeOptions({ prefer: pickStag ? pickStag.name : "" });
+    renderNonStaggeredSelector();
+    if (pickStag) {
+      updateStagFilterButtonVisibility();
+    }
 
     calcBoltDiameter();
     mirrorDesignToAnalysis();
@@ -1639,8 +1737,8 @@
     var gov;
 
     if (method === "LRFD") {
-      if (demandEq1Label) demandEq1Label.textContent = "Tu = 1.2DL + 1.6LL";
-      if (demandEq2Label) demandEq2Label.textContent = "Wu = 1.4DL";
+      if (demandEq1Label) demandEq1Label.textContent = "Tu = 1.2DL+1.6LL";
+      if (demandEq2Label) demandEq2Label.textContent = "Tu = 1.4DL";
       if (demandGovLabel) demandGovLabel.textContent = "Tu";
       tLoad1 = 1.2 * dl + 1.6 * ll;
       tLoad2 = 1.4 * dl;
@@ -1704,7 +1802,6 @@
         if ("value" in safeSectionOut) safeSectionOut.value = "--";
         safeSectionOut.textContent = "--";
       }
-      if (designSectionPreview) designSectionPreview.value = "--";
       if (safeAgOut) safeAgOut.value = "--";
       if (safeRemarkOut) {
         safeRemarkOut.value = "NO SAFE SECTION";
@@ -1728,8 +1825,13 @@
       if ("value" in safeSectionOut) safeSectionOut.value = picked.name;
       safeSectionOut.textContent = picked.name;
     }
-    if (designSectionPreview) designSectionPreview.value = picked.name;
-    if (designSectionSelect) designSectionSelect.value = picked.name;
+    /** `#tensionShapeSelect` is shared with Analysis Calculator; only drive it from Design while that tab is active. */
+    var designViewActive = !!(viewMap.design && viewMap.design.classList.contains("is-active"));
+    if (shapeSelect && picked.name && designViewActive) {
+      shapeSelect.value = picked.name;
+      renderNonStaggeredSelector();
+      rebuildStagShapeOptions({ prefer: picked.name });
+    }
     if (safeAgOut) safeAgOut.value = fmt(picked.Ag, 2);
     if (safeRemarkOut) {
       safeRemarkOut.value = "SAFE";
@@ -1761,17 +1863,6 @@
     shapeSelect.innerHTML = "";
     var first = candidateSections[0] ? candidateSections[0].name : "";
     if (first) shapeSelect.value = first;
-    if (designSectionSelect) {
-      var designAngles = tensionDesignAngleCatalog();
-      designSectionSelect.innerHTML = "";
-      designAngles.forEach(function (s) {
-        var opt = document.createElement("option");
-        opt.value = s.name;
-        opt.textContent = s.name;
-        designSectionSelect.appendChild(opt);
-      });
-      designSectionSelect.value = designAngles[0] ? designAngles[0].name : first || "";
-    }
     renderNonStaggeredSelector();
     rebuildStagShapeOptions({ prefer: shapeSelect.value });
   }
@@ -1843,15 +1934,9 @@
     var case2;
     var case8;
     var uGov;
-    if (isStaggeredAnalysisActive()) {
-      case2 = STAG_ANALYSIS_CASE2;
-      case8 = stagAnalysisCase8U();
-      uGov = governingUStaggerAnalysis();
-    } else {
-      case2 = Math.max(0, 1 - s.xbar / lc);
-      case8 = stagAnalysisCase8U();
-      uGov = connectionSelect.value === "FLANGE_WEB" ? 1 : Math.max(case2, case8);
-    }
+    case2 = Math.max(0, 1 - num(s.xbar, 0) / lc);
+    case8 = stagAnalysisCase8U();
+    uGov = activeNsTensionConnectionValue() === "FLANGE_WEB" ? 1 : Math.max(case2, case8);
     case1Out.value = fmt(case1, 3);
     case2Out.value = fmt(case2, 4);
     case8Out.value = fmt(case8, 4);
@@ -1870,12 +1955,13 @@
         ? agPlate
         : s.Ag;
     var dh = num(calcBoltDiameter(), 0);
-    var nHolesNet = Math.max(1, num(gageLines.value, 1));
+    /** `NS -Tension Analysis` `AM13` = Active_Ag − `K53`×`K47`×`U29` — `K53` is gage lines; `U29` = 1 in workbook. */
+    var nHolesNet = Math.max(0, Math.round(num(gageLines.value, 0)));
     var anUse;
     var aeUse;
     if (isStaggeredAnalysisActive()) {
       var critNetStag = criticalAn ? num(criticalAn.value, NaN) : NaN;
-      var uConnFrac = stagAnalysisConnU();
+      var uConnFrac = nsFractureEffectiveFactor(case2, case8);
       var bc15Excel = Number.isFinite(critNetStag) ? critNetStag * uConnFrac : NaN;
       anUse = Number.isFinite(critNetStag) ? Math.max(1e-6, critNetStag) : 0.0001;
       aeUse = Number.isFinite(bc15Excel) ? Math.max(1e-6, bc15Excel) : 0.0001;
@@ -1904,7 +1990,7 @@
         ? phiR * fu * aeUse
         : (fu * aeUse) / omegaR;
     var critAnForStag = criticalAn ? num(criticalAn.value, NaN) : NaN;
-    var uConnStag = stagAnalysisConnU();
+    var uConnStag = nsFractureEffectiveFactor(case2, case8);
     var aeStaggeredDemand = Number.isFinite(critAnForStag)
       ? Math.max(1e-6, critAnForStag * uConnStag)
       : aeUse;
@@ -1917,6 +2003,61 @@
     if (analysisFracLabel) analysisFracLabel.textContent = method === "LRFD" ? "Tu" : "Ta";
     if (analysisYieldCap) analysisYieldCap.value = fmt(yieldCap, 3);
     if (analysisFracCap) analysisFracCap.value = fmt(fracCap, 3);
+    if (analysisNsR64 && analysisNsDlPct && analysisNsLlPct) {
+      var i64Pct = num(analysisNsDlPct.value, 0);
+      var i66Pct = num(analysisNsLlPct.value, 0);
+      var r64Pct;
+      var r66Pct;
+      if (method === "LRFD") {
+        r64Pct = 1.2 * (i64Pct / 100) + 1.6 * (i66Pct / 100);
+        r66Pct = 1.4 * (i64Pct / 100);
+      } else {
+        r64Pct = i64Pct / 100 + i66Pct / 100;
+        r66Pct = NaN;
+      }
+      var al64Pct = method === "LRFD" ? Math.max(r64Pct, r66Pct) : r64Pct;
+      if (analysisNsR64Label) analysisNsR64Label.textContent = method === "LRFD" ? "Tu = 1.2DL+1.6LL" : "Ta = DL + LL";
+      if (analysisNsR66Label) analysisNsR66Label.textContent = method === "LRFD" ? "Tu = 1.4DL" : "—";
+      analysisNsR64.value = fmt(r64Pct, 4);
+      analysisNsR66.value = method === "LRFD" && Number.isFinite(r66Pct) ? fmt(r66Pct, 4) : "—";
+      if (analysisNsPctGovFactor) analysisNsPctGovFactor.value = fmt(al64Pct, 4);
+      if (analysisNsYieldPct) analysisNsYieldPct.value = fmt(yieldCap, 4);
+      if (analysisNsFracPct) analysisNsFracPct.value = fmt(fracCap, 4);
+      if (analysisNsPctYieldEq) analysisNsPctYieldEq.textContent = method === "LRFD" ? "Tu =" : "Ta =";
+      if (analysisNsPctFracEq) analysisNsPctFracEq.textContent = method === "LRFD" ? "Tu =" : "Ta =";
+      if (analysisNsPctGovTitle) analysisNsPctGovTitle.textContent = method === "LRFD" ? "Governing Tu =" : "Governing Ta =";
+      if (analysisNsPctMaxTitle) analysisNsPctMaxTitle.textContent = "Maximum load =";
+      var maxAcceptP = al64Pct > 0 ? Math.min(yieldCap, fracCap) / al64Pct : NaN;
+      // Match NS -Tension Analysis `AL66` display (4 decimals in workbook screenshots).
+      if (analysisNsMaxP) analysisNsMaxP.value = Number.isFinite(maxAcceptP) ? fmt(maxAcceptP, 4) : "--";
+    }
+    if (analysisStagR64 && analysisStagDlPct && analysisStagLlPct) {
+      var i64St = num(analysisStagDlPct.value, 0);
+      var i66St = num(analysisStagLlPct.value, 0);
+      var r64St;
+      var r66St;
+      if (method === "LRFD") {
+        r64St = 1.2 * (i64St / 100) + 1.6 * (i66St / 100);
+        r66St = 1.4 * (i64St / 100);
+      } else {
+        r64St = i64St / 100 + i66St / 100;
+        r66St = NaN;
+      }
+      var al64St = method === "LRFD" ? Math.max(r64St, r66St) : r64St;
+      if (analysisStagR64Label) analysisStagR64Label.textContent = method === "LRFD" ? "Tu = 1.2DL+1.6LL" : "Ta = DL + LL";
+      if (analysisStagR66Label) analysisStagR66Label.textContent = method === "LRFD" ? "Tu = 1.4DL" : "—";
+      analysisStagR64.value = fmt(r64St, 4);
+      analysisStagR66.value = method === "LRFD" && Number.isFinite(r66St) ? fmt(r66St, 4) : "—";
+      if (analysisStagPctGovFactor) analysisStagPctGovFactor.value = fmt(al64St, 4);
+      if (analysisStagYieldPct) analysisStagYieldPct.value = fmt(yieldCap, 4);
+      if (analysisStagFracPct) analysisStagFracPct.value = fmt(fracCapStagPanel, 4);
+      if (analysisStagPctYieldEq) analysisStagPctYieldEq.textContent = method === "LRFD" ? "Tu =" : "Ta =";
+      if (analysisStagPctFracEq) analysisStagPctFracEq.textContent = method === "LRFD" ? "Tu =" : "Ta =";
+      if (analysisStagPctGovTitle) analysisStagPctGovTitle.textContent = method === "LRFD" ? "Governing Tu =" : "Governing Ta =";
+      if (analysisStagPctMaxTitle) analysisStagPctMaxTitle.textContent = "Maximum load =";
+      var maxAcceptPStag = al64St > 0 ? Math.min(yieldCap, fracCapStagPanel) / al64St : NaN;
+      if (analysisStagMaxP) analysisStagMaxP.value = Number.isFinite(maxAcceptPStag) ? fmt(maxAcceptPStag, 4) : "--";
+    }
     if (analysisStagYieldLabel) analysisStagYieldLabel.textContent = method === "LRFD" ? "Tu = " : "Ta = ";
     if (analysisStagFracLabel) analysisStagFracLabel.textContent = method === "LRFD" ? "Tu = " : "Ta = ";
     if (analysisStagYieldCap) analysisStagYieldCap.value = fmt(yieldCap, 3);
@@ -1929,8 +2070,8 @@
     if (analysisDemand1) analysisDemand1.value = demandEq1 ? demandEq1.value : fmt(0, 3);
     if (analysisDemand2) analysisDemand2.value = demandEq2 ? demandEq2.value : "-";
     if (analysisDemandGov) analysisDemandGov.value = demandGov ? demandGov.value : fmt(demand, 3);
-    if (analysisStagDemand1Label) analysisStagDemand1Label.textContent = analysisDemand1Label ? analysisDemand1Label.textContent : (method === "LRFD" ? "Tu = 1.2DL + 1.6LL" : "Ta = DL + LL");
-    if (analysisStagDemand2Label) analysisStagDemand2Label.textContent = analysisDemand2Label ? analysisDemand2Label.textContent : (method === "LRFD" ? "Wu = 1.4DL" : "-");
+    if (analysisStagDemand1Label) analysisStagDemand1Label.textContent = analysisDemand1Label ? analysisDemand1Label.textContent : (method === "LRFD" ? "Tu = 1.2DL+1.6LL" : "Ta = DL + LL");
+    if (analysisStagDemand2Label) analysisStagDemand2Label.textContent = analysisDemand2Label ? analysisDemand2Label.textContent : (method === "LRFD" ? "Tu = 1.4DL" : "-");
     if (analysisStagDemandGovLabel) analysisStagDemandGovLabel.textContent = analysisDemandGovLabel ? analysisDemandGovLabel.textContent : (method === "LRFD" ? "Tu" : "Ta");
     if (analysisStagDemand1) analysisStagDemand1.value = analysisDemand1 ? analysisDemand1.value : fmt(0, 3);
     if (analysisStagDemand2) analysisStagDemand2.value = analysisDemand2 ? analysisDemand2.value : "-";
@@ -2016,7 +2157,10 @@
     /** `NS -Tension Analysis`!`AO57`: `IF(AH56>AF17,"SAFE!","UNSAFE :<")` — strict **greater than**. */
     var isSafe = demand > 0 && govCap > demand;
     if (analysisGovEqLabelNon) analysisGovEqLabelNon.textContent = method === "LRFD" ? "Tu =" : "Ta =";
-    if (analysisGoverningDisplay) analysisGoverningDisplay.textContent = demand === 0 ? "--" : fmt(govCap, 3);
+    if (analysisGoverningDisplay) {
+      analysisGoverningDisplay.textContent =
+        demand === 0 || !Number.isFinite(govCap) ? "--" : fmt(govCap, 3);
+    }
     if (analysisSafetyStatus) {
       analysisSafetyStatus.textContent = demand === 0 ? "--" : isSafe ? "SAFE!" : "UNSAFE :<";
       if (demand === 0) {
@@ -2031,7 +2175,10 @@
     var govCapStag = governingCapMinPositiveYieldFracBlock(yieldCap, fracCapStagPanel, bsGov);
     var safeStag = demand > 0 && govCapStag > demand;
     if (analysisStagGovEqLabel) analysisStagGovEqLabel.textContent = method === "LRFD" ? "Tu =" : "Ta =";
-    if (analysisGoverningDisplayStag) analysisGoverningDisplayStag.textContent = demand === 0 ? "--" : fmt(govCapStag, 3);
+    if (analysisGoverningDisplayStag) {
+      analysisGoverningDisplayStag.textContent =
+        demand === 0 || !Number.isFinite(govCapStag) ? "--" : fmt(govCapStag, 3);
+    }
     if (analysisSafetyStatusStag) {
       analysisSafetyStatusStag.textContent = demand === 0 ? "--" : (safeStag ? "SAFE!" : "UNSAFE :<");
       if (demand === 0) {
@@ -2122,7 +2269,9 @@
     if (analysisStagCriticalAn)
       analysisStagCriticalAn.value = Number.isFinite(crit) ? fmt(crit, 4) : "--";
 
-    var uConn = stagAnalysisConnU();
+    var lcSt = effectiveLcIn();
+    var case2St = Math.max(0, 1 - num(s.xbar, 0) / lcSt);
+    var uConn = nsFractureEffectiveFactor(case2St, stagAnalysisCase8U());
     if (analysisStagAe && Number.isFinite(crit)) {
       analysisStagAe.value = fmt(Math.max(1e-6, crit * uConn), 4);
     } else if (analysisStagAe) {
@@ -2663,6 +2812,11 @@
         recomputeAll();
       });
     }
+    [analysisNsDlPct, analysisNsLlPct].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener("input", recomputeAll);
+      el.addEventListener("change", recomputeAll);
+    });
   }
 
   function wireStaggeredInputMirrors() {
@@ -2750,6 +2904,11 @@
         recomputeAll();
       });
     }
+    [analysisStagDlPct, analysisStagLlPct].forEach(function (el) {
+      if (!el) return;
+      el.addEventListener("input", recomputeAll);
+      el.addEventListener("change", recomputeAll);
+    });
   }
 
   [
@@ -2805,18 +2964,6 @@
     shapeSelect.addEventListener("input", onPrimaryShapeChange);
     shapeSelect.addEventListener("change", onPrimaryShapeChange);
   }
-  if (designSectionSelect) {
-    designSectionSelect.addEventListener("change", function () {
-      if (designSectionPreview) designSectionPreview.value = designSectionSelect.value || "--";
-      if (shapeSelect && designSectionSelect.value) {
-        shapeSelect.value = designSectionSelect.value;
-        renderNonStaggeredSelector();
-        rebuildStagShapeOptions({ prefer: shapeSelect.value });
-      }
-      recomputeAll();
-    });
-  }
-
   wireNonStaggeredInputMirrors();
   wireStaggeredInputMirrors();
   enforceRequestedVisualLocks();
@@ -2830,9 +2977,9 @@
     loadTensionCatalog(function () {
       hydrateNsMasterOptionsFromAiscDataset(function () {
         populateShapes();
-        initStagSectionUi();
-        /** Excel `S -Tension Analysis` defaults (stagger-only plate thickness / geometry where applicable). */
+        /** Apply before `initStagSectionUi` so chip filters (`ANGLE` / `L`) match `S -Tension Analysis` initial state. */
         if (applyExcelStaggerAnalysisCalculatorDefaults()) excelStaggerAnalysisCalculatorDefaultsApplied = true;
+        initStagSectionUi();
         /** `Tension Design` workbook defaults (design calculator reference state). */
         if (applyExcelTensionDesignCalculatorDefaults()) {
           excelTensionDesignCalculatorDefaultsApplied = true;

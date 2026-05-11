@@ -9,7 +9,8 @@ const path = require("path");
 const XLSX = require("xlsx");
 
 const ROOT = path.join(__dirname, "..");
-const XLSX_PATH = path.join(ROOT, "Born2BeSteel Final (2).xlsx");
+/** Workbook that owns `Key Geometric Properties` + `aisc shapes database (2)` for this export. */
+const XLSX_PATH = path.join(ROOT, "Born2BeSteel Final (8).xlsx");
 const OUT = path.join(ROOT, "frontend", "data", "aisc-sections.json");
 
 /** Column indices from row 1 of Key Geometric Properties (0-based). */
@@ -168,7 +169,7 @@ function extractBendingAnalysisCatalog(wb) {
   return {
     meta: {
       sourceSheet: "aisc shapes database (2)",
-      sourceFile: "Born2BeSteel Final (2).xlsx",
+      sourceFile: "Born2BeSteel Final (8).xlsx",
       exportedAt: new Date().toISOString(),
       rowCount: sections.length,
       shapeSymbolsDistinct: [...shapeSymbols],
@@ -238,7 +239,7 @@ function main() {
 
   const payload = {
     meta: {
-      sourceFile: "Born2BeSteel Final (2).xlsx",
+      sourceFile: "Born2BeSteel Final (8).xlsx",
       sheet: "Key Geometric Properties",
       exportedAt: new Date().toISOString(),
       rowCount: sections.length,

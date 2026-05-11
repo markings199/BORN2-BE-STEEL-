@@ -12740,6 +12740,35 @@
       border-radius: 8px;
     }
     /* Analysis Calculator - Non Staggered (scoped only) */
+    #analysisCalcNon .analysis-ns-layout {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(0.85rem, 1.8vw, 1.25rem);
+      width: 100%;
+      max-width: 1540px;
+      margin: 0 auto;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    #analysisCalcNon .analysis-ns-main {
+      width: 100%;
+      min-width: 0;
+    }
+    #analysisCalcNon .analysis-ns-main .analysis-grid {
+      overflow: visible;
+    }
+    #analysisCalcNon .analysis-ns-pct-band {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-sizing: border-box;
+    }
     #analysisCalcNon .analysis-grid {
       grid-template-columns: minmax(250px, 0.9fr) minmax(320px, 1.05fr) minmax(280px, 0.95fr);
       gap: 0.5rem;
@@ -12749,15 +12778,214 @@
       align-items: stretch;
       padding-bottom: 0.25rem;
     }
+    #analysisCalcNon .analysis-ns-pct-instruction {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.42rem 0.52rem;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      color: #1e3a4f;
+      font-weight: 750;
+      border: 1px solid rgba(84, 132, 160, 0.5);
+      border-radius: 8px;
+      background: rgba(248, 252, 255, 0.96);
+      box-sizing: border-box;
+    }
+    #analysisCalcNon .analysis-ns-pct-five {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: clamp(0.55rem, 1.15vw, 0.85rem);
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      align-items: stretch;
+    }
+    @media (max-width: 1180px) {
+      #analysisCalcNon .analysis-ns-pct-five {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 720px) {
+      #analysisCalcNon .analysis-ns-pct-five {
+        grid-template-columns: 1fr;
+      }
+    }
+    #analysisCalcNon .analysis-ns-pct-tile h4 {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin: 0 0 0.4rem;
+      line-height: 1.2;
+    }
+    #analysisCalcNon .analysis-ns-pct-tile--max h4 {
+      background: #e07050;
+      color: #fff;
+      margin: 0 0 0.45rem;
+      padding: 0.38rem 0.45rem;
+      border-radius: 6px;
+    }
+    /* Yellow “user cell” look for %P demand / max-load mirrors; overrides global `input[readonly]` green in #analysisCalcNon. */
+    #analysisCalcNon .analysis-ns-pct-five input.in-yellow[readonly] {
+      background: #f1d272 !important;
+      color: #122f43 !important;
+      -webkit-text-fill-color: #122f43 !important;
+      border: 1px solid #c9b86a !important;
+      cursor: default;
+    }
+    /* Darker yellow highlight for "Maximum load =" field only; slightly smaller text so full value fits. */
+    #analysisCalcNon .analysis-ns-pct-five input#analysisNsMaxP.in-yellow[readonly] {
+      background: #deb84e !important;
+      border-color: #b8942f !important;
+      font-size: 0.72rem !important;
+      padding-inline: 0.55rem !important;
+      box-sizing: border-box;
+    }
+    /* Narrow tiles: keep long capacity strings (e.g. 499.5000 kips) readable instead of clipping as hashes. */
+    #analysisCalcNon .analysis-ns-pct-five input.out-green[readonly] {
+      min-width: 0;
+      width: 100%;
+      font-size: clamp(0.6rem, 1.55vw, 0.78rem);
+      letter-spacing: -0.015em;
+    }
+    #analysisCalcNon .analysis-ns-pct-five > .tension-card.analysis-ns-pct-tile {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 100%;
+      align-self: stretch;
+      box-shadow: 0 2px 12px rgba(17, 55, 75, 0.1);
+    }
+    #analysisCalcNon .analysis-ns-pct-five > .tension-card.analysis-ns-pct-tile .t-row:last-child {
+      margin-bottom: 0;
+    }
     #analysisCalcNon {
       overflow: visible !important;
       max-height: none;
       padding-bottom: 0.25rem;
     }
     #analysisCalcNon.analysis-subview.is-active {
+      display: flex;
+      flex-direction: column;
       overflow: visible !important;
       max-height: none !important;
       min-height: max-content !important;
+    }
+    #analysisCalcNon.analysis-subview.is-active > .analysis-ns-layout {
+      flex: 1 1 auto;
+      width: 100%;
+      min-width: 0;
+    }
+    /* Analysis Calculator — Staggered: same column stack + %P band as Non-Staggered */
+    #analysisCalcStag .analysis-stag-layout {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(0.85rem, 1.8vw, 1.25rem);
+      width: 100%;
+      max-width: 1540px;
+      margin: 0 auto;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    #analysisCalcStag .analysis-stag-main {
+      width: 100%;
+      min-width: 0;
+    }
+    #analysisCalcStag .analysis-stag-pct-band {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-sizing: border-box;
+    }
+    #analysisCalcStag .analysis-stag-pct-instruction {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.42rem 0.52rem;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      color: #1e3a4f;
+      font-weight: 750;
+      border: 1px solid rgba(84, 132, 160, 0.5);
+      border-radius: 8px;
+      background: rgba(248, 252, 255, 0.96);
+      box-sizing: border-box;
+    }
+    #analysisCalcStag .analysis-stag-pct-five {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: clamp(0.55rem, 1.15vw, 0.85rem);
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      align-items: stretch;
+    }
+    @media (max-width: 1180px) {
+      #analysisCalcStag .analysis-stag-pct-five {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 720px) {
+      #analysisCalcStag .analysis-stag-pct-five {
+        grid-template-columns: 1fr;
+      }
+    }
+    #analysisCalcStag .analysis-stag-pct-tile h4 {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin: 0 0 0.4rem;
+      line-height: 1.2;
+    }
+    #analysisCalcStag .analysis-stag-pct-tile--max h4 {
+      background: #e07050;
+      color: #fff;
+      margin: 0 0 0.45rem;
+      padding: 0.38rem 0.45rem;
+      border-radius: 6px;
+    }
+    #analysisCalcStag .analysis-stag-pct-five input.in-yellow[readonly] {
+      background: #f1d272 !important;
+      color: #122f43 !important;
+      -webkit-text-fill-color: #122f43 !important;
+      border: 1px solid #c9b86a !important;
+      cursor: default;
+    }
+    /* Darker yellow highlight for "Maximum load =" field only; slightly smaller text so full value fits. */
+    #analysisCalcStag .analysis-stag-pct-five input#analysisStagMaxP.in-yellow[readonly] {
+      background: #deb84e !important;
+      border-color: #b8942f !important;
+      font-size: 0.72rem !important;
+      padding-inline: 0.55rem !important;
+      box-sizing: border-box;
+    }
+    #analysisCalcStag .analysis-stag-pct-five input.out-green[readonly] {
+      min-width: 0;
+      width: 100%;
+      font-size: clamp(0.6rem, 1.55vw, 0.78rem);
+      letter-spacing: -0.015em;
+    }
+    #analysisCalcStag .analysis-stag-pct-five > .tension-card.analysis-stag-pct-tile {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 100%;
+      align-self: stretch;
+      box-shadow: 0 2px 12px rgba(17, 55, 75, 0.1);
+    }
+    #analysisCalcStag .analysis-stag-pct-five > .tension-card.analysis-stag-pct-tile .t-row:last-child {
+      margin-bottom: 0;
+    }
+    #analysisCalcStag.analysis-subview.is-active > .analysis-stag-layout {
+      flex: 1 1 auto;
+      width: 100%;
+      min-width: 0;
     }
     #analysisCalcNon .analysis-calculator-card,
     #analysisCalcNon .analysis-grid {
@@ -13042,10 +13270,11 @@
       cursor: pointer;
     }
     #analysisCalcNon .ns-aisc-btn.is-active {
-      background: #8ec9e7;
-      border-color: #5f93b0;
-      color: #0f2f45;
-      font-weight: 900;
+      background: #f1d272 !important;
+      border-color: #7e9eb1 !important;
+      color: #122f43 !important;
+      font-weight: 950 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
     #analysisCalcNon .analysis-right-top,
     #analysisCalcNon .analysis-mini-grid,
@@ -13221,10 +13450,10 @@
       margin-bottom: 0.36rem;
     }
     #tensionViewDesign .safe-section-card .safe-name {
-      min-height: 2.42rem;
-      margin: 0.16rem 0 0.3rem;
-      padding: 0.12rem 0.24rem;
-      font-size: clamp(1.02rem, 1.6vw, 1.34rem);
+      min-height: 1.45rem;
+      margin: 0.08rem 0 0.14rem;
+      padding: 0.14rem 0.28rem;
+      font-size: clamp(0.94rem, 1.15vw, 1.12rem);
       border-radius: 9px;
     }
     #tensionViewDesign .safe-section-card .t-row:last-child {
@@ -13469,10 +13698,10 @@
         background: #fff;
       }
       #tensionViewDesign .safe-section-card .safe-name {
-        min-height: 2rem;
-        margin: 0.1rem 0 0.22rem;
-        padding: 0.08rem 0.2rem;
-        font-size: clamp(0.92rem, 1.2vw, 1.2rem);
+        min-height: 1.4rem;
+        margin: 0.06rem 0 0.12rem;
+        padding: 0.12rem 0.26rem;
+        font-size: clamp(0.9rem, 1.08vw, 1.08rem);
       }
       #tensionViewDesign .safe-section-card .t-row {
         grid-template-columns: minmax(120px, 1fr) minmax(88px, 110px);
@@ -13494,7 +13723,8 @@
     /* --------------------------------------------------------------------- */
     #tensionSection #tensionViewDesign.tension-design-reference {
       display: none !important;
-      width: min(100%, 1460px);
+      width: 100%;
+      max-width: 100%;
       margin: 0 auto;
       /* allow the design grid to stretch inside the tension shell */
       flex: 1 1 auto;
@@ -13507,41 +13737,40 @@
     }
     #tensionSection #tensionViewDesign .tdr-grid {
       display: grid;
-      /* tuned to match the compact reference screenshot proportions */
+      width: 100%;
+      box-sizing: border-box;
+      /* Four tracks: bottom row uses cols 1–2 (demand) and 3–4 (lightest safe) to fill width */
       grid-template-columns:
-        minmax(230px, 1.75fr)
-        minmax(160px, 1.05fr)
-        minmax(250px, 1.35fr)
-        minmax(220px, 1.25fr)
-        minmax(160px, 0.95fr);
+        minmax(200px, 1.35fr)
+        minmax(150px, 1fr)
+        minmax(200px, 1.2fr)
+        minmax(220px, 1.45fr);
       /*
-        Make the 3rd row expand to fill remaining space so
-        Lightest Safe Section + Disclaimer occupy the empty area.
+        Row 4 holds the disclaimer full-width below demand + lightest safe.
       */
       /* Use content-driven rows so full card borders are never clipped */
-      grid-template-rows: auto auto auto;
+      grid-template-rows: auto auto auto auto;
       gap: 0.45rem;
-      align-items: start;
+      align-items: stretch;
       padding-bottom: 0.7rem; /* keep bottom borders visible */
     }
     #tensionSection #tensionViewDesign .input-params-card { grid-column: 1; grid-row: 1; }
     #tensionSection #tensionViewDesign .design-method-card { grid-column: 2; grid-row: 1; }
-    #tensionSection #tensionViewDesign .section-selection-card { grid-column: 3; grid-row: 1; }
-    #tensionSection #tensionViewDesign .bolt-spec-card { grid-column: 4 / span 2; grid-row: 1; }
+    #tensionSection #tensionViewDesign .bolt-spec-card { grid-column: 3 / span 2; grid-row: 1; }
     #tensionSection #tensionViewDesign .user-guide-card { grid-column: 1; grid-row: 2; }
     #tensionSection #tensionViewDesign .design-loads-card { grid-column: 2 / span 2; grid-row: 2; }
-    /* Shear lag fills the full right-side span after image panel removal */
-    #tensionSection #tensionViewDesign .shear-lag-card { grid-column: 4 / span 2; grid-row: 2; }
+    /* Shear lag: right column of row 2 (design grid is four columns after Section Selection removal) */
+    #tensionSection #tensionViewDesign .shear-lag-card { grid-column: 4; grid-row: 2; }
     #tensionSection #tensionViewDesign .shear-lag-card {
       min-height: 98px;
       height: 100%;
       align-self: stretch;
     }
-    #tensionSection #tensionViewDesign .design-demand-card { grid-column: 1 / span 3; grid-row: 3; }
+    #tensionSection #tensionViewDesign .design-demand-card { grid-column: 1 / span 2; grid-row: 3; }
     #tensionSection #tensionViewDesign .design-demand-card {
       min-height: 236px;
       padding-bottom: 0.24rem;
-      align-self: start;
+      align-self: stretch;
       overflow: visible;
       position: relative;
       border: 2px solid #5f8198;
@@ -13623,24 +13852,7 @@
       margin: 0.12rem 0 0.1rem;
       border-top: 1px solid #b9cfde;
     }
-    #tensionSection #tensionViewDesign .safe-section-card { grid-column: 4; grid-row: 3; }
-    #tensionSection #tensionViewDesign .disclaimer-card { grid-column: 5; grid-row: 3; }
-    #tensionSection #tensionViewDesign .section-selection-card .t-row {
-      grid-template-columns: minmax(96px, 1fr) minmax(92px, 110px);
-    }
-    #tensionSection #tensionViewDesign .section-selection-card #tensionDesignSectionSelect,
-    #tensionSection #tensionViewDesign .section-selection-card #tensionDesignSectionPreview {
-      font-weight: 800;
-    }
-    #tensionSection #tensionViewDesign .section-selection-card #tensionDesignSectionSelect {
-      text-transform: uppercase;
-    }
-    @media (max-width: 1240px) {
-      #tensionSection #tensionViewDesign .section-selection-card {
-        grid-column: 1;
-        grid-row: auto;
-      }
-    }
+    #tensionSection #tensionViewDesign .disclaimer-card { grid-column: 1 / -1; grid-row: 4; }
     @media (max-width: 900px) {
       #tensionSection #tensionViewDesign .design-demand-card h4 { margin-bottom: 0.22rem; }
     }
@@ -14050,15 +14262,17 @@
       line-height: 1;
     }
     #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-      min-height: 2.05rem;
-      margin: 0.08rem 0 0.2rem;
-      padding: 0.04rem 0.12rem;
-      font-size: clamp(0.94rem, 1.12vw, 1.14rem);
+      min-height: 1.42rem;
+      margin: 0.06rem 0 0.12rem;
+      padding: 0.14rem 0.32rem;
+      font-size: clamp(0.92rem, 1.1vw, 1.12rem);
       border-radius: 2px;
       flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: center;
+      line-height: 1.15;
+      box-sizing: border-box;
     }
     /* Make Lightest Safe Section look like the reference "table" */
     #tensionSection #tensionViewDesign .safe-section-card .safe-name {
@@ -14084,11 +14298,15 @@
       text-transform: uppercase;
     }
     #tensionSection #tensionViewDesign .safe-section-card {
+      grid-column: 3 / span 2;
+      grid-row: 3;
+      min-width: 0;
       align-self: stretch;
       max-height: none;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
+      gap: 0.28rem;
       height: 100%;
       min-height: 176px;
       border: 2px solid #5f8198;
@@ -14107,11 +14325,11 @@
     #tensionSection #tensionViewDesign .safe-section-card .safe-name {
       margin-bottom: 0.2rem;
     }
-    /* Scale the Safe Section contents up to fill the available card height */
+    /* Lightest safe section name: compact hero (single-line designation) */
     #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-      min-height: 2.6rem !important;
-      font-size: clamp(1.05rem, 1.5vw, 1.35rem);
-      padding-block: 0.35rem;
+      min-height: 1.48rem !important;
+      font-size: clamp(0.95rem, 1.15vw, 1.12rem);
+      padding: 0.16rem 0.36rem !important;
     }
     #tensionSection #tensionViewDesign .safe-section-card .t-row input#tensionSafeAg {
       height: 1.45rem;
@@ -14203,22 +14421,25 @@
     #tensionSection #tensionViewDesign .disclaimer-card {
       min-height: 0 !important;
       height: auto !important;
-      align-self: start;
       padding-bottom: 0.4rem !important;
     }
-    /* In the reference grid, let bottom-right panels stretch to fill row 3 */
+    /* Row 3: demand + lightest safe share height; disclaimer spans row 4 */
+    #tensionSection #tensionViewDesign .design-demand-card,
+    #tensionSection #tensionViewDesign .safe-section-card,
+    #tensionSection #tensionViewDesign .disclaimer-card {
+      align-self: stretch;
+    }
     #tensionSection #tensionViewDesign .safe-section-card,
     #tensionSection #tensionViewDesign .disclaimer-card {
       height: 100% !important;
-      align-self: stretch;
     }
     #tensionSection #tensionViewDesign .design-demand-card .t-row,
     #tensionSection #tensionViewDesign .safe-section-card .t-row {
       margin-bottom: 0.1rem;
     }
     #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-      min-height: 1.9rem !important;
-      margin: 0.08rem 0 0.2rem;
+      min-height: 1.42rem !important;
+      margin: 0.06rem 0 0.12rem;
     }
     #tensionSection #tensionViewDesign .disclaimer-card .disclaimer {
       font-size: 0.56rem;
@@ -14274,6 +14495,8 @@
     }
     #tensionViewAnalysisStag .analysis-subview.is-active {
       display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
     }
     #analysisCalcStag.analysis-subview.is-active {
       flex: 0 0 auto;
@@ -15604,9 +15827,16 @@
     }
     #tensionSection #analysisCalcNon.analysis-subview.is-active {
       display: flex !important;
+      flex-direction: column !important;
       overflow: visible !important;
       max-height: none !important;
       min-height: max-content !important;
+    }
+    #tensionSection #analysisCalcNon.analysis-subview.is-active > .analysis-ns-layout {
+      flex: 1 1 auto;
+      width: 100%;
+      min-width: 0;
+      min-height: 0;
     }
 
     /* Steel Grade material graphic — cascade tail (flex:auto + overflow:auto on card kept visual intrinsic-height) */
@@ -15634,8 +15864,8 @@
     /* Final lock: Tension Design Calculator reference sheet layout */
     @media (min-width: 1201px) {
       #tensionSection #tensionViewDesign .tdr-grid {
-        grid-template-columns: 1.15fr 0.74fr 1.02fr 0.95fr 0.72fr !important;
-        grid-template-rows: auto auto auto !important;
+        grid-template-columns: 1.15fr 0.74fr 1.12fr 1.2fr !important;
+        grid-template-rows: auto auto auto auto !important;
         gap: 0.5rem !important;
       }
       #tensionSection #tensionViewDesign .tension-card,
@@ -15682,9 +15912,10 @@
         border-color: #af6f59 !important;
       }
       #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-        min-height: 2.8rem !important;
-        font-size: 1.5rem !important;
+        min-height: 1.55rem !important;
+        font-size: clamp(0.98rem, 1.2vw, 1.2rem) !important;
         letter-spacing: 0.03em !important;
+        padding: 0.14rem 0.34rem !important;
       }
       #tensionSection #tensionViewDesign .design-demand-card .dra-section-title {
         font-size: 0.8rem !important;
@@ -15855,10 +16086,11 @@
     /* Pixel-perfect desktop pass (1366–1600 class) */
     @media (min-width: 1201px) and (max-width: 1650px) {
       #tensionSection #tensionViewDesign.tension-design-reference {
-        width: min(100%, 1320px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
       #tensionSection #tensionViewDesign .tdr-grid {
-        grid-template-columns: 1.18fr 0.72fr 1.03fr 0.95fr 0.7fr !important;
+        grid-template-columns: 1.18fr 0.72fr 1.06fr 1.12fr !important;
         gap: 0.46rem !important;
       }
 
@@ -15966,13 +16198,14 @@
 
       /* Safe card internals */
       #tensionSection #tensionViewDesign .safe-section-card {
-        min-height: 222px !important;
+        min-height: 168px !important;
         padding-bottom: 0.3rem !important;
       }
       #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-        min-height: 2.25rem !important;
-        font-size: 1.35rem !important;
-        margin: 0.06rem 0 0.15rem !important;
+        min-height: 1.48rem !important;
+        font-size: clamp(0.95rem, 1.1vw, 1.1rem) !important;
+        margin: 0.06rem 0 0.12rem !important;
+        padding: 0.14rem 0.32rem !important;
       }
       #tensionSection #tensionViewDesign .safe-section-card .t-row {
         margin-bottom: 0.06rem !important;
@@ -16038,8 +16271,9 @@
         padding-bottom: 0.24rem !important;
       }
       #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-        min-height: 2.08rem !important;
-        font-size: 1.28rem !important;
+        min-height: 1.45rem !important;
+        font-size: clamp(0.94rem, 1.05vw, 1.08rem) !important;
+        padding: 0.12rem 0.3rem !important;
       }
       #tensionSection #tensionViewDesign .disclaimer-card .disclaimer {
         padding: 0.12rem !important;
@@ -16125,9 +16359,10 @@
         flex-direction: column;
       }
       #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-        min-height: 2.7rem !important;
-        font-size: 1.55rem !important;
-        margin: 0.12rem 0 0.24rem !important;
+        min-height: 1.52rem !important;
+        font-size: clamp(0.96rem, 1.12vw, 1.14rem) !important;
+        margin: 0.08rem 0 0.14rem !important;
+        padding: 0.14rem 0.34rem !important;
       }
       #tensionSection #tensionViewDesign .safe-section-card .t-row {
         margin-bottom: 0.12rem !important;
@@ -16166,10 +16401,11 @@
     /* Strict micro-balance for current screenshot viewport (100% zoom desktop) */
     @media (min-width: 1340px) and (max-width: 1560px) and (min-height: 740px) and (max-height: 920px) {
       #tensionSection #tensionViewDesign.tension-design-reference {
-        width: min(100%, 1360px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
       #tensionSection #tensionViewDesign .tdr-grid {
-        grid-template-columns: 1.2fr 0.72fr 1.03fr 0.95fr 0.72fr !important;
+        grid-template-columns: 1.2fr 0.72fr 1.06fr 1.14fr !important;
         gap: 0.52rem !important;
       }
 
@@ -16245,9 +16481,10 @@
       }
 
       #tensionSection #tensionViewDesign .safe-section-card .safe-name {
-        min-height: 2.85rem !important;
-        margin: 0.12rem 0 0.26rem !important;
-        font-size: 1.6rem !important;
+        min-height: 1.5rem !important;
+        margin: 0.08rem 0 0.14rem !important;
+        font-size: clamp(0.96rem, 1.1vw, 1.12rem) !important;
+        padding: 0.14rem 0.34rem !important;
       }
       #tensionSection #tensionViewDesign .safe-section-card .t-row {
         margin-bottom: 0.14rem !important;
@@ -16374,7 +16611,8 @@
     }
     #tensionSection #tensionViewDesign .safe-section-card .safe-name {
       margin: 0.06rem 0 0.12rem !important;
-      min-height: 2.36rem !important;
+      min-height: 1.44rem !important;
+      padding: 0.12rem 0.3rem !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -16821,7 +17059,8 @@
     /* No calculation / logic changes                                     */
     /* ------------------------------------------------------------------ */
     html body #tensionSection #tensionViewDesign.tension-design-reference {
-      width: min(100%, 1480px) !important;
+      width: 100% !important;
+      max-width: 100% !important;
       margin-inline: auto !important;
       gap: 0.52rem !important;
     }
@@ -16983,39 +17222,8 @@
       line-height: 1.22 !important;
     }
 
-    /* Section Selection card: prevent label/value collision on narrow widths */
-    html body #tensionSection #tensionViewDesign .section-selection-card .t-row {
-      grid-template-columns: minmax(112px, 1.3fr) minmax(0, 1fr) !important;
-      gap: 0.26rem !important;
-      align-items: center !important;
-    }
-    html body #tensionSection #tensionViewDesign .section-selection-card .t-row > span {
-      min-width: 0 !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      letter-spacing: 0 !important;
-      font-size: 0.66rem !important;
-    }
-    html body #tensionSection #tensionViewDesign .section-selection-card #tensionDesignSectionSelect,
-    html body #tensionSection #tensionViewDesign .section-selection-card #tensionDesignSectionPreview {
-      min-width: 0 !important;
-      width: 100% !important;
-      font-size: 0.65rem !important;
-      font-weight: 900 !important;
-      line-height: 1 !important;
-      height: 1.38rem !important;
-      padding: 0.03rem 0.44rem !important;
-      text-align: left !important;
-      text-align-last: left !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-    }
-
     /* ------------------------------------------------------------------ */
     /* Tension Analysis (Non-Staggered) UI -> match Bending Design style  */
-    /* NOTE: Section Selection container is intentionally untouched.       */
     /* ------------------------------------------------------------------ */
     html body #analysisCalcNon .analysis-col-left > .tension-card,
     html body #analysisCalcNon .analysis-col-center > .analysis-stag-shear-card,
@@ -17177,11 +17385,11 @@
       color: #123347 !important;
     }
     html body #analysisCalcNon .analysis-governing.analysis-governing-ns-ref .value {
-      background: linear-gradient(180deg, #c8f5d4 0%, #9fe8b5 100%) !important;
-      border: 1px solid #5a9e72 !important;
-      color: #082412 !important;
+      background: #f1d272 !important;
+      border: 1px solid #7e9eb1 !important;
+      color: #122f43 !important;
       border-radius: 999px !important;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
       font-weight: 1000 !important;
       font-variant-numeric: tabular-nums !important;
       min-width: 8rem !important;
@@ -17577,10 +17785,13 @@
     html body #analysisCalcNon .analysis-col-center .tension-card .ns-picker-head,
     html body #analysisCalcNon #nsShapeIcons .ns-chip-btn,
     html body #analysisCalcNon #nsTypeChips .ns-chip-btn,
-    html body #analysisCalcNon #nsAiscGrid .ns-aisc-btn,
+    html body #analysisCalcNon #nsAiscGrid .ns-aisc-btn:not(.is-active),
     html body #analysisCalcNon .analysis-col-center .tension-card .ns-prop-row > span,
     html body #analysisCalcNon .analysis-col-center .tension-card .ns-prop-row .t-unit {
       color: #12384d !important;
+    }
+    html body #analysisCalcNon #nsAiscGrid .ns-aisc-btn.is-active {
+      color: #122f43 !important;
     }
 
     /* Sidebar main nav: late lock — strict column stack with non-shrinking items */
@@ -18814,18 +19025,13 @@
                   <span class="design-method-caret" aria-hidden="true">▼</span>
                 </div>
               </div>
-              <div class="tension-card section-selection-card">
-                <h4>Section Selection</h4>
-                <div class="t-row"><span>AISC_Manual_Label</span><select id="tensionDesignSectionSelect" class="in-yellow" aria-label="Section selection (design view)"></select></div>
-                <div class="t-row"><span>Selected / Safe</span><input id="tensionDesignSectionPreview" class="out-green" readonly aria-live="polite"></div>
-              </div>
               <div class="tension-card bolt-spec-card">
                 <h4>Bolt Specification</h4>
                 <div class="t-row"><span>Nominal Diameter (in)</span><input id="tensionNominalDiameter" class="in-yellow" type="number" step="0.125" min="0" inputmode="decimal" value="0.75"></div>
                 <div class="t-row"><span>Bolt / Hole</span><select id="tensionBoltType" class="in-yellow"><option value="BOLT">BOLT</option><option value="HOLE">HOLE</option></select></div>
                 <div class="t-row"><span>Diameter (in)</span><input id="tensionBoltDiameter" class="out-green" readonly></div>
                 <div class="t-row"><span>No. of Fasteners per line</span><input id="tensionFastenersPerLine" class="in-yellow" type="number" min="1" step="1" inputmode="numeric" value="3"></div>
-                <div class="t-row"><span>No. of Gage Lines</span><input id="tensionGageLines" class="in-yellow" type="number" min="1" step="1" inputmode="numeric" value="1"></div>
+                <div class="t-row"><span>No. of Gage Lines</span><input id="tensionGageLines" class="in-yellow" type="number" min="0" step="1" inputmode="numeric" value="1"></div>
               </div>
               <aside class="tension-guide user-guide-card" aria-label="User guide">
                 <h4>User Guide</h4>
@@ -18851,8 +19057,8 @@
                 <h4>Demand and Requirement Analysis</h4>
                 <div class="dra-top">
                   <div>
-                    <div class="dra-eq-row"><span id="tensionDemandEq1Label">Tu = 1.2DL + 1.6LL</span><input id="tensionDemandEq1" class="out-white" readonly><span class="dra-unit">kips</span></div>
-                    <div class="dra-eq-row"><span id="tensionDemandEq2Label">Wu = 1.4DL</span><input id="tensionDemandEq2" class="out-white" readonly><span class="dra-unit">kips</span></div>
+                    <div class="dra-eq-row"><span id="tensionDemandEq1Label">Tu = 1.2DL+1.6LL</span><input id="tensionDemandEq1" class="out-white" readonly><span class="dra-unit">kips</span></div>
+                    <div class="dra-eq-row"><span id="tensionDemandEq2Label">Tu = 1.4DL</span><input id="tensionDemandEq2" class="out-white" readonly><span class="dra-unit">kips</span></div>
                     <div class="dra-eq-row"><span id="tensionDemandGovLabel">Tu</span><input id="tensionDemandGov" class="out-green" readonly><span class="dra-unit">kips</span></div>
                   </div>
                   <div class="dra-r-block">
@@ -18934,6 +19140,8 @@
               </div>
 
               <div class="analysis-subview is-active" id="analysisCalcNon">
+                <div class="analysis-ns-layout">
+                <div class="analysis-ns-main">
                 <div class="analysis-grid">
                   <div class="analysis-col analysis-col-left">
                     <div class="tension-card" style="margin:0;">
@@ -18955,7 +19163,7 @@
                       <div class="t-row"><span>Bolt/Hole</span><select id="analysisBoltTypeMirror" class="in-yellow"><option value="BOLT">BOLT</option><option value="HOLE">HOLE</option></select></div>
                       <div class="t-row t-row-unit"><span>Diameter</span><input id="analysisHoleDiaMirror" class="out-green" readonly><span class="t-unit">in</span></div>
                       <div class="t-row"><span>No. fasteners/line</span><input id="analysisFastMirror" class="in-yellow" type="number" step="1" min="1" inputmode="numeric"></div>
-                      <div class="t-row"><span>No. gage lines</span><input id="analysisGageMirror" class="in-yellow" type="number" step="1" min="1" inputmode="numeric"></div>
+                      <div class="t-row"><span>No. gage lines</span><input id="analysisGageMirror" class="in-yellow" type="number" step="1" min="0" inputmode="numeric"></div>
                       <div class="bolt-spec-fill">
                         <div class="bolt-guide-legend" aria-label="User guide">
                           <div class="legend-title">USER GUIDE:</div>
@@ -18979,7 +19187,7 @@
                         <div class="ns-picker-col ns-picker-labels">
                           <div class="ns-picker-head">AISC_Manual_Label</div>
                           <div id="nsAiscGrid" class="ns-aisc-grid" role="listbox" aria-label="Select non-staggered AISC section"></div>
-                          <select id="tensionShapeSelect" class="in-yellow ns-aisc-list sr-only" aria-label="Select non-staggered AISC section"></select>
+                          <select id="tensionShapeSelect" class="in-yellow ns-aisc-list sr-only" tabindex="-1" aria-label="Selected AISC Manual Label (sync only; use label list above)"></select>
                         </div>
                       </div>
                       <div class="tension-prop-grid tension-prop-grid-section">
@@ -18995,7 +19203,7 @@
                     <div class="tension-card analysis-stag-shear-card" style="margin:0;">
                       <h4>Shear Lag Factor, U</h4>
                       <div class="t-row"><span>Fastened to</span><select id="tensionNonStagConnectionSelect" class="in-yellow" aria-label="Connection type for non-stagger analysis" title="Single angle: which leg(s) are bolted"><option value="WEB">WEB LEG ONLY</option><option value="FLANGE">FLANGE LEG ONLY</option><option value="FLANGE_WEB" selected>WEB &amp; FLANGE (BOTH LEGS)</option></select></div>
-                      <div class="t-row"><span>Unsupported length, Lc (in)</span><input id="analysisUnsupportedLc" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="10"></div>
+                      <div class="t-row"><span>Unsupported length, Lc (in)</span><input id="analysisUnsupportedLc" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="8"></div>
                       <div class="t-row"><span>Case 1</span><input id="tensionCase1" class="out-green" readonly></div>
                       <div class="t-row"><span>Case 2 = 1 - (x̄ / Lc)</span><input id="tensionCase2" class="out-green" readonly></div>
                       <div class="t-row"><span>Case 8</span><input id="tensionCase8" class="out-green" readonly></div>
@@ -19004,7 +19212,7 @@
 
                     <div class="tension-card analysis-for-plates" style="margin:0;">
                       <h4>For Plates</h4>
-                      <div class="t-row"><span>Length (in)</span><input id="analysisPlateLengthIn" class="out-green" type="number" step="any" min="0" inputmode="decimal" value="144"></div>
+                      <div class="t-row"><span>Length (in)</span><input id="analysisPlateLengthIn" class="out-green" type="number" step="any" min="0" inputmode="decimal" value="180"></div>
                       <div class="t-row"><span>Thickness (in)</span><input id="tensionPlateThickness" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0"></div>
                       <div class="t-row t-row-unit"><span>Ag (plate)</span><input id="tensionPlateAg" class="out-green" readonly><span class="t-unit">in²</span></div>
                       <div class="t-row ns-length-used-row"><span>Length used (in)</span><input id="tensionLengthIn" class="out-green" readonly></div>
@@ -19021,8 +19229,8 @@
                     <div class="analysis-right-top">
                       <div class="tension-card" style="margin:0;">
                         <h4>Demand Analysis</h4>
-                        <div class="t-row t-row-unit"><span id="analysisDemand1Label">Tu = 1.2DL + 1.6LL</span><input id="analysisDemand1" class="out-green" readonly><span class="t-unit">kips</span></div>
-                        <div class="t-row t-row-unit"><span id="analysisDemand2Label">Wu = 1.4DL</span><input id="analysisDemand2" class="out-green" readonly><span class="t-unit">kips</span></div>
+                        <div class="t-row t-row-unit"><span id="analysisDemand1Label">Tu = 1.2DL+1.6LL</span><input id="analysisDemand1" class="out-green" readonly><span class="t-unit">kips</span></div>
+                        <div class="t-row t-row-unit"><span id="analysisDemand2Label">Tu = 1.4DL</span><input id="analysisDemand2" class="out-green" readonly><span class="t-unit">kips</span></div>
                         <div class="t-row t-row-unit"><span id="analysisDemandGovLabel">Tu</span><input id="analysisDemandGov" class="out-green" readonly><span class="t-unit">kips</span></div>
                       </div>
                       <div class="tension-card" style="margin:0;">
@@ -19047,16 +19255,16 @@
                       <h4>Block Shear</h4>
                       <div class="analysis-blockshear-grid">
                         <div>
-                          <div class="t-row"><span>Tension length (in)</span><input id="analysisBsLt" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="9"></div>
-                          <div class="t-row"><span>No. of holes (tension)</span><input id="analysisBsNt" class="in-yellow" type="number" step="any" min="0" value="3"></div>
+                          <div class="t-row"><span>Tension length (in)</span><input id="analysisBsLt" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0"></div>
+                          <div class="t-row"><span>No. of holes (tension)</span><input id="analysisBsNt" class="in-yellow" type="number" step="any" min="0" value="0"></div>
                           <div class="t-row t-row-unit"><span>Agt</span><input id="analysisBsAgt" class="out-green" readonly><span class="t-unit">in<sup>2</sup></span></div>
                           <div class="t-row t-row-unit"><span>Ant</span><input id="analysisBsAnt" class="out-green" readonly><span class="t-unit">in<sup>2</sup></span></div>
                         </div>
                         <div>
-                          <div class="t-row"><span>Shear length (in)</span><input id="analysisBsLv" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="7.5"></div>
-                          <div class="t-row"><span>No. of holes (shear)</span><input id="analysisBsNv" class="in-yellow" type="number" step="any" min="0" value="2.5"></div>
-                          <div class="t-row t-row-unit"><span>Avg</span><input id="analysisBsAvg" class="out-green" readonly><span class="t-unit">in<sup>2</sup></span></div>
-                          <div class="t-row t-row-unit"><span>Avn</span><input id="analysisBsAvn" class="out-green" readonly><span class="t-unit">in<sup>2</sup></span></div>
+                          <div class="t-row"><span>Shear length (in)</span><input id="analysisBsLv" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0"></div>
+                          <div class="t-row"><span>No. of holes (shear)</span><input id="analysisBsNv" class="in-yellow" type="number" step="any" min="0" value="0"></div>
+                          <div class="t-row t-row-unit"><span>Agv</span><input id="analysisBsAvg" class="out-green" readonly><span class="t-unit">in<sup>2</sup></span></div>
+                          <div class="t-row t-row-unit"><span>Anv</span><input id="analysisBsAvn" class="out-green" readonly><span class="t-unit">in<sup>2</sup></span></div>
                         </div>
                       </div>
                       <hr>
@@ -19079,15 +19287,50 @@
                     </div>
                   </div>
                 </div>
+                </div>
+
+                <aside class="analysis-ns-pct-band" aria-label="Percentage-based demand and maximum load">
+                <p class="analysis-ns-pct-instruction" id="analysisNsPctInstruction">
+                  <strong>INSTRUCTION:</strong> Use this section only if DL and LL are provided as percentages (%). Matches <strong>NS - Tension Analysis</strong> (<code>I64</code>, <code>I66</code>, <code>R64</code>, <code>R66</code>, <code>V64</code>, <code>AA64</code>, <code>AL64</code>, <code>AL66</code>).
+                </p>
+                <div class="analysis-ns-pct-five" role="group" aria-label="Percentage-based demand row">
+                  <div class="tension-card analysis-ns-pct-tile" style="margin:0;">
+                    <h4>Steel properties</h4>
+                    <div class="t-row t-row-unit"><span>Dead load</span><input id="analysisNsDlPct" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="25" aria-label="Dead load percent of P"><span class="t-unit">% P</span></div>
+                    <div class="t-row t-row-unit"><span>Live load</span><input id="analysisNsLlPct" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="75" aria-label="Live load percent of P"><span class="t-unit">% P</span></div>
+                  </div>
+                  <div class="tension-card analysis-ns-pct-tile" style="margin:0;">
+                    <h4>Demand analysis</h4>
+                    <div class="t-row t-row-unit"><span id="analysisNsR64Label">Tu = 1.2DL+1.6LL</span><input id="analysisNsR64" class="in-yellow" readonly aria-label="R64 demand factor"><span class="t-unit">—</span></div>
+                    <div class="t-row t-row-unit"><span id="analysisNsR66Label">Tu = 1.4DL</span><input id="analysisNsR66" class="in-yellow" readonly aria-label="R66 demand factor"><span class="t-unit">—</span></div>
+                  </div>
+                  <div class="tension-card analysis-ns-pct-tile" style="margin:0;">
+                    <h4>Yielding</h4>
+                    <div class="t-row t-row-unit"><span id="analysisNsPctYieldEq">Tu =</span><input id="analysisNsYieldPct" class="out-green" readonly aria-label="V64 yielding capacity"><span class="t-unit">kips</span></div>
+                  </div>
+                  <div class="tension-card analysis-ns-pct-tile" style="margin:0;">
+                    <h4>Fracture</h4>
+                    <div class="t-row t-row-unit"><span id="analysisNsPctFracEq">Tu =</span><input id="analysisNsFracPct" class="out-green" readonly aria-label="AA64 fracture capacity"><span class="t-unit">kips</span></div>
+                  </div>
+                  <div class="tension-card analysis-ns-pct-tile analysis-ns-pct-tile--max" style="margin:0;">
+                    <h4>Max acceptable load</h4>
+                    <div class="t-row t-row-unit"><span id="analysisNsPctGovTitle">Governing Tu =</span><input id="analysisNsPctGovFactor" class="in-yellow" readonly aria-label="AL64 governing factor times P"><span class="t-unit">P kips</span></div>
+                    <div class="t-row t-row-unit"><span id="analysisNsPctMaxTitle">Maximum load =</span><input id="analysisNsMaxP" class="in-yellow" readonly aria-label="AL66 maximum reference load P"><span class="t-unit">kips</span></div>
+                  </div>
+                </div>
+                </aside>
+                </div>
               </div>
 
               <div class="analysis-subview" id="analysisCalcStag">
+                <div class="analysis-stag-layout">
+                <div class="analysis-stag-main">
                 <div class="analysis-stag-stack">
                 <div class="analysis-grid">
                   <div class="analysis-col analysis-stag-input">
                     <div class="tension-card" style="margin:0;">
                       <h4>Design Method</h4>
-                      <div class="t-row"><span>Method</span><select id="analysisStagMethodMirror" class="in-yellow"><option value="LRFD">LRFD</option><option value="ASD">ASD</option></select></div>
+                      <div class="t-row"><span>Method</span><select id="analysisStagMethodMirror" class="in-yellow"><option value="LRFD" selected>LRFD</option><option value="ASD">ASD</option></select></div>
                     </div>
                     <div class="tension-card" style="margin:0;">
                       <h4>Steel Properties</h4>
@@ -19104,7 +19347,7 @@
                       <div class="t-row"><span>Bolt/Hole</span><select id="analysisStagBoltTypeMirror" class="in-yellow"><option value="BOLT">BOLT</option><option value="HOLE">HOLE</option></select></div>
                       <div class="t-row t-row-unit"><span>Diameter</span><input id="analysisStagHoleDiaMirror" class="out-green" readonly><span class="t-unit">in</span></div>
                       <div class="t-row"><span>No. fasteners/line</span><input id="analysisStagFastMirror" class="in-yellow" type="number" step="1" min="1" inputmode="numeric"></div>
-                      <div class="t-row"><span>No. gage lines</span><input id="analysisStagGageMirror" class="in-yellow" type="number" step="1" min="1" inputmode="numeric"></div>
+                      <div class="t-row"><span>No. gage lines</span><input id="analysisStagGageMirror" class="in-yellow" type="number" step="1" min="0" inputmode="numeric"></div>
                     </div>
                     <div class="tension-card analysis-stag-shear-card" style="margin:0;">
                       <h4>Shear Lag Factor, U</h4>
@@ -19147,9 +19390,9 @@
                       <div class="stag-card-body">
                       <div class="stag-net-area-title">NET AREA</div>
                       <div class="stag-details-head">STAGGER DETAILS:</div>
-                      <div class="t-row t-row-unit"><span>Sg1</span><input id="tensionSg1" class="in-yellow" type="number" step="any" value="1"><span class="t-unit">in</span></div>
-                      <div class="t-row t-row-unit"><span>g1</span><input id="tensionG1" class="in-yellow" type="number" step="any" value="1.5"><span class="t-unit">in</span></div>
-                      <div class="t-row t-row-unit"><span>g2</span><input id="tensionG2" class="in-yellow" type="number" step="any" value="0"><span class="t-unit">in</span></div>
+                      <div class="t-row t-row-unit"><span>Sg1</span><input id="tensionSg1" class="in-yellow" type="number" step="any" value="2"><span class="t-unit">in</span></div>
+                      <div class="t-row t-row-unit"><span>g1</span><input id="tensionG1" class="in-yellow" type="number" step="any" value="3"><span class="t-unit">in</span></div>
+                      <div class="t-row t-row-unit"><span>g2</span><input id="tensionG2" class="in-yellow" type="number" step="any" value="3.5"><span class="t-unit">in</span></div>
                       <div class="stag-path-note"><strong>NOTE:</strong> Only enter a value for g2 if analyzing Situation 2. For Situation 1, leave g2 = 0.</div>
                       <div class="stag-details-head">CRITICAL NET AREA:</div>
                       <div class="t-row t-row-unit"><span>Path 1 net area</span><input id="tensionPath1" class="out-green" readonly><span class="t-unit">in²</span></div>
@@ -19279,6 +19522,39 @@
                     </div>
                   </div>
                 </div>
+                </div>
+                </div>
+
+                <aside class="analysis-stag-pct-band" aria-label="Staggered percentage-based demand and maximum load">
+                <p class="analysis-stag-pct-instruction" id="analysisStagPctInstruction">
+                  <strong>INSTRUCTION:</strong> Use this section only if DL and LL are provided as percentages (%). Matches <strong>S - Tension Analysis</strong> (<code>I64</code>, <code>I66</code>, governing demand factors, yielding/fracture capacities, maximum reference load).
+                </p>
+                <div class="analysis-stag-pct-five" role="group" aria-label="Percentage-based demand row staggered">
+                  <div class="tension-card analysis-stag-pct-tile" style="margin:0;">
+                    <h4>Steel properties</h4>
+                    <div class="t-row t-row-unit"><span>Dead load</span><input id="analysisStagDlPct" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="25" aria-label="Stagger dead load percent of P"><span class="t-unit">% P</span></div>
+                    <div class="t-row t-row-unit"><span>Live load</span><input id="analysisStagLlPct" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="75" aria-label="Stagger live load percent of P"><span class="t-unit">% P</span></div>
+                  </div>
+                  <div class="tension-card analysis-stag-pct-tile" style="margin:0;">
+                    <h4>Demand analysis</h4>
+                    <div class="t-row t-row-unit"><span id="analysisStagR64Label">Tu = 1.2DL+1.6LL</span><input id="analysisStagR64" class="out-green" readonly aria-label="Stagger R64 demand factor"><span class="t-unit">—</span></div>
+                    <div class="t-row t-row-unit"><span id="analysisStagR66Label">Tu = 1.4DL</span><input id="analysisStagR66" class="out-green" readonly aria-label="Stagger R66 demand factor"><span class="t-unit">—</span></div>
+                  </div>
+                  <div class="tension-card analysis-stag-pct-tile" style="margin:0;">
+                    <h4>Yielding</h4>
+                    <div class="t-row t-row-unit"><span id="analysisStagPctYieldEq">Tu =</span><input id="analysisStagYieldPct" class="out-green" readonly aria-label="Stagger yielding capacity percent row"><span class="t-unit">kips</span></div>
+                  </div>
+                  <div class="tension-card analysis-stag-pct-tile" style="margin:0;">
+                    <h4>Fracture</h4>
+                    <div class="t-row t-row-unit"><span id="analysisStagPctFracEq">Tu =</span><input id="analysisStagFracPct" class="out-green" readonly aria-label="Stagger fracture capacity percent row"><span class="t-unit">kips</span></div>
+                  </div>
+                  <div class="tension-card analysis-stag-pct-tile analysis-stag-pct-tile--max" style="margin:0;">
+                    <h4>Max acceptable load</h4>
+                    <div class="t-row t-row-unit"><span id="analysisStagPctGovTitle">Governing Tu =</span><input id="analysisStagPctGovFactor" class="out-green" readonly aria-label="Stagger governing factor times P"><span class="t-unit">P kips</span></div>
+                    <div class="t-row t-row-unit"><span id="analysisStagPctMaxTitle">Maximum load =</span><input id="analysisStagMaxP" class="in-yellow" readonly aria-label="Stagger maximum reference load P"><span class="t-unit">kips</span></div>
+                  </div>
+                </div>
+                </aside>
                 </div>
               </div>
             </div>
