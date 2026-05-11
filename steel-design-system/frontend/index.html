@@ -17991,6 +17991,37 @@
       width: max-content !important;
       min-width: max-content !important;
     }
+    html body #shearSection #shearViewCapacity #shearCapSplitNoDefl .bending-capacity-table thead,
+    html body #shearSection #shearViewCapacity #shearCapSplitDefl .bending-capacity-table thead {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 6 !important;
+    }
+    html body #shearSection #shearViewCapacity #shearCapSplitNoDefl .bending-capacity-table thead th,
+    html body #shearSection #shearViewCapacity #shearCapSplitDefl .bending-capacity-table thead th {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 7 !important;
+      background: #deb887 !important;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08) !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-db-card,
+    html body #shearSection #shearViewCapacity .bending-cap-db-shell {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow: visible !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-split-panel {
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+      min-width: 0 !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-split-panel[hidden] {
+      display: none !important;
+    }
     /* Shear Required Ix: keep Ix= pinned to left corner */
     html body #shearSection #shearViewDesign .bending-ix-computed-block,
     html body #shearSection #shearViewDesign .bending-ix-manual-block {
