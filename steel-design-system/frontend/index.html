@@ -9059,6 +9059,7 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
+      overflow: visible;
     }
     #shearSection #shearViewCapacity .bending-cap-db-toolbar {
       display: flex;
@@ -9142,18 +9143,42 @@
     }
     #shearSection #shearViewCapacity .bending-cap-db-table-wrap.bending-capacity-table-scroll {
       max-height: min(70vh, 720px);
-      overflow: auto;
+      overflow-x: auto !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x pan-y;
       border: 0;
       border-radius: 0;
       background: #fff;
       margin: 0;
+      width: 100%;
+      display: block;
     }
     #shearSection #shearViewCapacity .bending-capacity-table {
       width: max-content;
-      min-width: 100%;
+      min-width: max-content;
       border-collapse: collapse;
       font-size: 0.62rem;
       font-variant-numeric: tabular-nums;
+    }
+    #shearSection #shearViewCapacity #shearCapSplitNoDefl,
+    #shearSection #shearViewCapacity #shearCapSplitDefl {
+      min-width: 0;
+      overflow: visible;
+    }
+    html body #shearSection #shearViewCapacity #shearCapSplitNoDefl .bending-capacity-table-scroll,
+    html body #shearSection #shearViewCapacity #shearCapSplitDefl .bending-capacity-table-scroll {
+      overflow-x: scroll !important;
+      overflow-y: auto !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      scrollbar-gutter: stable both-edges;
+      overscroll-behavior-x: contain;
+    }
+    html body #shearSection #shearViewCapacity #shearCapSplitNoDefl .bending-capacity-table,
+    html body #shearSection #shearViewCapacity #shearCapSplitDefl .bending-capacity-table {
+      min-width: max-content !important;
+      width: max-content !important;
     }
     #shearSection #shearViewCapacity .bending-capacity-table thead th {
       position: sticky;
@@ -17937,6 +17962,34 @@
     html body #shearSection #shearViewCapacity .bending-cap-remark-pill--na {
       background: #78909c !important;
       color: #ffffff !important;
+    }
+    /* FINAL HARD LOCK: Shear Capacity tables must horizontally scroll in both split panels */
+    html body #shearSection #shearViewCapacity .bending-cap-db-card.tension-card.compression-card {
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+    }
+    html body #shearSection #shearViewCapacity #shearCapSplitNoDefl,
+    html body #shearSection #shearViewCapacity #shearCapSplitDefl {
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: auto !important;
+      overflow-y: visible !important;
+    }
+    html body #shearSection #shearViewCapacity #shearCapSplitNoDefl .bending-cap-db-table-wrap.bending-capacity-table-scroll,
+    html body #shearSection #shearViewCapacity #shearCapSplitDefl .bending-cap-db-table-wrap.bending-capacity-table-scroll {
+      width: 100% !important;
+      max-width: 100% !important;
+      display: block !important;
+      overflow-x: scroll !important;
+      overflow-y: auto !important;
+      scrollbar-gutter: stable both-edges !important;
+      -webkit-overflow-scrolling: touch !important;
+      touch-action: pan-x pan-y !important;
+    }
+    html body #shearSection #shearViewCapacity #shearCapSplitNoDefl .bending-capacity-table,
+    html body #shearSection #shearViewCapacity #shearCapSplitDefl .bending-capacity-table {
+      width: max-content !important;
+      min-width: max-content !important;
     }
     /* Shear Required Ix: keep Ix= pinned to left corner */
     html body #shearSection #shearViewDesign .bending-ix-computed-block,

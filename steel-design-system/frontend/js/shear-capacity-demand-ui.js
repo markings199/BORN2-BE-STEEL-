@@ -38,6 +38,28 @@
       : "noDefl";
   }
 
+  function forceHorizontalScrollLayout() {
+    var selectors = [
+      "#shearCapSplitNoDefl .bending-capacity-table-scroll",
+      "#shearCapSplitDefl .bending-capacity-table-scroll",
+    ];
+    selectors.forEach(function (sel) {
+      var wrap = capView.querySelector(sel);
+      if (!wrap) return;
+      wrap.style.display = "block";
+      wrap.style.width = "100%";
+      wrap.style.maxWidth = "100%";
+      wrap.style.overflowX = "auto";
+      wrap.style.overflowY = "auto";
+      wrap.style.webkitOverflowScrolling = "touch";
+      wrap.style.touchAction = "pan-x pan-y";
+      var tbl = wrap.querySelector("table.bending-capacity-table");
+      if (!tbl) return;
+      tbl.style.width = "max-content";
+      tbl.style.minWidth = "max-content";
+    });
+  }
+
   function updateTitleAndSplit() {
     var noDeflPanel = document.getElementById("shearCapSplitNoDefl");
     var deflPanel = document.getElementById("shearCapSplitDefl");
@@ -246,6 +268,7 @@
 
   function renderActiveTable() {
     if (!activeCapacityView()) return;
+    forceHorizontalScrollLayout();
     updateTitleAndSplit();
 
     bodyNoDefl.textContent = "";
@@ -393,6 +416,7 @@
     }
 
     tbody.appendChild(frag);
+    forceHorizontalScrollLayout();
   }
 
   function loadOrderAndCatalog(cb) {
@@ -449,5 +473,6 @@
   window.addEventListener("load", function () {
     bind();
     loadOrderAndCatalog(renderActiveTable);
+    forceHorizontalScrollLayout();
   });
 })();
