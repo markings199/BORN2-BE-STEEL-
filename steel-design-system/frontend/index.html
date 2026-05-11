@@ -7886,22 +7886,6 @@
       color: #000000 !important;
     }
 
-    #shearSection #shearViewDesign .bending-demand-combo-chip {
-      background: linear-gradient(180deg, #ffe8c4 0%, #ffc978 45%, #ffab52 100%) !important;
-      border: 1px solid #e09028 !important;
-      color: #3d2100 !important;
-    }
-    #shearSection #shearViewDesign .bending-demand-gov-input.out-green {
-      background: transparent !important;
-      border: none !important;
-      color: #102616 !important;
-      font-weight: 900 !important;
-    }
-    /* Combo comparison values — white cells per reference (not mint) */
-    #shearSection #shearViewDesign .bending-demand-combo-value {
-      background: transparent !important;
-      color: #0a0a0a !important;
-    }
     /* Load-combination title strip — light blue band like other card headers */
     #shearSection #shearViewDesign .shear-demand-loadcombo-head {
       display: flex;
@@ -7984,9 +7968,12 @@
     #bendingSection #bendDesignView .out-green,
     #shearSection #shearViewDesign .out-green,
     #bendingSection #bendAnalysisView .out-green {
-      background: #b7e4c7 !important;
-      border-color: #6daa82 !important;
+      background: linear-gradient(180deg, #c9efd8 0%, #b7e4c7 100%) !important;
+      border-color: #8abfa1 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
       color: #102616 !important;
+      -webkit-text-fill-color: #102616 !important;
+      font-weight: 900 !important;
     }
     #tensionRodSection .tension-hint,
     #tensionRodSection .disclaimer,
@@ -8238,7 +8225,8 @@
     }
 
     /* Bending Design — same shell / tabs / cards as Compression Design */
-    #bendingSection .bending-shell {
+    #bendingSection .bending-shell,
+    #shearSection .tension-shell.bending-shell {
       display: flex;
       flex-direction: column;
       padding: clamp(0.48rem, 0.92vw, 0.72rem) !important;
@@ -8252,7 +8240,8 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.92),
         0 14px 36px rgba(17, 55, 75, 0.068);
     }
-    #bendingSection .bending-calculator-dashboard {
+    #bendingSection .bending-calculator-dashboard,
+    #shearSection .compression-dashboard.bending-calculator-dashboard {
       display: grid;
       grid-template-columns: minmax(220px, 0.9fr) minmax(360px, 1.35fr) minmax(240px, 0.95fr);
       gap: 0.44rem;
@@ -8261,7 +8250,12 @@
       max-width: 100%;
       box-sizing: border-box;
     }
-    #bendingSection .bending-calculator-dashboard > .compression-top-tabs {
+    #shearSection .compression-dashboard.bending-calculator-dashboard {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    #bendingSection .bending-calculator-dashboard > .compression-top-tabs,
+    #shearSection .compression-dashboard.bending-calculator-dashboard > .compression-top-tabs {
       grid-column: 1 / -1;
       display: inline-flex;
       align-items: center;
@@ -8273,7 +8267,8 @@
       width: fit-content;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
     }
-    #bendingSection .bending-calculator-dashboard .compression-tab {
+    #bendingSection .bending-calculator-dashboard .compression-tab,
+    #shearSection .compression-dashboard.bending-calculator-dashboard .compression-tab {
       border: none;
       border-radius: 6px;
       background: transparent;
@@ -8286,7 +8281,8 @@
       padding: 0.48rem 0.78rem;
       cursor: pointer;
     }
-    #bendingSection .bending-calculator-dashboard .compression-tab.is-active {
+    #bendingSection .bending-calculator-dashboard .compression-tab.is-active,
+    #shearSection .compression-dashboard.bending-calculator-dashboard .compression-tab.is-active {
       background: #ffffff;
       color: #11384f;
       box-shadow: 0 1px 3px rgba(17, 56, 79, 0.12);
@@ -8300,11 +8296,33 @@
     #bendingSection .bending-calculator-dashboard > #bendCapacityView {
       grid-column: 1 / -1;
     }
+    #shearSection #formShearDesign {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+    }
+    /* Shear Design Calculator — center numeric/text in every field */
+    html body #shearSection #shearViewDesign input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    html body #shearSection #shearViewDesign select,
+    html body #shearSection #shearViewDesign textarea {
+      text-align: center !important;
+    }
+    html body #shearSection #shearViewDesign select {
+      text-align-last: center !important;
+    }
+    #shearSection .compression-dashboard.bending-calculator-dashboard > #shearViewDesign,
+    #shearSection .compression-dashboard.bending-calculator-dashboard > #shearViewAnalysis,
+    #shearSection .compression-dashboard.bending-calculator-dashboard > #shearViewCapacity {
+      grid-column: 1 / -1;
+    }
     #bendingSection #bendCapacityView.bend-view.is-active {
       display: block !important;
       min-width: 0;
     }
-    #bendingSection #bendDesignView.bend-view.is-active {
+    #bendingSection #bendDesignView.bend-view.is-active,
+    #shearSection #shearViewDesign.bend-view.is-active {
       grid-template-columns: minmax(220px, 0.9fr) minmax(360px, 1.35fr) minmax(240px, 0.95fr);
       gap: 0.44rem;
       align-items: start;
@@ -8376,13 +8394,15 @@
       background-size: 0.24rem 0.24rem, 0.24rem 0.24rem, 100% 100% !important;
       background-repeat: no-repeat !important;
     }
-    /* Bending Design Calculator — method selector uses wrap + text caret (Shear/Tension pattern); avoids gradient-arrow clash with select.in-yellow */
-    html body #bendingSection #bendDesignView .bending-design-method-card .design-method-select-wrap {
+    /* Bending + Shear Design Calculator — method selector (same card / classes) */
+    html body #bendingSection #bendDesignView .bending-design-method-card .design-method-select-wrap,
+    html body #shearSection #shearViewDesign .bending-design-method-card .design-method-select-wrap {
       position: relative !important;
       width: 100% !important;
       display: block !important;
     }
-    html body #bendingSection #bendDesignView .bending-design-method-card .design-method-caret {
+    html body #bendingSection #bendDesignView .bending-design-method-card .design-method-caret,
+    html body #shearSection #shearViewDesign .bending-design-method-card .design-method-caret {
       position: absolute !important;
       right: 0.44rem !important;
       top: 50% !important;
@@ -8394,7 +8414,8 @@
       line-height: 1 !important;
       z-index: 3 !important;
     }
-    html body #bendingSection #bendDesignView .bending-design-method-card .big-select {
+    html body #bendingSection #bendDesignView .bending-design-method-card .big-select,
+    html body #shearSection #shearViewDesign .bending-design-method-card .big-select {
       width: 100% !important;
       text-align: center !important;
       text-align-last: center !important;
@@ -8456,7 +8477,9 @@
     }
     /* Exclude Material data pills (#bendingDesign*) — they need auto height + pill radius */
     #bendingSection #bendDesignView .compression-given-value-row input:not(#bendingDesignE):not(#bendingDesignFy),
-    #bendingSection #bendDesignView .compression-given-value-row select:not(#bendingDesignGrade), #shearSection #shearViewDesign .compression-given-value-row select:not(#bendingDesignGrade) {
+    #bendingSection #bendDesignView .compression-given-value-row select:not(#bendingDesignGrade),
+    #shearSection #shearViewDesign .compression-given-value-row input,
+    #shearSection #shearViewDesign .compression-given-value-row select:not(#bendingDesignGrade) {
       grid-column: 1;
       width: 100%;
       min-width: 0;
@@ -8470,7 +8493,10 @@
     }
     #bendingSection #bendDesignView .compression-given-value-row input#bendingDesignE,
     #bendingSection #bendDesignView .compression-given-value-row input#bendingDesignFy,
-    #bendingSection #bendDesignView .compression-given-value-row select#bendingDesignGrade,     #shearSection #shearViewDesign .compression-given-value-row select#shearSteelGrade {
+    #bendingSection #bendDesignView .compression-given-value-row select#bendingDesignGrade,
+    #shearSection #shearViewDesign .compression-given-value-row input#shearE,
+    #shearSection #shearViewDesign .compression-given-value-row input#shearFy,
+    #shearSection #shearViewDesign .compression-given-value-row select#shearSteelGrade {
       grid-column: 1;
       width: 100%;
       min-width: 0;
@@ -8698,19 +8724,61 @@
         inset 0 2px 5px rgba(255, 255, 255, 0.65),
         inset 0 -2px 4px rgba(120, 95, 35, 0.1);
     }
-    /* Shear Design — E & Fy as Excel yellow cells (Material Data reference) */
+    /* Shear Design — MATERIAL Data (Excel Shear Design R9 / P12 / X10) */
+    #shearSection #shearViewDesign .bending-material-card.shear-excel-card > h4.shear-material-card-h {
+      text-transform: none !important;
+    }
+    #shearSection #shearViewDesign .bending-material-card.shear-excel-card .shear-material-card-title {
+      text-transform: none !important;
+      letter-spacing: 0.04em;
+    }
+    #shearSection #shearViewDesign .shear-material-label-excel {
+      text-transform: none !important;
+      color: #0a0a0a !important;
+      font-weight: 900 !important;
+    }
+    #shearSection #shearViewDesign .shear-material-e-fy-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0.42rem;
+      align-items: stretch;
+    }
+    #shearSection #shearViewDesign .shear-material-fy-col.shear-material-fy-col {
+      border: 1px solid #0a0a0a !important;
+      border-radius: 11px !important;
+    }
+    #shearSection #shearViewDesign .bending-material-card .shear-material-compact-row input#shearE.in-yellow,
     #shearSection #shearViewDesign .shear-excel-card input#shearE.in-yellow {
       height: auto !important;
-      min-height: 1.55rem !important;
-      padding: 0.22rem 0.45rem !important;
-      border-radius: 4px !important;
+      min-height: 1.42rem !important;
+      padding: 0.26rem 0.5rem !important;
+      border-radius: 6px !important;
+      border: 1px solid #0a0a0a !important;
+      box-shadow: none !important;
       text-align: center;
-      font-weight: 800;
-      font-size: clamp(10px, 0.78vw, 12px) !important;
+      font-weight: 900;
+      font-size: clamp(10px, 0.82vw, 12px) !important;
       cursor: text;
+      background: linear-gradient(180deg, #ffe8b8 0%, #ffd98e 100%) !important;
+      color: #0a0a0a !important;
+      -webkit-text-fill-color: #0a0a0a !important;
     }
-    #bendingSection #bendDesignView input#bendingDesignFy.out-green,
-    #shearSection #shearViewDesign .shear-excel-card input#shearFy.in-yellow.shear-fy-readonly {
+    #shearSection #shearViewDesign .bending-material-card .shear-material-compact-row input#shearFy.out-green.shear-fy-readonly {
+      height: auto !important;
+      min-height: 1.42rem !important;
+      padding: 0.26rem 0.5rem !important;
+      border-radius: 6px !important;
+      border: 1px solid #0a0a0a !important;
+      box-shadow: none !important;
+      text-align: center;
+      font-weight: 900;
+      font-size: clamp(10px, 0.82vw, 12px) !important;
+      cursor: default;
+      background: linear-gradient(180deg, #dff8ea 0%, #c6efce 100%) !important;
+      color: #0a0a0a !important;
+      -webkit-text-fill-color: #0a0a0a !important;
+    }
+    #bendingSection #bendDesignView input#bendingDesignFy.out-green {
       height: auto !important;
       min-height: 1.55rem !important;
       padding: 0.22rem 0.45rem !important;
@@ -8746,6 +8814,11 @@
       color: #141414;
       box-shadow: none;
       line-height: 1.22;
+    }
+    #shearSection #shearViewDesign .bending-cap-analysis-btn {
+      position: relative;
+      z-index: 3;
+      pointer-events: auto !important;
     }
     #bendingSection #bendDesignView .bending-cap-analysis-btn:focus-visible, #shearSection #shearViewDesign .bending-cap-analysis-btn:focus-visible {
       outline: 2px solid #153f55;
@@ -8969,6 +9042,196 @@
       font-weight: 800;
     }
 
+    /* Shear Capacity view — same visual shell/table styling as Bending Capacity view */
+    #shearSection #shearViewCapacity .bending-capacity-table-panel {
+      grid-column: 1 / -1;
+      min-width: 0;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-card.tension-card.compression-card {
+      padding: 0 !important;
+      border-radius: 14px !important;
+      background: #ffffff !important;
+      border: 1px solid rgba(199, 218, 232, 0.95) !important;
+      box-shadow: 0 10px 28px rgba(17, 56, 79, 0.08) !important;
+      overflow: hidden;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-shell {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem 0.75rem;
+      padding: 0.58rem 0.75rem 0.52rem;
+      background: #f2f5f8;
+      border-bottom: 1px solid #d3e0ea;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-title {
+      margin: 0;
+      font-size: clamp(0.95rem, 1.35vw, 1.08rem);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      color: #0f3144;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.38rem;
+      align-items: center;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-btn {
+      height: 32px;
+      padding: 0 0.72rem;
+      border-radius: 8px;
+      font-size: 0.66rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-btn--primary {
+      background: #11384f;
+      color: #f4fafc;
+      border-color: #0c2a3d;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-btn--muted {
+      background: #e1e8ee;
+      color: #19394f;
+      border-color: #97acbc;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-filters {
+      display: grid;
+      grid-template-columns: minmax(140px, 1.5fr) 104px 104px minmax(120px, 1fr);
+      gap: 0.42rem;
+      padding: 0.48rem 0.75rem 0.52rem;
+      background: #f2f5f8;
+      border-bottom: 1px solid #d3e0ea;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      #shearSection #shearViewCapacity .bending-cap-db-filters {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-filters input,
+    #shearSection #shearViewCapacity .bending-cap-db-filters select {
+      height: 32px;
+      border: 1px solid #adc2d1;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #0f3144;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0 0.52rem;
+      min-width: 0;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-meta {
+      padding: 0.32rem 0.75rem 0.4rem;
+      background: #f2f5f8;
+      border-bottom: 1px solid #d3e0ea;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #375467;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    #shearSection #shearViewCapacity .bending-cap-db-table-wrap.bending-capacity-table-scroll {
+      max-height: min(70vh, 720px);
+      overflow: auto;
+      border: 0;
+      border-radius: 0;
+      background: #fff;
+      margin: 0;
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      font-size: 0.62rem;
+      font-variant-numeric: tabular-nums;
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 0.32rem 0.38rem;
+      text-align: center;
+      vertical-align: bottom;
+      font-weight: 900;
+      color: #111;
+      background: #deb887;
+      border: 1px solid #c4a574;
+      white-space: nowrap;
+      text-transform: none;
+      letter-spacing: 0.02em;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table tbody td {
+      padding: 0.22rem 0.34rem;
+      border: 1px solid #d5dde3;
+      background: #ffffff;
+      color: #1a1a1a;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table tbody tr.bending-cap-data-row--alt td {
+      background: #f4f7f9;
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table tbody tr.bending-cap-group-row td {
+      font-weight: 900;
+      text-align: center;
+      background: #d8d8d8 !important;
+      color: #111;
+      border-color: #b0b0b0;
+      padding: 0.34rem 0.42rem;
+      letter-spacing: 0.08em;
+      font-size: 0.68rem;
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table tbody td.bending-cap-section-cell {
+      text-align: left;
+      font-weight: 800;
+      color: #0f3144;
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table tbody td.bending-cap-pu-cell {
+      font-weight: 900;
+    }
+    #shearSection #shearViewCapacity .bending-capacity-table tbody td.bending-cap-remark-cell {
+      background: #eef3f7 !important;
+      vertical-align: middle;
+    }
+    #shearSection #shearViewCapacity .bending-cap-data-row--alt td.bending-cap-remark-cell {
+      background: #e8eef3 !important;
+    }
+    #shearSection #shearViewCapacity .bending-cap-remark-pill {
+      display: inline-block;
+      padding: 0.14rem 0.58rem;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 0.58rem;
+      letter-spacing: 0.06em;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    #shearSection #shearViewCapacity .bending-cap-remark-pill--safe {
+      background: #2e7d32;
+      color: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    #shearSection #shearViewCapacity .bending-cap-remark-pill--unsafe {
+      background: #c62828;
+      color: #ffffff;
+    }
+    #shearSection #shearViewCapacity .bending-cap-remark-pill--na {
+      background: #78909c;
+      color: #ffffff;
+      font-weight: 900;
+    }
+
     #bendingSection #bendDesignView .bending-ix-card, #shearSection #shearViewDesign .bending-ix-card {
       padding-bottom: 0.48rem;
     }
@@ -9013,6 +9276,17 @@
       letter-spacing: 0.04em;
       line-height: 1.45;
     }
+    #shearSection #shearViewDesign .bending-ix-formula-strip--workbook > strong {
+      display: block;
+      font-weight: 900;
+      font-size: clamp(0.82rem, 1.15vw, 0.98rem);
+      color: #0a0a0a;
+      letter-spacing: 0.04em;
+      line-height: 1.45;
+    }
+    #bendingSection #bendDesignView .bending-ix-formula-strip .bending-ix-formula-main strong {
+      font-weight: 900;
+    }
     #bendingSection #bendDesignView .bending-ix-formula-strip .bending-ix-formula-wb, #shearSection #shearViewDesign .bending-ix-formula-strip .bending-ix-formula-wb {
       display: block;
       margin-top: 0.38rem;
@@ -9023,7 +9297,9 @@
       text-align: center;
     }
     #bendingSection #bendDesignView .bending-ix-computed-block,
-    #bendingSection #bendDesignView .bending-ix-manual-block, #shearSection #shearViewDesign .bending-ix-manual-block {
+    #bendingSection #bendDesignView .bending-ix-manual-block,
+    #shearSection #shearViewDesign .bending-ix-computed-block,
+    #shearSection #shearViewDesign .bending-ix-manual-block {
       display: grid;
       grid-template-columns: minmax(2.5rem, 3.2rem) minmax(0, 1fr);
       align-items: stretch;
@@ -9123,7 +9399,7 @@
     #bendingSection #bendDesignView .bending-safe-result-card .compression-lightest-title, #shearSection #shearViewDesign .bending-safe-result-card .compression-lightest-title {
       border-radius: 10px;
     }
-    #bendingSection #bendDesignView #bendingDesignSafeSection.bending-safe-section-hero,     #shearSection #shearViewDesign #shearDesignSectionName.bending-safe-section-hero {
+    #bendingSection #bendDesignView #bendingDesignSafeSection.bending-safe-section-hero {
       min-height: 2.62rem;
       font-size: clamp(1.05rem, 1.62vw, 1.45rem);
       margin: 0.16rem 0 0.45rem;
@@ -9134,24 +9410,59 @@
       border: 1px solid #c9a84a !important;
       font-weight: 900;
       letter-spacing: 0.08em;
-      color: #11384f !important;
-      -webkit-text-fill-color: #11384f;
+      color: #23374a !important;
+      -webkit-text-fill-color: #23374a;
       background: linear-gradient(180deg, #f0c95c 0%, #deb02a 100%) !important;
       box-shadow:
         inset 0 2px 4px rgba(255, 255, 255, 0.45),
         inset 0 -2px 5px rgba(120, 85, 10, 0.14);
     }
-    #bendingSection #bendDesignView .bending-safe-result-card .bending-safe-yellow-val.in-yellow, #shearSection #shearViewDesign .bending-safe-result-card .bending-safe-yellow-val.in-yellow {
+    #shearSection #shearViewDesign #shearDesignSectionName.bending-safe-section-hero {
+      min-height: 2.62rem;
+      font-size: clamp(1.05rem, 1.62vw, 1.45rem);
+      margin: 0.16rem 0 0.45rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+    /* Shear Design — Lightest safe section matches Bending yellow */
+    #shearSection #shearViewDesign #shearDesignSectionName.bending-safe-section-hero {
+      border: 1px solid #d1bc73 !important;
+      background: linear-gradient(180deg, #fde8a8 0%, #f0c95c 55%, #e8b228 100%) !important;
+      box-shadow:
+        inset 0 2px 5px rgba(255, 255, 255, 0.55),
+        inset 0 -2px 4px rgba(120, 95, 35, 0.12) !important;
+      color: #23374a !important;
+      -webkit-text-fill-color: #23374a !important;
+    }
+    #shearSection #shearViewDesign .bending-safe-result-card .bending-safe-yellow-val.in-yellow {
+      border: 1px solid #c9a84a !important;
+      background: linear-gradient(180deg, #f0c95c 0%, #deb02a 100%) !important;
+      color: #153346 !important;
+      -webkit-text-fill-color: #153346 !important;
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.45),
+        inset 0 -2px 5px rgba(120, 85, 10, 0.14);
+    }
+    #bendingSection #bendDesignView .bending-safe-result-card .bending-safe-yellow-val.in-yellow {
       min-height: 1.28rem;
       height: auto !important;
       padding: 0.24rem 0.28rem !important;
       background: linear-gradient(180deg, #f0c95c 0%, #deb02a 100%) !important;
       border: 1px solid #c9a84a !important;
-      color: #11384f !important;
-      -webkit-text-fill-color: #11384f;
+      color: #153346 !important;
+      -webkit-text-fill-color: #153346;
       box-shadow:
         inset 0 2px 4px rgba(255, 255, 255, 0.45),
         inset 0 -2px 5px rgba(120, 85, 10, 0.14);
+    }
+    #shearSection #shearViewDesign .bending-safe-result-card .bending-safe-yellow-val.in-yellow {
+      min-height: 1.28rem;
+      height: auto !important;
+      padding: 0.24rem 0.28rem !important;
     }
     #bendingSection #bendDesignView .bending-demand-tag, #shearSection #shearViewDesign .bending-demand-tag {
       margin: 0 0 0.28rem;
@@ -9200,12 +9511,6 @@
       box-shadow:
         inset 0 2px 5px rgba(255, 255, 255, 0.65),
         inset 0 -2px 4px rgba(120, 95, 35, 0.1);
-    }
-    /* Shear Design — governing Wu: full mint hero (must follow combined rule above) */
-    #shearSection #shearViewDesign .bending-demand-gov-hero {
-      background: linear-gradient(180deg, #dff8ea 0%, #c8efd9 55%, #b7e4c7 100%) !important;
-      border: 1px solid #5fa078 !important;
-      box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.55) !important;
     }
     #bendingSection #bendDesignView .bending-demand-gov-input, #shearSection #shearViewDesign .bending-demand-gov-input {
       display: block;
@@ -9456,6 +9761,12 @@
       color: #1f3340;
       line-height: 1.2;
     }
+    #bendingSection #bendDesignView .bending-safe-result-card .bending-result-lbl,
+    #bendingSection #bendDesignView .bending-safe-result-card .bending-result-unit,
+    #shearSection #shearViewDesign .bending-safe-result-card .bending-result-lbl,
+    #shearSection #shearViewDesign .bending-safe-result-card .bending-result-unit {
+      color: #12384d;
+    }
     #bendingSection #bendDesignView .bending-result-row--remark, #shearSection #shearViewDesign .bending-result-row--remark {
       grid-template-columns: minmax(6.5rem, 7.5rem) minmax(0, 1fr);
       align-items: start;
@@ -9540,7 +9851,7 @@
     }
     #bendingSection #bendDesignView input.bending-wu-gov.in-yellow[readonly],
     #bendingSection #bendDesignView input.bending-result-val.in-yellow[readonly], #shearSection #shearViewDesign input.bending-result-val.in-yellow[readonly] {
-      color: #11384f !important;
+      color: #153346 !important;
     }
     #bendingSection #bendDesignView .compression-lightest-title, #shearSection #shearViewDesign .compression-lightest-title {
       margin-top: 0.42rem;
@@ -9569,7 +9880,7 @@
       text-transform: uppercase !important;
       background: linear-gradient(180deg, #fcd5cb 0%, #f8b4a6 100%) !important;
       border-bottom: 1px solid #d98a7a !important;
-      color: #11384f !important;
+      color: #5a1f17 !important;
     }
     #bendingSection #bendDesignView .compression-guide .legend-item, #shearSection #shearViewDesign .compression-guide .legend-item {
       display: flex;
@@ -9602,29 +9913,36 @@
       text-align: center;
     }
     @media (max-width: 1260px) {
-      #bendingSection .bending-calculator-dashboard {
+      #bendingSection .bending-calculator-dashboard,
+      #shearSection .compression-dashboard.bending-calculator-dashboard {
         grid-template-columns: 1fr 1fr;
       }
-      #bendingSection #bendDesignView.bend-view.is-active {
+      #bendingSection #bendDesignView.bend-view.is-active,
+      #shearSection #shearViewDesign.bend-view.is-active {
         grid-template-columns: 1fr 1fr;
       }
-      #bendingSection .bending-calculator-dashboard > .compression-top-tabs {
+      #bendingSection .bending-calculator-dashboard > .compression-top-tabs,
+      #shearSection .compression-dashboard.bending-calculator-dashboard > .compression-top-tabs {
         width: 100%;
       }
-      #bendingSection #bendDesignView .compression-col-right {
+      #bendingSection #bendDesignView .compression-col-right,
+      #shearSection #shearViewDesign .compression-col-right {
         grid-column: 1 / -1;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
       }
     }
     @media (max-width: 920px) {
-      #bendingSection .bending-calculator-dashboard {
+      #bendingSection .bending-calculator-dashboard,
+      #shearSection .compression-dashboard.bending-calculator-dashboard {
         grid-template-columns: 1fr;
       }
-      #bendingSection #bendDesignView.bend-view.is-active {
+      #bendingSection #bendDesignView.bend-view.is-active,
+      #shearSection #shearViewDesign.bend-view.is-active {
         grid-template-columns: 1fr;
       }
-      #bendingSection #bendDesignView .compression-col-right {
+      #bendingSection #bendDesignView .compression-col-right,
+      #shearSection #shearViewDesign .compression-col-right {
         grid-template-columns: 1fr;
         grid-template-rows: auto;
       }
@@ -9696,11 +10014,9 @@
     #bendingSection #bendDesignView.bend-view.is-active {
       display: grid !important;
     }
-    /* Shear Design: original tension-grid rows — not the Bending compression 3-column shell */
+    /* Shear Design Calculator — same 3-column grid shell as Bending (#bendDesignView) */
     #shearSection #shearViewDesign.bend-view.is-active {
-      display: flex !important;
-      flex-direction: column;
-      gap: 0.38rem;
+      display: grid !important;
       min-width: 0;
     }
     #bendingSection #bendAnalysisView.bend-view.is-active,
@@ -10170,6 +10486,16 @@
     #shearSection #shearViewAnalysis.bending-analysis-view .shear-analysis-shear-capacity-card .bend-nominal-row #shearUltimateVu.out-green-a {
       min-height: clamp(2rem, 5vh, 2.65rem);
       cursor: text;
+    }
+    #shearSection #shearViewAnalysis.bending-analysis-view .shear-analysis-shear-capacity-card > .bend-a-head.shear-analysis-shear-capacity-banner {
+      color: #111111 !important;
+      -webkit-text-fill-color: #111111 !important;
+    }
+    #shearSection #shearViewAnalysis.bending-analysis-view .bend-results-moment-card > .bend-a-head.shear-analysis-head-mixed.is-ultimate-shear {
+      background: linear-gradient(180deg, #f7d8d8 0%, #efb9b9 100%) !important;
+      border-bottom-color: #d3a0a0 !important;
+      color: #5a1f1f !important;
+      -webkit-text-fill-color: #5a1f1f !important;
     }
     #shearSection #shearViewAnalysis.bending-analysis-view .bend-section-select-card .bend-section-name-pill {
       margin: 0.42rem 0 0.48rem !important;
@@ -13161,8 +13487,8 @@
         minmax(230px, 1.75fr)
         minmax(160px, 1.05fr)
         minmax(250px, 1.35fr)
-        minmax(190px, 1.05fr)
-        minmax(140px, 0.82fr);
+        minmax(220px, 1.25fr)
+        minmax(160px, 0.95fr);
       /*
         Make the 3rd row expand to fill remaining space so
         Lightest Safe Section + Disclaimer occupy the empty area.
@@ -13179,12 +13505,10 @@
     #tensionSection #tensionViewDesign .bolt-spec-card { grid-column: 4 / span 2; grid-row: 1; }
     #tensionSection #tensionViewDesign .user-guide-card { grid-column: 1; grid-row: 2; }
     #tensionSection #tensionViewDesign .design-loads-card { grid-column: 2 / span 2; grid-row: 2; }
-    /* Keep connection image panel visible (used by Shear Lag selection) */
-    #tensionSection #tensionViewDesign .shear-lag-card { grid-column: 4; grid-row: 2; }
-    #tensionSection #tensionViewDesign .tension-connection-card { grid-column: 5; grid-row: 2; }
-    #tensionSection #tensionViewDesign .shear-lag-card,
-    #tensionSection #tensionViewDesign .tension-connection-card {
-      min-height: 248px;
+    /* Shear lag fills the full right-side span after image panel removal */
+    #tensionSection #tensionViewDesign .shear-lag-card { grid-column: 4 / span 2; grid-row: 2; }
+    #tensionSection #tensionViewDesign .shear-lag-card {
+      min-height: 98px;
       height: 100%;
       align-self: stretch;
     }
@@ -13296,68 +13620,7 @@
       #tensionSection #tensionViewDesign .design-demand-card h4 { margin-bottom: 0.22rem; }
     }
 
-    /* --------------------------------------------------------------------- */
-    /* Shear Design Calculator — two columns + Tension color tokens           */
-    /* --------------------------------------------------------------------- */
-    #shearSection #shearViewDesign.shear-design-reference {
-      width: min(100%, 1480px) !important;
-      max-width: 100% !important;
-      margin-inline: auto !important;
-      padding-bottom: 0.45rem;
-      color: #12384d;
-      font-family: inherit;
-      box-sizing: border-box;
-    }
-    #shearSection #shearViewDesign.shear-design-reference .tdr-grid.shear-design-master {
-      display: grid !important;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      gap: clamp(0.55rem, 1.15vw, 0.88rem) clamp(0.75rem, 1.6vw, 1.1rem) !important;
-      align-items: stretch !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    #shearSection #shearViewDesign.shear-design-reference .shear-design-col {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: clamp(0.55rem, 1.15vw, 0.88rem) !important;
-      min-width: 0 !important;
-    }
-    #shearSection #shearViewDesign.shear-design-reference .shear-design-col--right .shear-demand-eval {
-      flex: 1 1 auto !important;
-      min-height: 0 !important;
-    }
-    #shearSection #shearViewDesign.shear-design-reference .shear-lightest-user-guide-stack {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 0.32rem !important;
-      min-width: 0 !important;
-      width: 100% !important;
-    }
-    html body #shearSection #shearViewDesign.shear-design-reference {
-      width: min(100%, 1480px) !important;
-      margin-inline: auto !important;
-    }
-    html body #shearSection #shearViewDesign .tension-card,
-    html body #shearSection #shearViewDesign .tension-guide {
-      border-radius: 12px !important;
-      border: 1px solid #a7c5d7 !important;
-      background: linear-gradient(180deg, #f8fdff 0%, #f0f8fd 100%) !important;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
-      padding: 0.42rem 0.52rem 0.5rem !important;
-    }
-    html body #shearSection #shearViewDesign .tension-card h4,
-    html body #shearSection #shearViewDesign .tension-guide h4 {
-      border-bottom: 1px solid #a8cadf !important;
-      background: linear-gradient(180deg, #d3ebf8 0%, #b6dcef 100%) !important;
-      color: #11384f !important;
-      border-radius: 8px !important;
-      margin-bottom: 0.3rem !important;
-      padding: 0.18rem 0.34rem !important;
-      font-size: 0.73rem !important;
-      font-weight: 1000 !important;
-      letter-spacing: 0.02em !important;
-      text-transform: uppercase !important;
-    }
+    /* Shear Design — legacy .t-row layout (unused by current bending-style DOM) */
     html body #shearSection #shearViewDesign .t-row {
       grid-template-columns: minmax(0, 1fr) minmax(104px, 122px) !important;
       align-items: center !important;
@@ -13464,11 +13727,17 @@
     html body #shearSection #shearViewDesign .tension-card.design-demand-card.shear-demand-eval {
       padding: 0.42rem 0.52rem 0.48rem !important;
     }
-    /* Lightest card uses same blue section header as all other Shear design cards */
+    /* Lightest Safe Section header — match Tension Design Calculator (.safe-section-card h4) */
     html body #shearSection #shearViewDesign .shear-card-lightest > h4 {
-      border-bottom: 1px solid #a8cadf !important;
-      background: linear-gradient(180deg, #d3ebf8 0%, #b6dcef 100%) !important;
-      color: #11384f !important;
+      border-bottom: 1px solid #d6a29a !important;
+      background: linear-gradient(180deg, #f7c9bd 0%, #f2b9aa 100%) !important;
+      color: #5a1f17 !important;
+      -webkit-text-fill-color: #5a1f17 !important;
+    }
+    html body #shearSection #shearViewDesign .shear-card-lightest .shear-lightest-lbl,
+    html body #shearSection #shearViewDesign .shear-card-lightest .shear-ref-unit,
+    html body #shearSection #shearViewDesign .shear-card-lightest .shear-ref-output-row .shear-line-f41 {
+      color: #12384d !important;
     }
     /* Lightest section name — layout; colors match Bending #bendingDesignSafeSection.bending-safe-section-hero */
     html body #shearSection #shearViewDesign .shear-card-lightest input#shearDesignSectionName.bending-safe-section-hero {
@@ -13651,9 +13920,6 @@
       margin-top: 0.12rem !important;
     }
     @media (max-width: 900px) {
-      #shearSection #shearViewDesign.shear-design-reference .tdr-grid.shear-design-master {
-        grid-template-columns: 1fr !important;
-      }
       html body #shearSection .tension-top-tabs {
         grid-template-columns: 1fr !important;
       }
@@ -13715,6 +13981,30 @@
     #tensionSection #tensionViewDesign .shear-lag-card .t-row {
       margin-bottom: 0.06rem;
     }
+    /* Row-2 height sync: User Guide, Design Loads, Shear Lag */
+    #tensionSection #tensionViewDesign .user-guide-card,
+    #tensionSection #tensionViewDesign .design-loads-card,
+    #tensionSection #tensionViewDesign .shear-lag-card {
+      min-height: 98px !important;
+      height: 100% !important;
+      align-self: stretch !important;
+      padding-top: 0.1rem;
+      padding-bottom: 0.1rem;
+      box-sizing: border-box;
+    }
+    #tensionSection #tensionViewDesign .design-loads-card .t-row,
+    #tensionSection #tensionViewDesign .shear-lag-card .t-row {
+      margin-bottom: 0.02rem;
+      line-height: 1.02;
+    }
+    #tensionSection #tensionViewDesign .design-loads-card .t-row:last-child,
+    #tensionSection #tensionViewDesign .shear-lag-card .t-row:last-child {
+      margin-bottom: 0;
+    }
+    #tensionSection #tensionViewDesign .user-guide-card .legend {
+      margin-top: 0.04rem;
+      gap: 0.1rem;
+    }
     #tensionSection #tensionViewDesign .bolt-spec-card .t-row {
       margin-bottom: 0.04rem;
     }
@@ -13733,23 +14023,6 @@
       font-size: 0.62rem;
       font-weight: 800;
       line-height: 1;
-    }
-    #tensionSection #tensionViewDesign .tension-connection-card {
-      padding: 0.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8fcff;
-    }
-    #tensionSection #tensionViewDesign .tension-connection-card .tension-connection-image {
-      width: 100%;
-      min-height: 220px;
-      height: clamp(210px, 26vh, 300px);
-      object-fit: cover;
-      object-position: center center;
-      border-radius: 2px;
-      border: 1px solid #9bb5c5;
-      background: #ffffff;
     }
     #tensionSection #tensionViewDesign .safe-section-card .safe-name {
       min-height: 2.05rem;
@@ -13941,18 +14214,11 @@
       #tensionSection #tensionViewDesign .user-guide-card,
       #tensionSection #tensionViewDesign .design-loads-card,
       #tensionSection #tensionViewDesign .shear-lag-card,
-      #tensionSection #tensionViewDesign .tension-connection-card,
       #tensionSection #tensionViewDesign .design-demand-card,
       #tensionSection #tensionViewDesign .safe-section-card,
       #tensionSection #tensionViewDesign .disclaimer-card {
         grid-column: auto;
         grid-row: auto;
-      }
-      #tensionSection #tensionViewDesign .tension-connection-card .tension-connection-image {
-        min-height: 200px;
-        height: clamp(200px, 28vh, 280px);
-        object-fit: cover;
-        object-position: center center;
       }
       #tensionSection #tensionViewDesign .t-row {
         grid-template-columns: minmax(0, 1fr) minmax(112px, 45%);
@@ -16492,23 +16758,31 @@
       background: linear-gradient(180deg, #fde8a8 0%, #f9d67b 100%) !important;
     }
     html body #shearSection #shearViewDesign .shear-excel-card input#shearE.in-yellow {
-      border: 1px solid #c9a84a !important;
-      color: #141414 !important;
-      -webkit-text-fill-color: #141414 !important;
-      background: #ffd966 !important;
+      border: 1px solid #0a0a0a !important;
+      color: #0a0a0a !important;
+      -webkit-text-fill-color: #0a0a0a !important;
+      background: linear-gradient(180deg, #ffe8b8 0%, #ffd98e 100%) !important;
     }
-    html body #bendingSection #bendDesignView input#bendingDesignFy.out-green,
-    html body #shearSection #shearViewDesign .shear-excel-card input#shearFy.in-yellow.shear-fy-readonly {
-      border: 1px solid #c9a84a !important;
+    html body #bendingSection #bendDesignView input#bendingDesignFy.out-green {
+      border: 1px solid #6daa82 !important;
       color: #141414 !important;
       -webkit-text-fill-color: #141414 !important;
-      background: #ffd966 !important;
+      background: linear-gradient(180deg, #dff8ea 0%, #c6efce 100%) !important;
+    }
+    html body #shearSection #shearViewDesign .shear-excel-card input#shearFy.out-green.shear-fy-readonly {
+      border: 1px solid #0a0a0a !important;
+      color: #141414 !important;
+      -webkit-text-fill-color: #141414 !important;
+      background: linear-gradient(180deg, #dff8ea 0%, #c6efce 100%) !important;
     }
     html body #bendingSection #bendDesignView .bending-material-card .compression-given-label,
     html body #shearSection #shearViewDesign .bending-material-card .compression-given-label,
     html body #bendingSection #bendDesignView .bending-material-card .compression-given-unit,
     html body #shearSection #shearViewDesign .bending-material-card .compression-given-unit {
       color: #11384f !important;
+    }
+    html body #shearSection #shearViewDesign .shear-material-label-excel {
+      color: #0a0a0a !important;
     }
     html body #bendingSection #bendDesignView .bending-material-card .compression-given-box, #shearSection #shearViewDesign .bending-material-card .compression-given-box {
       border-color: #a7c5d7 !important;
@@ -17310,20 +17584,26 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════ */
-    /* Bending Design Calculator — Tension module visual reference (UI only) */
-    /* Scopes: #bendingSection #bendDesignView only — no logic / DOM changes  */
+    /* Bending + Shear Design Calculator — shared colors, type, chrome (UI)   */
+    /* Scopes: #bendDesignView and #shearViewDesign (same DOM / classes)     */
     /* ═══════════════════════════════════════════════════════════════════ */
-    html body #bendingSection #bendDesignView.bend-view.is-active {
+    html body #bendingSection #bendDesignView.bend-view.is-active,
+    html body #shearSection #shearViewDesign.bend-view.is-active {
       width: min(100%, 1480px) !important;
       max-width: 100% !important;
       margin-inline: auto !important;
       gap: clamp(0.85rem, 1.15vw, 1.1rem) !important;
       box-sizing: border-box !important;
+      color: #12384d !important;
+      font-family: inherit !important;
+      -webkit-font-smoothing: antialiased !important;
     }
-    html body #bendingSection #bendDesignView .compression-col {
+    html body #bendingSection #bendDesignView .compression-col,
+    html body #shearSection #shearViewDesign .compression-col {
       gap: clamp(0.85rem, 1.1vw, 1.05rem) !important;
     }
-    html body #bendingSection #bendDesignView .tension-card.compression-card {
+    html body #bendingSection #bendDesignView .tension-card.compression-card,
+    html body #shearSection #shearViewDesign .tension-card.compression-card {
       border-radius: 12px !important;
       border: 1px solid #a7c5d7 !important;
       background: linear-gradient(180deg, #f8fdff 0%, #f0f8fd 100%) !important;
@@ -17331,7 +17611,9 @@
       padding: 0.42rem 0.52rem 0.5rem !important;
     }
     html body #bendingSection #bendDesignView .tension-card.compression-card > h4,
-    html body #bendingSection #bendDesignView .tension-card.compression-card > h4.bending-ix-head {
+    html body #bendingSection #bendDesignView .tension-card.compression-card > h4.bending-ix-head,
+    html body #shearSection #shearViewDesign .tension-card.compression-card > h4,
+    html body #shearSection #shearViewDesign .tension-card.compression-card > h4.bending-ix-head {
       margin: -0.42rem -0.52rem 0.42rem -0.52rem !important;
       padding: 0.22rem 0.42rem 0.24rem !important;
       border: 0 !important;
@@ -17345,13 +17627,25 @@
       text-transform: uppercase !important;
       line-height: 1.25 !important;
     }
+    /* Lightest Safe Section header — match Tension Design Calculator (.safe-section-card h4) */
+    html body #bendingSection #bendDesignView .tension-card.compression-card.compression-safe-card > h4,
+    html body #shearSection #shearViewDesign .tension-card.compression-card.compression-safe-card > h4 {
+      border-bottom: 1px solid #d6a29a !important;
+      background: linear-gradient(180deg, #f7c9bd 0%, #f2b9aa 100%) !important;
+      color: #5a1f17 !important;
+      -webkit-text-fill-color: #5a1f17 !important;
+    }
     html body #bendingSection #bendDesignView .tension-card.compression-card .bending-ix-head-sub,
-    html body #bendingSection #bendDesignView .tension-card.compression-card .bending-ix-head-colon {
+    html body #bendingSection #bendDesignView .tension-card.compression-card .bending-ix-head-colon,
+    html body #shearSection #shearViewDesign .tension-card.compression-card .bending-ix-head-sub,
+    html body #shearSection #shearViewDesign .tension-card.compression-card .bending-ix-head-colon {
       color: #11384f !important;
       font-weight: 800 !important;
     }
     html body #bendingSection #bendDesignView input.in-yellow,
-    html body #bendingSection #bendDesignView select.in-yellow {
+    html body #bendingSection #bendDesignView select.in-yellow,
+    html body #shearSection #shearViewDesign input.in-yellow,
+    html body #shearSection #shearViewDesign select.in-yellow {
       border-radius: 10px !important;
       border: 1px solid #d1bc73 !important;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
@@ -17361,7 +17655,9 @@
       font-weight: 900 !important;
     }
     html body #bendingSection #bendDesignView input.out-green,
-    html body #bendingSection #bendDesignView textarea.out-green {
+    html body #bendingSection #bendDesignView textarea.out-green,
+    html body #shearSection #shearViewDesign input.out-green,
+    html body #shearSection #shearViewDesign textarea.out-green {
       border-radius: 10px !important;
       border: 1px solid #8abfa1 !important;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
@@ -17376,7 +17672,13 @@
     html body #bendingSection #bendDesignView .bending-ix-yellow-hero input.in-yellow,
     html body #bendingSection #bendDesignView .bending-ix-teal-hero input.out-green,
     html body #bendingSection #bendDesignView .bending-demand-mu-result-cell input.out-green,
-    html body #bendingSection #bendDesignView .bending-demand-combo-body input {
+    html body #bendingSection #bendDesignView .bending-demand-combo-body input,
+    html body #shearSection #shearViewDesign .bending-demand-gov-hero input.in-yellow,
+    html body #shearSection #shearViewDesign .bending-demand-manual-hero input.in-yellow,
+    html body #shearSection #shearViewDesign .bending-ix-yellow-hero input.in-yellow,
+    html body #shearSection #shearViewDesign .bending-ix-teal-hero input.out-green,
+    html body #shearSection #shearViewDesign .bending-demand-mu-result-cell input.out-green,
+    html body #shearSection #shearViewDesign .bending-demand-combo-body input {
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
@@ -17384,7 +17686,9 @@
       color: #102616 !important;
     }
     html body #bendingSection #bendDesignView .bending-ix-teal-hero input.out-green,
-    html body #bendingSection #bendDesignView .bending-demand-mu-result-cell input.out-green {
+    html body #bendingSection #bendDesignView .bending-demand-mu-result-cell input.out-green,
+    html body #shearSection #shearViewDesign .bending-ix-teal-hero input.out-green,
+    html body #shearSection #shearViewDesign .bending-demand-mu-result-cell input.out-green {
       -webkit-text-fill-color: #0a0a0a !important;
       color: #0a0a0a !important;
     }
@@ -17392,23 +17696,27 @@
       color: #102616 !important;
       -webkit-text-fill-color: #102616 !important;
     }
-    html body #bendingSection #bendDesignView .compression-given-box {
+    html body #bendingSection #bendDesignView .compression-given-box,
+    html body #shearSection #shearViewDesign .compression-given-box {
       border: 1px solid #c5dae8 !important;
       border-radius: 10px !important;
       background: #ffffff !important;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
     }
-    html body #bendingSection #bendDesignView .compression-given-label {
+    html body #bendingSection #bendDesignView .compression-given-label,
+    html body #shearSection #shearViewDesign .compression-given-label {
       color: #12384d !important;
       font-size: 0.7rem !important;
       font-weight: 900 !important;
     }
-    html body #bendingSection #bendDesignView .compression-given-unit {
+    html body #bendingSection #bendDesignView .compression-given-unit,
+    html body #shearSection #shearViewDesign .compression-given-unit {
       color: #12384d !important;
       font-size: 0.66rem !important;
       font-weight: 900 !important;
     }
-    html body #bendingSection #bendDesignView .compression-guide .legend-item {
+    html body #bendingSection #bendDesignView .compression-guide .legend-item,
+    html body #shearSection #shearViewDesign .compression-guide .legend-item {
       gap: 0.38rem !important;
       margin-bottom: 0.42rem !important;
       font-size: 0.68rem !important;
@@ -17416,49 +17724,89 @@
       color: #12384d !important;
       line-height: 1.35 !important;
     }
-    html body #bendingSection #bendDesignView .compression-guide .legend-item .swatch {
+    html body #bendingSection #bendDesignView .compression-guide .legend-item .swatch,
+    html body #shearSection #shearViewDesign .compression-guide .legend-item .swatch {
       width: 1.05rem !important;
       height: 0.72rem !important;
       border-radius: 3px !important;
       border: 1px solid rgba(31, 51, 64, 0.35) !important;
       flex-shrink: 0 !important;
     }
-    html body #bendingSection #bendDesignView .compression-guide .legend-item .swatch.yellow {
+    html body #bendingSection #bendDesignView .compression-guide .legend-item .swatch.yellow,
+    html body #shearSection #shearViewDesign .compression-guide .legend-item .swatch.yellow {
       background: linear-gradient(180deg, #fde8a8 0%, #f9d67b 100%) !important;
     }
-    html body #bendingSection #bendDesignView .compression-guide .legend-item .swatch.green {
+    html body #bendingSection #bendDesignView .compression-guide .legend-item .swatch.green,
+    html body #shearSection #shearViewDesign .compression-guide .legend-item .swatch.green {
       background: linear-gradient(180deg, #c9efd8 0%, #b7e4c7 100%) !important;
     }
-    /* LRFD/ASD combo titles (1.2DL+1.6LL, 1.4DL, DL+LL, —) — light red band */
+    /* Bending Design — combo titles (DL+LL / —): light green band */
     html body #bendingSection #bendDesignView .bending-demand-combo-chip {
-      background: linear-gradient(180deg, #fff0f0 0%, #ffdede 50%, #ffcfcf 100%) !important;
-      border-bottom: 1px solid #d87878 !important;
-      color: #5c1f1f !important;
+      background: linear-gradient(180deg, #d9f3e4 0%, #c6efce 100%) !important;
+      border-bottom: 1px solid #6daa82 !important;
+      color: #0a0a0a !important;
     }
-    /* Numeric kips/ft cells — formula-driven mint green */
+    /* Bending Design — numeric kips/ft wells: white */
     html body #bendingSection #bendDesignView .bending-demand-combo-body {
-      background: linear-gradient(180deg, #dff8ea 0%, #c8efd9 55%, #b7e4c7 100%) !important;
-      border-top: 1px solid #6daa82 !important;
+      background: #ffffff !important;
+      border-top: 1px solid #e2eaf0 !important;
     }
     html body #bendingSection #bendDesignView .bending-demand-combo-value {
       color: #102616 !important;
       -webkit-text-fill-color: #102616 !important;
     }
+    /* Shear Design — Demand Analysis combos (Born2BeSteel Shear Design sheet N28/S28): light-green chip, black text, white value area */
+    html body #shearSection #shearViewDesign .bending-demand-combo-chip {
+      background: linear-gradient(180deg, #d9f3e4 0%, #c6efce 100%) !important;
+      border-bottom: 1px solid #6daa82 !important;
+      color: #0a0a0a !important;
+    }
+    html body #shearSection #shearViewDesign .bending-demand-combo-chip span {
+      color: #0a0a0a !important;
+    }
+    html body #shearSection #shearViewDesign .bending-demand-combo-body {
+      background: #ffffff !important;
+      border-top: 1px solid #e2eaf0 !important;
+    }
+    html body #shearSection #shearViewDesign .bending-demand-combo-body .bending-demand-combo-value {
+      color: #0a0a0a !important;
+      -webkit-text-fill-color: #0a0a0a !important;
+    }
     html body #bendingSection #bendDesignView .bending-safe-yellow-val.in-yellow {
       background: linear-gradient(180deg, #fde8a8 0%, #f9d67b 100%) !important;
       border: 1px solid #d1bc73 !important;
-      color: #2f2a10 !important;
-      -webkit-text-fill-color: #2f2a10 !important;
+      color: #153346 !important;
+      -webkit-text-fill-color: #153346 !important;
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.75),
         inset 0 -1px 0 rgba(120, 95, 35, 0.08) !important;
     }
-    html body #bendingSection #bendDesignView #bendingDesignSafeSection.bending-safe-section-hero,
-    html body #shearSection #shearViewDesign input#shearDesignSectionName.bending-safe-section-hero {
+    html body #shearSection #shearViewDesign .bending-safe-result-card .bending-safe-yellow-val.in-yellow {
+      border: 1px solid #c9a84a !important;
+      background: linear-gradient(180deg, #f0c95c 0%, #deb02a 100%) !important;
+      color: #153346 !important;
+      -webkit-text-fill-color: #153346 !important;
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.45),
+        inset 0 -2px 5px rgba(120, 85, 10, 0.14);
+    }
+    html body #bendingSection #bendDesignView #bendingDesignSafeSection.bending-safe-section-hero {
       border: 1px solid #d1bc73 !important;
       background: linear-gradient(180deg, #fde8a8 0%, #f0c95c 55%, #e8b228 100%) !important;
-      color: #11384f !important;
-      -webkit-text-fill-color: #11384f !important;
+      color: #23374a !important;
+      -webkit-text-fill-color: #23374a !important;
+      box-shadow:
+        inset 0 2px 5px rgba(255, 255, 255, 0.55),
+        inset 0 -2px 4px rgba(120, 95, 35, 0.12) !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.08em !important;
+      font-size: clamp(1.05rem, 1.62vw, 1.45rem) !important;
+    }
+    html body #shearSection #shearViewDesign #shearDesignSectionName.bending-safe-section-hero {
+      border: 1px solid #d1bc73 !important;
+      background: linear-gradient(180deg, #fde8a8 0%, #f0c95c 55%, #e8b228 100%) !important;
+      color: #23374a !important;
+      -webkit-text-fill-color: #23374a !important;
       box-shadow:
         inset 0 2px 5px rgba(255, 255, 255, 0.55),
         inset 0 -2px 4px rgba(120, 95, 35, 0.12) !important;
@@ -17467,9 +17815,195 @@
       font-size: clamp(1.05rem, 1.62vw, 1.45rem) !important;
     }
     @media (max-width: 900px) {
-      html body #bendingSection #bendDesignView.bend-view.is-active {
+      html body #bendingSection #bendDesignView.bend-view.is-active,
+      html body #shearSection #shearViewDesign.bend-view.is-active {
         width: 100% !important;
         padding-inline: clamp(0.2rem, 1.5vw, 0.45rem) !important;
+      }
+    }
+
+    /* FINAL LOCK: Shear Capacity Database must visually match Bending Capacity Database */
+    html body #shearSection #shearViewCapacity.bend-view.is-active {
+      display: block !important;
+      width: 100% !important;
+      font-size: 14px !important;
+      color: #0f3144 !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-db-card,
+    html body #shearSection #shearViewCapacity .bending-cap-db-shell,
+    html body #shearSection #shearViewCapacity .bending-cap-db-toolbar,
+    html body #shearSection #shearViewCapacity .bending-cap-db-filters,
+    html body #shearSection #shearViewCapacity .bending-cap-db-meta {
+      display: flex !important;
+      flex-wrap: wrap !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-db-shell {
+      display: flex !important;
+      flex-direction: column !important;
+      min-width: 0 !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-db-filters {
+      display: grid !important;
+      grid-template-columns: minmax(140px, 1.5fr) 104px 104px minmax(120px, 1fr) !important;
+      gap: 0.42rem !important;
+      align-items: center !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-db-filters input,
+    html body #shearSection #shearViewCapacity .bending-cap-db-filters select {
+      height: 32px !important;
+      font-size: 0.72rem !important;
+      padding: 0 0.52rem !important;
+      border-radius: 8px !important;
+      border: 1px solid #adc2d1 !important;
+      background: #ffffff !important;
+      color: #0f3144 !important;
+      box-sizing: border-box !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table {
+      width: max-content !important;
+      min-width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 0.62rem !important;
+      font-variant-numeric: tabular-nums !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table thead th {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 2 !important;
+      padding: 0.32rem 0.38rem !important;
+      font-weight: 900 !important;
+      background: #deb887 !important;
+      border: 1px solid #c4a574 !important;
+      color: #111 !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table tbody td {
+      padding: 0.22rem 0.34rem !important;
+      border: 1px solid #d5dde3 !important;
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+      font-size: 0.62rem !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table tbody tr.bending-cap-data-row--alt td {
+      background: #f4f7f9 !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table tbody tr.bending-cap-group-row td {
+      background: #d8d8d8 !important;
+      border-color: #b0b0b0 !important;
+      color: #111 !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.08em !important;
+      font-size: 0.68rem !important;
+      text-align: center !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table tbody td.bending-cap-section-cell {
+      text-align: left !important;
+      font-weight: 800 !important;
+      color: #0f3144 !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table tbody td.bending-cap-pu-cell {
+      font-weight: 900 !important;
+      color: #062031 !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-capacity-table tbody td.bending-cap-remark-cell {
+      background: #eef3f7 !important;
+      vertical-align: middle !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-data-row--alt td.bending-cap-remark-cell {
+      background: #e8eef3 !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-remark-pill {
+      display: inline-block !important;
+      padding: 0.14rem 0.58rem !important;
+      border-radius: 999px !important;
+      font-weight: 900 !important;
+      font-size: 0.58rem !important;
+      letter-spacing: 0.06em !important;
+      line-height: 1.2 !important;
+      white-space: nowrap !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-remark-pill--safe {
+      background: #2e7d32 !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-remark-pill--unsafe {
+      background: #c62828 !important;
+      color: #ffffff !important;
+    }
+    html body #shearSection #shearViewCapacity .bending-cap-remark-pill--na {
+      background: #78909c !important;
+      color: #ffffff !important;
+    }
+    /* Shear Required Ix: keep Ix= pinned to left corner */
+    html body #shearSection #shearViewDesign .bending-ix-computed-block,
+    html body #shearSection #shearViewDesign .bending-ix-manual-block {
+      grid-template-columns: minmax(2.5rem, 3.2rem) minmax(0, 1fr) !important;
+    }
+    html body #shearSection #shearViewDesign .bending-ix-inline-lbl {
+      justify-content: flex-start !important;
+      text-align: left !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    /* FINAL LOCK (Tension Design): compact, equal mid-row card heights */
+    html body #tensionSection #tensionViewDesign .user-guide-card,
+    html body #tensionSection #tensionViewDesign .design-loads-card,
+    html body #tensionSection #tensionViewDesign .shear-lag-card {
+      min-height: 116px !important;
+      height: 116px !important;
+      align-self: stretch !important;
+      padding-top: 0.16rem !important;
+      padding-bottom: 0.16rem !important;
+      box-sizing: border-box !important;
+    }
+    html body #tensionSection #tensionViewDesign .user-guide-card h4,
+    html body #tensionSection #tensionViewDesign .design-loads-card h4,
+    html body #tensionSection #tensionViewDesign .shear-lag-card h4 {
+      margin-bottom: 0.14rem !important;
+      padding-top: 0.06rem !important;
+      padding-bottom: 0.06rem !important;
+      min-height: 0 !important;
+    }
+    html body #tensionSection #tensionViewDesign .design-loads-card .t-row input,
+    html body #tensionSection #tensionViewDesign .design-loads-card .t-row select,
+    html body #tensionSection #tensionViewDesign .shear-lag-card .t-row input,
+    html body #tensionSection #tensionViewDesign .shear-lag-card .t-row select {
+      height: 1.08rem !important;
+      min-height: 1.08rem !important;
+    }
+    html body #tensionSection #tensionViewDesign .design-loads-card .t-row.t-row-unit {
+      grid-template-columns: minmax(0, 1fr) minmax(86px, 122px) max-content !important;
+      column-gap: 0.16rem !important;
+    }
+    html body #tensionSection #tensionViewDesign .design-loads-card .t-row.t-row-unit .t-unit {
+      justify-self: start !important;
+      text-align: left !important;
+      width: auto !important;
+      min-width: 0 !important;
+    }
+    html body #tensionSection #tensionViewDesign .design-loads-card .t-row,
+    html body #tensionSection #tensionViewDesign .shear-lag-card .t-row {
+      margin-bottom: 0.05rem !important;
+      line-height: 1.08 !important;
+    }
+    html body #tensionSection #tensionViewDesign .user-guide-card .legend {
+      margin-top: 0.08rem !important;
+      gap: 0.14rem !important;
+    }
+    html body #tensionSection #tensionViewDesign .user-guide-card .legend-item {
+      line-height: 1.16 !important;
+      margin: 0 !important;
+    }
+    @media (min-width: 1340px) and (max-width: 1560px) and (min-height: 740px) and (max-height: 920px) {
+      html body #tensionSection #tensionViewDesign .design-loads-card,
+      html body #tensionSection #tensionViewDesign .shear-lag-card,
+      html body #tensionSection #tensionViewDesign .user-guide-card {
+        min-height: 116px !important;
+        height: 116px !important;
       }
     }
 
@@ -17662,12 +18196,6 @@
       line-height: 1.25;
       max-width: 190px;
       margin: 0 auto;
-      min-height: 2.5em;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
     #overviewSection .sys-value-row {
       display: grid;
@@ -17983,28 +18511,28 @@
                   <img src="assets/overview/beam-design.png" alt="">
                 </div>
                 <h3>Beam Design</h3>
-                <p>Calculate first precision tool: tne a steel design calculation.</p>
+                <p>Analyze and design steel beams, checking capacities for flexure, shear, and deflection.</p>
               </article>
               <article class="sys-card">
                 <div class="sys-card-art" aria-hidden="true">
                   <img src="assets/overview/column-design.png" alt="">
                 </div>
                 <h3>Column Design</h3>
-                <p>Calculate a column calculator for every iug hollow sections.</p>
+                <p>Analyze and design steel columns, checking for axial loads, moments, and buckling stability.</p>
               </article>
               <article class="sys-card">
                 <div class="sys-card-art" aria-hidden="true">
                   <img src="assets/overview/connection-design.png" alt="">
                 </div>
                 <h3>CONNECTION DESIGN</h3>
-                <p>Integrated connection checks and detailing support.</p>
+                <p>Analyze and design steel connection components, checking bolt, weld, and plate capacities.</p>
               </article>
               <article class="sys-card">
                 <div class="sys-card-art" aria-hidden="true">
                   <img src="assets/overview/truss-design.png" alt="">
                 </div>
                 <h3>Truss Design</h3>
-                <p>Truss design crass and calculation and prepenrial steel system.</p>
+                <p>Analyze and design steel truss members, checking for tension and compression capacities.</p>
               </article>
             </div>
           </section>
@@ -18235,10 +18763,6 @@
                 <div class="t-row sl-row-connection"><span>Connection</span><select id="tensionConnection" class="in-yellow" title="Single angle: which leg(s) are bolted (AISC Table D3.1)"><option value="WEB" selected>WEB LEG ONLY</option><option value="FLANGE">FLANGE LEG ONLY</option><option value="FLANGE_WEB">WEB &amp; FLANGE (BOTH LEGS)</option></select></div>
                 <div class="t-row sl-row-u"><span>Shear Lag Factor, U</span><input id="tensionU" class="out-green" readonly></div>
               </div>
-              <aside class="tension-card tension-connection-card" aria-label="Connection detail">
-                <img id="tensionConnectionImage" class="tension-connection-image" src="assets/tension-page/shear-lag-web-leg.png" alt="Shear lag connection diagram for selected angle connection type" loading="lazy">
-              </aside>
-
               <div class="tension-card design-demand-card">
                 <h4>Demand and Requirement Analysis</h4>
                 <div class="dra-top">
@@ -18396,7 +18920,7 @@
 
                     <div class="tension-card analysis-for-plates" style="margin:0;">
                       <h4>For Plates</h4>
-                      <div class="t-row"><span>Length (in)</span><input id="analysisPlateLengthIn" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="144"></div>
+                      <div class="t-row"><span>Length (in)</span><input id="analysisPlateLengthIn" class="out-green" type="number" step="any" min="0" inputmode="decimal" value="144"></div>
                       <div class="t-row"><span>Thickness (in)</span><input id="tensionPlateThickness" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0"></div>
                       <div class="t-row t-row-unit"><span>Ag (plate)</span><input id="tensionPlateAg" class="out-green" readonly><span class="t-unit">in²</span></div>
                       <div class="t-row ns-length-used-row"><span>Length used (in)</span><input id="tensionLengthIn" class="out-green" readonly></div>
@@ -18793,7 +19317,7 @@
                   <h4>Demand Analysis</h4>
                   <div class="compression-mini-row"><span id="compressionDemandLabel1">1.2DL+1.6LL</span><input id="compressionDemandCombo1" class="out-green" readonly value="620"><span>kips</span></div>
                   <div class="compression-mini-row"><span id="compressionDemandLabel2">1.4DL</span><input id="compressionDemandCombo2" class="out-green" readonly value="126"><span>kips</span></div>
-                  <div class="compression-mini-row"><span id="compressionDemandGovLabel">Tu</span><input id="compressionDemandGov" class="out-green" readonly value="126"><span>kips</span></div>
+                  <div class="compression-mini-row"><span id="compressionDemandGovLabel">Tu</span><input id="compressionDemandGov" class="out-green" readonly value="620"><span>kips</span></div>
                 </div>
                 <div class="tension-card compression-card compression-mini-stack">
                   <h4>Check Compactness</h4>
@@ -19194,8 +19718,8 @@
                     <div class="design-method-select-wrap">
                       <label class="sr-only" for="bendingDesignMethod">Design method LRFD or ASD</label>
                       <select id="bendingDesignMethod" class="in-yellow big-select" aria-label="Design method">
-                        <option value="LRFD" selected>LRFD</option>
-                        <option value="ASD">ASD</option>
+                        <option value="LRFD">LRFD</option>
+                        <option value="ASD" selected>ASD</option>
                       </select>
                       <span class="design-method-caret" aria-hidden="true">▼</span>
                     </div>
@@ -19596,14 +20120,14 @@
                       <div class="bend-result-subhead bend-result-subhead--muted"><em>M</em><sub>n</sub> (<strong>Bending Analysis</strong> U33)</div>
                       <div class="bend-nominal-row">
                         <span class="bend-nominal-label"><em>M</em><sub>n</sub>:</span>
-                        <input id="bendMn" class="out-green-a bend-nominal-input" type="text" readonly tabindex="-1" value="--" aria-label="Nominal moment Mn (kip·inch)" inputmode="decimal" aria-readonly="true">
-                        <span class="bend-a-unit">kip·in</span>
+                        <input id="bendMn" class="out-green-a bend-nominal-input" type="text" readonly tabindex="-1" value="--" aria-label="Nominal moment Mn (kips·ft)" inputmode="decimal" aria-readonly="true">
+                        <span class="bend-a-unit">kips·ft</span>
                       </div>
                       <div class="bend-a-head bend-a-head--peach" id="bendCapacityHead">Bending capacity</div>
                       <div class="bend-capacity-panel-body">
                         <span id="bendDesignMomentPrefix" class="bend-capacity-prefix"><em>M</em><sub>a</sub>:</span>
-                        <input id="bendMa" type="text" readonly tabindex="-1" class="bend-capacity-hero-input bend-mn-big out-green-a" value="--" aria-live="polite" aria-label="Design bending strength Ma or Mu (kip·inch)" inputmode="decimal" aria-readonly="true">
-                        <span class="bend-a-unit bend-capacity-unit">kip·in</span>
+                        <input id="bendMa" type="text" readonly tabindex="-1" class="bend-capacity-hero-input bend-mn-big out-green-a" value="--" aria-live="polite" aria-label="Design bending strength Ma or Mu (kips·ft)" inputmode="decimal" aria-readonly="true">
+                        <span class="bend-a-unit bend-capacity-unit">kips·ft</span>
                       </div>
                     </div>
                   </div>
@@ -19618,123 +20142,229 @@
       </div>
 
       <div id="shearSection" class="content-panel">
-        <div class="tension-shell">
-          <div class="tension-top-tabs" aria-label="Shear calculator modes">
-            <button type="button" class="tension-tab is-active" data-shear-view="design" aria-selected="true">Design Calculator</button>
-            <button type="button" class="tension-tab" data-shear-view="capacity" aria-selected="false">Capacity Analysis</button>
-            <button type="button" class="tension-tab" data-shear-view="analysis" aria-selected="false">Analysis Calculator</button>
-          </div>
+        <div class="tension-shell bending-shell">
+          <form id="formShearDesign" class="tension-view is-active" aria-label="Shear calculator">
+            <div class="compression-dashboard bending-calculator-dashboard">
+              <div class="compression-top-tabs" aria-label="Shear calculator modes">
+                <button type="button" class="compression-tab is-active" data-shear-view="design" aria-selected="true">Design Calculator</button>
+                <button type="button" class="compression-tab" data-shear-view="analysis" aria-selected="false">Analysis Calculator</button>
+              </div>
 
-              <div id="shearViewDesign" class="bend-view shear-design-reference is-active" aria-hidden="false">
-                <div class="tdr-grid shear-design-master" role="region" aria-label="Shear design calculator workbook">
-                  <div class="shear-design-col shear-design-col--left">
-                  <div class="tension-card shear-design-input-card">
-                    <h4>Input Parameters</h4>
-                    <div class="t-row t-row-unit"><span>Dead Load, DL</span><input id="shearDL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="8" aria-label="Dead load DL"><span class="t-unit">kips/ft</span></div>
-                    <div class="t-row t-row-unit"><span>Live Load, LL</span><input id="shearLL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="12" aria-label="Live load LL"><span class="t-unit">kips/ft</span></div>
-                    <div class="t-row t-row-unit"><span>Length</span><input id="shearBeamLength" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="5" aria-label="Beam length"><span class="t-unit">ft</span></div>
-                  </div>
-                  <div class="tension-card compact design-method-card">
-                    <h4>Design Method</h4>
-                    <label class="sr-only" for="shearMethod">Design method LRFD or ASD</label>
+              <div id="shearViewDesign" class="bend-view compression-design-view is-active" data-shear-view="design" aria-hidden="false">
+                <div class="compression-col compression-col-left">
+                  <div class="tension-card compression-card bending-design-method-card">
+                    <h4>Analysis method</h4>
                     <div class="design-method-select-wrap">
-                      <select id="shearMethod" class="in-yellow big-select" aria-label="Design method">
+                      <label class="sr-only" for="shearMethod">Analysis method LRFD or ASD</label>
+                      <select id="shearMethod" class="in-yellow big-select" aria-label="Analysis method">
                         <option value="ASD">ASD</option>
                         <option value="LRFD">LRFD</option>
                       </select>
                       <span class="design-method-caret" aria-hidden="true">▼</span>
                     </div>
                   </div>
-                  <div class="shear-lightest-user-guide-stack">
-                  <div class="tension-card safe-card safe-section-card shear-card-lightest">
-                    <h4>Lightest Safe Section</h4>
-                    <div class="shear-ref-output-row">
-                      <span id="shearLineF38" class="shear-lightest-lbl">Wa =</span>
-                      <input id="shearLineG38" class="out-green" type="text" readonly tabindex="-1" aria-readonly="true" value="--" aria-live="polite" title="Minimum weight (plf) — formula-driven">
-                      <span id="shearLineG38Unit" class="shear-ref-unit">kips/ft</span>
+                  <div class="tension-card compression-card">
+                    <h4>Loads</h4>
+                    <div class="compression-given-stack">
+                      <div class="compression-given-box">
+                        <span class="compression-given-label">Dead load</span>
+                        <div class="compression-given-value-row">
+                          <input id="shearDL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="2" aria-label="Dead load DL">
+                          <span class="compression-given-unit">kips/ft</span>
+                        </div>
+                      </div>
+                      <div class="compression-given-box">
+                        <span class="compression-given-label">Live load</span>
+                        <div class="compression-given-value-row">
+                          <input id="shearLL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="18" aria-label="Live load LL">
+                          <span class="compression-given-unit">kips/ft</span>
+                        </div>
+                      </div>
+                      <div class="compression-given-box">
+                        <span class="compression-given-label">Beam length</span>
+                        <div class="compression-given-value-row">
+                          <input id="shearBeamLength" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="7" aria-label="Beam length">
+                          <span class="compression-given-unit">ft</span>
+                        </div>
+                      </div>
                     </div>
-                    <div class="shear-ref-output-row">
-                      <span id="shearLineF41" class="shear-line-f41"></span>
-                      <input id="shearLineG41" class="out-green" type="text" readonly tabindex="-1" aria-readonly="true" value="--" aria-live="polite" title="Design shear strength — formula-driven">
-                      <span class="shear-ref-unit">kips</span>
+                  </div>
+                  <div class="tension-card compression-card">
+                    <h4>Design for shear members</h4>
+                    <div class="bending-member-options compression-given-stack">
+                      <div class="compression-given-box">
+                        <label class="compression-given-label" for="shearDesignDeflSelect">Deflection</label>
+                        <div class="compression-given-value-row bending-member-dropdown-row">
+                          <select id="shearDesignDeflSelect" class="in-yellow bending-member-select" aria-label="Deflection consideration (workbook display)">
+                            <option value="without considering deflection" selected>WITHOUT CONSIDERING DEFLECTION</option>
+                            <option value="considering deflection">CONSIDERING DEFLECTION</option>
+                          </select>
+                          <span class="compression-given-unit" aria-hidden="true"></span>
+                        </div>
+                      </div>
+                      <div class="compression-given-box">
+                        <label class="compression-given-label" for="shearDesignBeamWeightSelect">Beam weight</label>
+                        <div class="compression-given-value-row bending-member-dropdown-row">
+                          <select id="shearDesignBeamWeightSelect" class="in-yellow bending-member-select" aria-label="Beam self-weight (workbook display)">
+                            <option value="consider beam weight" selected>CONSIDER BEAM WEIGHT</option>
+                            <option value="ignore beam weight">IGNORE BEAM WEIGHT</option>
+                          </select>
+                          <span class="compression-given-unit" aria-hidden="true"></span>
+                        </div>
+                      </div>
                     </div>
-                    <label class="sr-only" for="shearDesignSectionName">Lightest adequate section</label>
-                    <input id="shearDesignSectionName" class="shear-lightest-section-name bending-safe-section-hero" type="text" readonly tabindex="-1" aria-readonly="true" aria-live="polite" value="—" title="Lightest adequate section (workbook)">
                   </div>
-                  <aside class="tension-guide user-guide-card" aria-label="User guide">
-                    <h4>User Guide</h4>
-                    <div class="legend">
-                      <div class="legend-item"><span class="swatch yellow" aria-hidden="true"></span><span>Yellow Cells [ User Input ]: Enter your specific project parameters here.</span></div>
-                      <div class="legend-item"><span class="swatch green" aria-hidden="true"></span><span>GREEN Cells [ Formula-Driven ]: Formula-driven calculations. Do not edit.</span></div>
+                  <div class="tension-card compression-card" aria-label="Shear demand">
+                    <h4>Shear (demand)</h4>
+                    <div class="bending-demand-mu-section">
+                      <div class="bending-demand-formula-strip" id="shearVuFormulaStrip"><em>V</em> = <span id="shearVuFormula"><em>w</em>L/2</span></div>
+                      <div class="bending-demand-flow-arrow" aria-hidden="true">▼</div>
+                      <div class="bending-demand-manual-hero in-yellow">
+                        <input id="shearVu" class="in-yellow bending-demand-manual-input" type="number" step="any" min="0" inputmode="decimal" value="0" aria-live="polite" aria-label="Shear demand from uniform load">
+                        <span class="bending-demand-unit-corner">kips</span>
+                      </div>
                     </div>
-                  </aside>
+                    <p class="bending-demand-instruction-strip"><em>INSTRUCTION: LEAVE THE YELLOW BOX BELOW AS <strong>0</strong> IF THE BEAM IS SIMPLY SUPPORTED.</em></p>
+                    <div class="bending-demand-mu-factored-lbl"><strong>Maximum shear:</strong></div>
+                    <div class="bending-demand-manual-hero in-yellow">
+                      <input id="shearDesignManualVu" class="in-yellow bending-demand-manual-input" type="number" step="any" min="0" inputmode="decimal" value="0" aria-label="Manual maximum shear override kips, workbook G55">
+                      <span class="bending-demand-unit-corner">kips</span>
+                    </div>
                   </div>
-                  </div>
-                  <div class="shear-design-col shear-design-col--right">
-                  <div class="tension-card shear-material-card">
-                    <h4>Material Data</h4>
-                    <div class="t-row"><span>Steel Grade</span><select id="shearSteelGrade" class="in-yellow" aria-label="Steel grade"></select></div>
-                    <div class="t-row t-row-unit"><span>Fy</span><input id="shearFy" class="in-yellow" type="text" readonly tabindex="-1" aria-readonly="true" aria-live="polite" value="" aria-label="Yield strength Fy, ksi" title="From steel grade (updates with grade selection)"><span class="t-unit">ksi</span></div>
-                    <div class="t-row t-row-unit"><span>E</span><input id="shearE" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="29000" aria-label="Modulus E ksi"><span class="t-unit">ksi</span></div>
-                  </div>
+                </div>
 
-                  <div class="tension-card design-demand-card shear-demand-eval">
-                    <h4>Demand Evaluation</h4>
-                    <div class="shear-sub-block shear-load-combination-block" role="group" aria-label="Load combination">
-                      <div class="shear-sub-badge">LOAD COMBINATION</div>
-                      <div class="shear-load-combination-grid">
-                        <div class="shear-governing-row">
-                          <span id="shearGovWLabel" class="shear-gov-inline-lbl">ALLOWABLE Wa :</span>
-                          <div class="shear-green-inline">
-                            <input id="shearGovW" class="out-green shear-gov-w-val" type="text" readonly tabindex="-1" aria-live="polite" value="" aria-readonly="true" title="Governing uniform load (kips/ft)">
-                          </div>
-                          <span class="shear-gov-unit t-unit">kips/ft</span>
-                        </div>
-                        <div class="shear-combo-columns" aria-label="Load combinations">
-                          <div class="shear-combo-col">
-                            <div class="shear-combo-caption"><span id="shearComboALabel">DL+LL</span></div>
-                            <div class="shear-combo-green-wrap">
-                              <input id="shearComboA" class="out-green shear-combo-field" type="text" readonly tabindex="-1" aria-readonly="true" value="" aria-live="polite">
-                            </div>
-                          </div>
-                          <div class="shear-combo-col">
-                            <div class="shear-combo-caption"><span id="shearComboBLabel">Wa =</span></div>
-                            <div class="shear-combo-green-wrap">
-                              <input id="shearComboB" class="out-green shear-combo-field" type="text" readonly tabindex="-1" aria-readonly="true" value="" aria-live="polite">
-                            </div>
-                          </div>
+                <div class="compression-col compression-col-center">
+                  <div class="tension-card compression-card bending-material-card shear-excel-card">
+                    <h4 class="shear-material-card-h"><span class="shear-material-card-title">MATERIAL Data</span></h4>
+                    <div class="compression-given-stack">
+                      <div class="compression-given-box">
+                        <span class="compression-given-label shear-material-label-excel">Steel Grade:</span>
+                        <div class="compression-given-value-row bending-material-dropdown-row">
+                          <select id="shearSteelGrade" class="in-yellow bending-material-grade-select" aria-label="Steel grade (workbook R9)"></select>
+                          <span class="compression-given-unit"></span>
                         </div>
                       </div>
-                    </div>
-                    <div class="shear-demand-bottom-grid">
-                      <div class="shear-sub-block shear-demand-mini-card">
-                        <div class="shear-sub-badge">MOMENT DEMAND</div>
-                        <div class="shear-demand-split">
-                          <div class="shear-demand-left">
-                            <div class="shear-demand-equation-inline"><span id="shearDemandMuPrefix">Ma =</span><span id="shearMuFormula" class="shear-eqn-fmla">WL²/8</span></div>
-                          </div>
-                          <div class="shear-demand-value-stack">
-                            <input id="shearMu" class="out-green shear-demand-main-val" type="text" readonly tabindex="-1" aria-readonly="true" value="--" aria-live="polite">
-                            <span class="shear-demand-unit-lbl">kips/ft</span>
+                      <div class="shear-material-e-fy-row" aria-label="Modulus and workbook Fy">
+                        <div class="compression-given-box shear-material-e-col">
+                          <span class="compression-given-label shear-material-label-excel shear-material-inline-equation"><em>E</em> =</span>
+                          <div class="compression-given-value-row shear-material-compact-row">
+                            <input id="shearE" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="29000" aria-label="Modulus E ksi (workbook P12)">
+                            <span class="compression-given-unit">ksi</span>
                           </div>
                         </div>
-                      </div>
-                      <div class="shear-sub-block shear-demand-mini-card">
-                        <div class="shear-sub-badge">SHEAR DEMAND</div>
-                        <div class="shear-demand-split">
-                          <div class="shear-demand-left">
-                            <div class="shear-demand-equation-inline"><span id="shearDemandVuPrefix">Va =</span><span id="shearVuFormula" class="shear-eqn-fmla">WL/2</span></div>
-                          </div>
-                          <div class="shear-demand-value-stack">
-                            <input id="shearVu" class="out-green shear-demand-main-val" type="text" readonly tabindex="-1" aria-readonly="true" value="--" aria-live="polite">
-                            <span class="shear-demand-unit-lbl">kips</span>
+                        <div class="compression-given-box shear-material-fy-col" aria-label="Yield Fy workbook X10">
+                          <span class="compression-given-label shear-material-label-excel shear-material-inline-equation"><em>F<sub>y</sub></em> =</span>
+                          <div class="compression-given-value-row shear-material-compact-row">
+                            <input id="shearFy" class="out-green shear-fy-readonly" type="text" readonly tabindex="-1" aria-live="polite" value="100" title="Shear Design sheet X10 (design strength ksi); grade name R9 is separate">
+                            <span class="compression-given-unit">ksi</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                  <div class="tension-card compression-card compression-mini-stack bending-demand-card">
+                    <h4>Demand analysis</h4>
+                    <p id="shearDesignMethodTag" class="bending-demand-tag bending-demand-method-line" aria-live="polite">(ASD METHOD)</p>
+                    <div class="bending-demand-gov-section">
+                      <div class="bending-demand-gov-title" id="shearGovWLabel">ALLOWABLE Wa =</div>
+                      <div class="bending-demand-gov-hero">
+                        <input id="shearGovW" class="in-yellow bending-demand-gov-input bending-wu-gov" type="text" readonly aria-live="polite" value="" aria-readonly="true" title="Governing uniform load (kips/ft)">
+                        <span class="bending-demand-unit-corner">kips/ft</span>
+                      </div>
+                    </div>
+                    <div class="bending-demand-combo-grid" aria-label="Load combinations">
+                      <div class="bending-demand-combo-panel">
+                        <div class="bending-demand-combo-chip"><span id="shearComboALabel">DL+LL</span></div>
+                        <div class="bending-demand-combo-body">
+                          <input id="shearComboA" class="bending-demand-combo-value" type="text" readonly value="" aria-live="polite">
+                          <span class="bending-demand-unit-corner">kips/ft</span>
+                        </div>
+                      </div>
+                      <div class="bending-demand-combo-panel">
+                        <div class="bending-demand-combo-chip"><span id="shearComboBLabel">-</span></div>
+                        <div class="bending-demand-combo-body">
+                          <input id="shearComboB" class="bending-demand-combo-value" type="text" readonly value="" aria-live="polite">
+                          <span class="bending-demand-unit-corner">kips/ft</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="bending-demand-mu-section">
+                      <div class="bending-demand-mu-factored-lbl"><strong id="shearMuCardTitle">Moment demand</strong></div>
+                      <div class="bending-demand-formula-strip" id="shearMuFormulaStrip"><span id="shearDemandMuPrefix">M<sub>a</sub></span> = <span id="shearMuFormula"><em>w</em>L<sup>2</sup>/8</span></div>
+                      <div class="bending-demand-flow-arrow" aria-hidden="true">▼</div>
+                      <div class="bending-demand-mu-result-cell">
+                        <input id="shearMu" class="out-green bending-demand-mu-calc-input" type="text" readonly value="--" aria-live="polite">
+                        <span class="bending-demand-unit-corner">kips-ft</span>
+                      </div>
+                    </div>
+                    <p class="bending-demand-instruction-strip"><em>INSTRUCTION: LEAVE THE YELLOW BOX BELOW AS <strong>0</strong> IF THE BEAM IS SIMPLY SUPPORTED.</em></p>
+                    <div class="bending-demand-mu-factored-lbl"><strong>Manual M<sub>u</sub> / M<sub>a</sub> (optional)</strong></div>
+                    <div class="bending-demand-manual-hero in-yellow">
+                      <input id="shearDesignManualMu" class="in-yellow bending-demand-manual-input" type="number" step="any" min="0" inputmode="decimal" value="0" aria-label="Manual moment override kip-ft, workbook Shear Design O46">
+                      <span class="bending-demand-unit-corner">kips-ft</span>
+                    </div>
+                    <div class="bending-defl-row bending-demand-defl-strip">
+                      <span class="bending-defl-label">Max deflection: <em>L</em> /</span>
+                      <input id="shearDesignDeflDivisor" class="in-yellow bending-demand-defl-input" type="number" step="any" min="1" inputmode="decimal" value="360" aria-label="Deflection limit denominator T50 for required Ix Y31">
+                    </div>
                   </div>
+                </div>
 
+                <div class="compression-col compression-col-right">
+                  <div class="tension-card compression-card bending-cap-analysis-card">
+                    <div class="bending-cap-analysis-buttons" role="group" aria-label="Open shear capacity analysis">
+                      <button type="button" id="shearDesignCapWithoutDeflBtn" class="bending-cap-analysis-btn is-selected" aria-pressed="true">
+                        <span class="bending-cap-analysis-btn-head">CAPACITY ANALYSIS</span>
+                        <span class="bending-cap-analysis-btn-sub">without considering</span>
+                        <span class="bending-cap-analysis-btn-sub">deflection</span>
+                      </button>
+                      <button type="button" id="shearDesignCapConsideringDeflBtn" class="bending-cap-analysis-btn" aria-pressed="false">
+                        <span class="bending-cap-analysis-btn-head">CAPACITY ANALYSIS</span>
+                        <span class="bending-cap-analysis-btn-sub">considering deflection</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="tension-card compression-card bending-ix-card" aria-label="Required Ix from Shear Design Y31">
+                    <h4 class="bending-ix-head">Required <em>I<sub>x</sub></em><span class="bending-ix-head-colon">:</span> <span class="bending-ix-head-sub">(FOR SIMPLE SUPPORT)</span></h4>
+                    <div id="shearDesignIxFormula" class="bending-ix-formula-strip bending-ix-formula-strip--workbook"><strong>Δ<sub>max</sub> = 5<em>w</em>L⁴/(384<em>E</em><em>I</em>)</strong></div>
+                    <div class="bending-ix-computed-block">
+                      <span class="bending-ix-inline-lbl"><em>I<sub>x</sub></em> =</span>
+                      <div class="bending-ix-teal-hero">
+                        <input id="shearDesignIxReq" class="out-green bending-ix-req-field" type="text" readonly value="—" aria-live="polite" tabindex="-1" title="Shear Design Y31 — LL-only service w; compared to member Ix on the considering-deflection capacity sheet.">
+                        <span class="bending-demand-unit-corner">in⁴</span>
+                      </div>
+                    </div>
+                    <p class="bending-ix-instruction-strip"><em>INSTRUCTION: LEAVE THE YELLOW BOX BELOW AS <strong>0</strong> IF THE BEAM IS SIMPLY SUPPORTED.</em></p>
+                    <div class="bending-ix-manual-heading"><strong>Required <em>I<sub>x</sub></em>:</strong></div>
+                    <div class="bending-ix-manual-block">
+                      <span class="bending-ix-inline-lbl"><em>I<sub>x</sub></em> =</span>
+                      <div class="bending-ix-yellow-hero in-yellow">
+                        <input id="shearDesignManualIx" class="in-yellow bending-ix-manual-field" type="number" step="any" min="0" inputmode="decimal" value="0" aria-label="Manual required I_x in fourth power (workbook yellow cell)">
+                        <span class="bending-demand-unit-corner">in⁴</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tension-card compression-card safe-card compression-safe-card bending-safe-result-card">
+                    <h4>Lightest safe section</h4>
+                    <div id="shearDesignSectionName" class="safe-name bending-safe-name bending-safe-section-hero" aria-live="polite">—</div>
+                    <div class="bending-safe-rows">
+                      <div class="bending-result-row">
+                        <span class="bending-result-lbl">Weight:</span>
+                        <input id="shearLineG38" class="in-yellow bending-result-val bending-safe-yellow-val" type="text" readonly value="--" aria-live="polite" aria-readonly="true" title="Weight plf — workbook">
+                        <span id="shearLineG38Unit" class="bending-result-unit">lb/ft</span>
+                      </div>
+                      <div class="bending-result-row">
+                        <span id="shearLineMaLbl" class="bending-result-lbl"><em>M</em><sub>a</sub>=</span>
+                        <input id="shearLineMa" class="in-yellow bending-result-val bending-safe-yellow-val" type="text" readonly value="--" aria-live="polite" aria-readonly="true" title="Design flexural strength for lightest section (workbook flexural line)">
+                        <span class="bending-result-unit">kips-ft</span>
+                      </div>
+                      <div class="bending-result-row">
+                        <span id="shearLineF41" class="bending-result-lbl"><em>V</em><sub>a</sub>=</span>
+                        <input id="shearLineG41" class="in-yellow bending-result-val bending-safe-yellow-val" type="text" readonly value="--" aria-live="polite" aria-readonly="true" title="Design shear strength">
+                        <span class="bending-result-unit">kips</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -19746,8 +20376,8 @@
                     <div class="bend-a-card bend-analysis-method-card">
                       <div class="bend-a-head">Analysis method</div>
                       <select id="shearAnalysisMethod" class="bend-method-chip in-yellow-a" aria-label="Analysis method">
-                        <option value="LRFD" selected>LRFD</option>
-                        <option value="ASD">ASD</option>
+                        <option value="LRFD">LRFD</option>
+                        <option value="ASD" selected>ASD</option>
                       </select>
                     </div>
                     <div class="bend-a-card bend-section-select-card">
@@ -19856,67 +20486,118 @@
                 </div>
               </div>
 
-              <div id="shearViewCapacity" class="bend-view bending-capacity-route-view" aria-hidden="true">
-                <div class="tension-card cd-view-card shear-cd-view-card">
-                  <div class="shear-cd-inputs-panel" aria-label="Shear capacity and demand inputs">
-                    <div class="shear-cd-toolbar">
-                      <h3 class="shear-cd-toolbar-title">Capacity inputs</h3>
-                      <button type="button" class="shear-cd-btn shear-cd-btn--primary" data-shear-view-switch="design">BACK TO DESIGN CALCULATOR</button>
-                    </div>
-                    <div class="shear-cd-fields-grid">
-                      <div class="shear-cd-field">
-                        <label for="shearCdMethod">Design method</label>
-                        <select id="shearCdMethod" class="in-yellow shear-cd-select" aria-label="LRFD or ASD (workbook SHEAR DESIGN F25)">
-                          <option value="LRFD" selected>LRFD</option>
-                          <option value="ASD">ASD</option>
+              <div id="shearViewCapacity" class="bend-view bending-capacity-route-view" aria-hidden="true" data-shear-cap-mode="noDefl">
+                <div class="bending-capacity-table-panel">
+                  <div class="tension-card compression-card bending-capacity-table-card bending-cap-db-card">
+                    <div class="bending-cap-db-shell">
+                      <div class="bending-cap-db-toolbar">
+                        <h4 id="shearCapDbTitle" class="bending-cap-db-title">Capacity Analysis Database</h4>
+                        <div class="bending-cap-db-actions">
+                          <button type="button" id="shearCapDbNavBtn" class="bending-cap-db-btn bending-cap-db-btn--primary" data-shear-view-switch="design">BACK TO DESIGN CALCULATOR</button>
+                          <button type="button" id="shearCapDbResetBtn" class="bending-cap-db-btn bending-cap-db-btn--muted">RESET</button>
+                        </div>
+                      </div>
+                      <div class="bending-cap-db-filters">
+                        <label class="sr-only" for="shearCapDbSearch">Filter designation</label>
+                        <input id="shearCapDbSearch" type="search" placeholder="Filter designation (e.g., W44X368)" autocomplete="off">
+                        <label class="sr-only" for="shearCapDbShape">Shapes</label>
+                        <select id="shearCapDbShape" aria-label="Shapes">
+                          <option value="">Shapes</option>
+                          <option value="W">W</option>
                         </select>
+                        <label class="sr-only" for="shearCapDbType">Type</label>
+                        <select id="shearCapDbType" aria-label="Type">
+                          <option value="">Type</option>
+                          <option value="rolled">Rolled</option>
+                        </select>
+                        <label class="sr-only" for="shearCapDbLabel">AISC Manual Label</label>
+                        <input id="shearCapDbLabel" type="search" placeholder="AISC_Manual_Label" autocomplete="off">
                       </div>
-                      <div class="shear-cd-field">
-                        <label for="shearCdGrade">Steel grade</label>
-                        <select id="shearCdGrade" class="in-yellow shear-cd-select" aria-label="ASTM grade"></select>
+                      <div class="bending-cap-db-meta">
+                        <span id="shearCapDbResultCount">0 results</span>
                       </div>
-                      <div class="shear-cd-field">
-                        <label for="shearCdE"><em>E</em> (ksi)</label>
-                        <input id="shearCdE" class="in-yellow" type="number" step="any" min="1" inputmode="decimal" value="29000" aria-label="Modulus E ksi workbook N12 P12" title="Workbook modulus (ksi); SHEAR DESIGN P12 / SHEAR ANALYSIS N12">
+
+                      <div id="shearCapSplitNoDefl" class="bending-cap-split-panel">
+                        <div class="bending-capacity-table-scroll bending-cap-db-table-wrap" tabindex="0">
+                          <table class="bending-capacity-table" aria-label="Shear capacity table without considering deflection">
+                            <thead>
+                              <tr>
+                                <th scope="col">Section</th>
+                                <th scope="col">W</th>
+                                <th scope="col">d</th>
+                                <th scope="col">t<sub>w</sub></th>
+                                <th scope="col">A<sub>w</sub></th>
+                                <th scope="col">λ<sub>f</sub></th>
+                                <th scope="col">λ<sub>w</sub></th>
+                                <th scope="col">Z<sub>x</sub></th>
+                                <th scope="col">S<sub>x</sub></th>
+                                <th scope="col">K<sub>c</sub></th>
+                                <th scope="col">λ<sub>pf</sub></th>
+                                <th scope="col">λ<sub>rf</sub></th>
+                                <th scope="col">M<sub>p</sub></th>
+                                <th scope="col">Compactness</th>
+                                <th scope="col">M<sub>n</sub></th>
+                                <th scope="col">W<sub>a</sub></th>
+                                <th scope="col">M<sub>a</sub> (w/ beam wt)</th>
+                                <th scope="col">M<sub>a</sub></th>
+                                <th scope="col">REMARKS (M<sub>a</sub>)</th>
+                                <th scope="col">φ<sub>v</sub></th>
+                                <th scope="col">Ω<sub>v</sub></th>
+                                <th scope="col">C<sub>v</sub></th>
+                                <th scope="col">V<sub>n</sub></th>
+                                <th scope="col">V<sub>a</sub></th>
+                                <th scope="col">REMARKS (V<sub>a</sub>)</th>
+                                <th scope="col">Eligibility</th>
+                              </tr>
+                            </thead>
+                            <tbody id="shearCapacityNoDeflBody"></tbody>
+                          </table>
+                        </div>
                       </div>
-                      <div class="shear-cd-field">
-                        <label for="shearCdFy"><em>F<sub>y</sub></em> (ksi)</label>
-                        <input id="shearCdFy" class="out-green" type="text" readonly tabindex="-1" aria-live="polite" value="" aria-label="Yield Fy from grade" title="From selected grade (workbook Z10)">
-                      </div>
-                      <div class="shear-cd-field">
-                        <label for="shearCdVuDemand"><em>V<sub>u</sub></em> required (kips)</label>
-                        <input id="shearCdVuDemand" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="" placeholder="72" aria-label="Required shear demand Vu kips workbook Z38" title="Compared to each row design strength P (Shear-Capacity); workbook SHEAR DESIGN Z38">
+
+                      <div id="shearCapSplitDefl" class="bending-cap-split-panel" hidden>
+                        <div class="bending-capacity-table-scroll bending-cap-db-table-wrap" tabindex="0">
+                          <table class="bending-capacity-table" aria-label="Shear capacity table considering deflection">
+                            <thead>
+                              <tr>
+                                <th scope="col">Section</th>
+                                <th scope="col">W</th>
+                                <th scope="col">d</th>
+                                <th scope="col">t<sub>w</sub></th>
+                                <th scope="col">A<sub>w</sub></th>
+                                <th scope="col">λ<sub>f</sub></th>
+                                <th scope="col">λ<sub>w</sub></th>
+                                <th scope="col">Z<sub>x</sub></th>
+                                <th scope="col">S<sub>x</sub></th>
+                                <th scope="col">K<sub>c</sub></th>
+                                <th scope="col">λ<sub>pf</sub></th>
+                                <th scope="col">λ<sub>rf</sub></th>
+                                <th scope="col">M<sub>p</sub></th>
+                                <th scope="col">Compactness</th>
+                                <th scope="col">M<sub>n</sub></th>
+                                <th scope="col">M<sub>a</sub></th>
+                                <th scope="col">I<sub>x</sub></th>
+                                <th scope="col">REMARKS (M<sub>u</sub>)</th>
+                                <th scope="col">REMARKS (I<sub>x</sub>)</th>
+                                <th scope="col">φ<sub>v</sub></th>
+                                <th scope="col">Ω<sub>v</sub></th>
+                                <th scope="col">C<sub>v</sub></th>
+                                <th scope="col">V<sub>n</sub></th>
+                                <th scope="col">V<sub>a</sub></th>
+                                <th scope="col">REMARKS (V<sub>a</sub>)</th>
+                                <th scope="col">Eligibility</th>
+                              </tr>
+                            </thead>
+                            <tbody id="shearCapacityDeflBody"></tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div class="shear-cd-table-shell" role="region" aria-label="Shear capacity analysis table">
-                    <table class="shear-cd-master-table" aria-label="Shear-Capacity workbook columns F through demand">
-                      <thead>
-                        <tr>
-                          <th scope="col">Section</th>
-                          <th scope="col">w</th>
-                          <th scope="col">d</th>
-                          <th scope="col"><em>t</em><sub>w</sub></th>
-                          <th scope="col"><em>A</em><sub>w</sub></th>
-                          <th scope="col"><em>h</em>/<em>t</em><sub>w</sub></th>
-                          <th scope="col">φ<sub>v</sub></th>
-                          <th scope="col">Ω<sub>v</sub></th>
-                          <th scope="col"><em>C</em><sub>v</sub></th>
-                          <th scope="col"><em>V</em><sub>n</sub></th>
-                          <th scope="col" id="shearCdHeadStrengthCol" title="Shear-Capacity column P: LRFD φv·Vn, ASD Vn/Ωv"><em>φV</em><sub>n</sub></th>
-                          <th scope="col"><em>V</em><sub>u</sub></th>
-                          <th scope="col">REMARKS</th>
-                          <th scope="col">W. Safe Sections</th>
-                          <th scope="col">Safe Sections</th>
-                          <th scope="col"><em>V</em><sub>u</sub></th>
-                        </tr>
-                      </thead>
-                      <tbody id="shearCdTableBody"></tbody>
-                    </table>
-                  </div>
-                  <p class="shear-cd-footnote">Workbook <strong>Shear-Capacity</strong>: column <strong>P</strong> is design shear strength (shown under φV<sub>n</sub> / V<sub>n</sub>/Ω<sub>v</sub>); <strong>V<sub>u</sub></strong> columns repeat required shear (Z38). REMARKS uses strict <strong>P &gt; V<sub>u</sub></strong>.</p>
                 </div>
               </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -20028,8 +20709,8 @@
   <script src="js/main.js"></script>
   <script src="js/section-properties-ui.js"></script>
   <script src="js/calculations-ui.js"></script>
-  <script src="js/compression-design-ui.js"></script>
-  <script src="js/tension-page-ui.js"></script>
+  <script src="js/compression-design-ui.js?v=20260511a"></script>
+  <script src="js/tension-page-ui.js?v=20260511c"></script>
   <script src="js/tension-rod-ui.js"></script>
   <script src="js/bending-design-workbook.js"></script>
   <script src="js/bending-design-ui.js"></script>

@@ -1,9 +1,11 @@
 /**
  * Born2BeSteel workbook formulas (Excel-accurate).
  * References:
- * - SHEAR DESIGN !I10:AA30, !O26, !R38, !Z38, !F38:G41
- * - Shear-Capacity !L:N, !O:P, !Q:S
- * - SHEAR ANALYSIS !Q39 (Cv), !F39 (LRFD φv), !K39 (ASD Ωv), !Y28 (Vn), !Y38 (design strength row)
+ * - SHEAR DESIGN !I10:AA30, !O26, !R38, !Z38/Z49 (lightest flexure & **`AC`** shear strength), !F38:G41
+ * - Shear Capacity no deflection / w deflection **`AC`** (design shear for **`AD`** SAFE vs `MAX(G51,G55)`), not legacy **`P`**
+ * - Shear-Capacity !L:N, !O:P, !Q:S (table helper column **`P`** remains available via `evaluateCapacityRow`)
+ * - SHEAR ANALYSIS !Q39 (Cv — Web Factor), !F39 (LRFD φv), !K39 (ASD Ωv), !Y28 (Vn), !Y38 (design strength)
+ *   Y38: IF(F9="LRFD",F39*Y28,IF(F9="ASD",Y28/K39)); Cv matches IF(G32<=1.1*√(5N12/X10),1,…)
  */
 (function (global) {
   "use strict";
@@ -14,7 +16,11 @@
    * @property {number} weightPlf
    * @property {number} d
    * @property {number} tw
-   * @property {number|null} lambdaW h/tw from Key Geometric Properties (Excel column K)
+   * @property {number|null} lambdaW h/tw from Key Geometric Properties (Excel column L)
+   * @property {number|null} [lambdaF] flange slenderness bf/2tf (Excel column K)
+   * @property {number|null} [Zx] plastic modulus Zx (in³) — Excel column M
+   * @property {number|null} [Sx] elastic section modulus Sx (in³) — Excel column N
+   * @property {number|null} [Ix] moment of inertia Ix (in⁴) — deflection capacity sheet column V
    */
 
   /**
@@ -68,17 +74,19 @@
   }
 
   /**
-   * Excel `SHEAR ANALYSIS` !Q39 — web shear coefficient Cv (numeric).
-   * IF(K≤2.24√(E/Fy),1, IF(K≤1.1√(5E/Fy),1, 1.1√(5E/Fy)/K))
+   * Excel `SHEAR ANALYSIS` Web Factor (!Q39 / G32 with N12=E, X10=Fy):
+   * IF(G32<=1.1*SQRT(5*N12/X10),1,
+   * IF(G32<=1.37*SQRT(5*N12/X10),(1.1*SQRT(5*N12/X10))/G32,(1.51*N12*5)/(X10*G32^2)))
    */
   function shearAnalysisCv(K, E, Fy) {
     if (!Number.isFinite(K) || !Number.isFinite(E) || !Number.isFinite(Fy) || K <= 0 || E <= 0 || Fy <= 0)
       return NaN;
-    var lim224 = 2.24 * Math.sqrt(E / Fy);
-    var lim110 = 1.1 * Math.sqrt((5 * E) / Fy);
-    if (K <= lim224) return 1;
-    if (K <= lim110) return 1;
-    return lim110 / K;
+    var sqrt5N12overX10 = Math.sqrt((5 * E) / Fy);
+    var lim11 = 1.1 * sqrt5N12overX10;
+    var lim137 = 1.37 * sqrt5N12overX10;
+    if (K <= lim11) return 1;
+    if (K <= lim137) return lim11 / K;
+    return (1.51 * E * 5) / (Fy * K * K);
   }
 
   /**
@@ -115,13 +123,13 @@
   }
 
   /**
-   * Excel `SHEAR ANALYSIS` !Y38 — strength shown on analysis row.
-   * LRFD: F39·Y28; ASD: K39·Y28 (workbook multiplies Ω×Vn).
+   * Excel `SHEAR ANALYSIS` !Y38 — IF(F9="LRFD",F39*Y28,IF(F9="ASD",Y28/K39)).
+   * LRFD: φv·Vn; ASD: Ωv·Vn (sheet multiplies by K39).
    */
   function shearAnalysisDesignStrength_kips(method, phiLRFD, omegaASD, Vn) {
     if (!Number.isFinite(Vn)) return NaN;
     if (method === "ASD") {
-      return Number.isFinite(omegaASD) ? omegaASD * Vn : NaN;
+      return Number.isFinite(omegaASD) ? Vn * omegaASD : NaN;
     }
     return Number.isFinite(phiLRFD) ? phiLRFD * Vn : NaN;
   }
@@ -196,6 +204,32 @@
   }
 
   /**
+   * Excel **`Shear Capacity no deflection` / `Shear Capacity w deflection` column `AC`** (design shear strength
+   * shown as **`Va=`/`Vu=` on Shear Design Z49**), NOT legacy column **`P`**.
+   *
+   * `LRFD`: `AC = AB × Y` where `AB = 0.6·Fy·Aw·Cv`, Cv matches SHEAR ANALYSIS (`shearAnalysisCv`),
+   * `Y = IF(htw ≤ 2.24√(E/Fy), 1, 0.9)`.
+   * `ASD`: `AC = AB / Z` where `Z = IF(htw ≤ 2.24√(E/Fy), 1.5, 1.67)`.
+   * Demand comparison (`AD`): **`AC > MAX(G51,G55)`** (strict `>`).
+   */
+  function shearCapacitySheetDesignStrengthAC_kips(sec, E, Fy, method) {
+    var Aw = sec.d * sec.tw;
+    var K =
+      sec.lambdaW != null && Number.isFinite(Number(sec.lambdaW)) ? Number(sec.lambdaW) : NaN;
+    if (!Number.isFinite(K) || !Number.isFinite(Aw) || Aw <= 0 || K <= 0) return NaN;
+    if (!Number.isFinite(E) || !Number.isFinite(Fy) || E <= 0 || Fy <= 0) return NaN;
+    var Cv = shearAnalysisCv(K, E, Fy);
+    var AB = 0.6 * Fy * Aw * Cv;
+    var lim224 = 2.24 * Math.sqrt(E / Fy);
+    if (method === "ASD") {
+      var Z = K <= lim224 ? 1.5 : 1.67;
+      return AB / Z;
+    }
+    var Y = K <= lim224 ? 1 : 0.9;
+    return AB * Y;
+  }
+
+  /**
    * One row of `Shear-Capacity` for current design inputs.
    * @param {ShearSectionProps} sec
    * @param {number} E ksi
@@ -258,6 +292,207 @@
     return best;
   }
 
+  function trimLower(s) {
+    return String(s == null ? "" : s)
+      .trim()
+      .toLowerCase();
+  }
+
+  function isConsideringDeflectionMode(deflectionMode) {
+    return trimLower(deflectionMode) === "considering deflection";
+  }
+
+  function isConsiderBeamWeightMode(beamWeightMode) {
+    return trimLower(beamWeightMode) === "consider beam weight";
+  }
+
+  /**
+   * Shear Design `Y31` — required Ix (in⁴) for LL-only uniform load and span L (ft).
+   * (T50*5*(G27*1/12)*(G33*12)^4)/(384*P12*(G33*12))
+   */
+  function requiredIxY31_in4(deflDivisor, ll_klf, Lft, E_ksi) {
+    var T50 = Number(deflDivisor);
+    var G27 = Number(ll_klf);
+    var G33 = Number(Lft);
+    var P12 = Number(E_ksi);
+    if (!Number.isFinite(T50) || T50 <= 0) return NaN;
+    if (!Number.isFinite(G27) || G27 < 0) return NaN;
+    if (!Number.isFinite(G33) || G33 <= 0) return NaN;
+    if (!Number.isFinite(P12) || P12 <= 0) return NaN;
+    var w_kipin = G27 / 12;
+    var L_in = G33 * 12;
+    return (T50 * 5 * w_kipin * Math.pow(L_in, 4)) / (384 * P12 * L_in);
+  }
+
+  /** Excel `Shear Capacity` flange S — COMPACT / NON-COMPACT / SLENDER (P,Q columns). */
+  function flangeSlendernessClassExcel(lambdaF, E, Fy) {
+    var K = Number(lambdaF);
+    if (!Number.isFinite(K) || K <= 0) return "";
+    var P = 0.38 * Math.sqrt(E / Fy);
+    var Q = 1 * Math.sqrt(E / Fy);
+    if (K < P) return "COMPACT";
+    if (K < Q) return "NON-COMPACT";
+    return "SLENDER";
+  }
+
+  /**
+   * Nominal flexural strength T (kip·ft) — column T on capacity sheets (before φ/Ω).
+   * @param {"noDefl"|"wDefl"} sheetVariant middle-branch Fy·Sx term matches each sheet.
+   */
+  function nominalFlexuralT_kipft(sec, E, Fy, sheetVariant) {
+    var Zx = sec.Zx != null && Number.isFinite(Number(sec.Zx)) ? Number(sec.Zx) : NaN;
+    var Sx = sec.Sx != null && Number.isFinite(Number(sec.Sx)) ? Number(sec.Sx) : NaN;
+    var Kf = sec.lambdaF != null && Number.isFinite(Number(sec.lambdaF)) ? Number(sec.lambdaF) : NaN;
+    var Kw = sec.lambdaW != null && Number.isFinite(Number(sec.lambdaW)) ? Number(sec.lambdaW) : NaN;
+    if (!Number.isFinite(Zx) || !Number.isFinite(Sx) || !Number.isFinite(Kf) || !Number.isFinite(Kw))
+      return NaN;
+    var R = (Fy * Zx) / 12;
+    var P = 0.38 * Math.sqrt(E / Fy);
+    var Q = 1 * Math.sqrt(E / Fy);
+    var O = 4 / Math.sqrt(Kw);
+    var cls = flangeSlendernessClassExcel(Kf, E, Fy);
+    if (cls === "COMPACT") return R;
+    // Workbook stored values for both no-deflection and considering-deflection sheets
+    // align to kip-ft units with /12 on the 0.7*Fy*Sx term.
+    var fySxTerm = (0.7 * Fy * Sx) / 12;
+    if (cls === "NON-COMPACT") {
+      return R - (R - fySxTerm) * ((Kf - P) / (Q - P));
+    }
+    return (0.9 * E * O * Sx) / (Kf * Kf);
+  }
+
+  /** Column W — LRFD 0.9·T, ASD T/1.67 */
+  function designFlexuralStrength_kipft(method, T_kipft) {
+    if (!Number.isFinite(T_kipft)) return NaN;
+    return method === "LRFD" ? 0.9 * T_kipft : T_kipft / 1.67;
+  }
+
+  /**
+   * Column U on `Shear Capacity no deflection` — factored line load (klf) for optional beam self-weight row;
+   * IF(ignore,0, ASD: DL+LL+w/1000, LRFD: 1.2*(DL+w/1000)+1.6*LL).
+   */
+  function lineLoadWithBeamWeight_klf(method, dl, ll, weightPlf, considerBeamWeight) {
+    if (!considerBeamWeight) return 0;
+    var wklf = Number(weightPlf) / 1000;
+    var d = Number(dl);
+    var l = Number(ll);
+    if (method === "ASD") return d + l + wklf;
+    return 1.2 * (d + wklf) + 1.6 * l;
+  }
+
+  function momentFromLineLoad_kipft(w_klf, Lft) {
+    var w = Number(w_klf);
+    var L = Number(Lft);
+    if (!Number.isFinite(w) || !Number.isFinite(L) || L <= 0) return NaN;
+    return (w * L * L) / 8;
+  }
+
+  /**
+   * One row of `Shear Capacity no deflection` (Born2BeSteel Final (5) sheet).
+   */
+  function evaluateShearCapacityNoDeflectionDesignRow(sec, ctx) {
+    var method = ctx.method;
+    var E = ctx.E;
+    var Fy = ctx.Fy;
+    var O39 = ctx.O39;
+    var O45 = ctx.O45;
+    var G51 = ctx.G51;
+    var G55 = ctx.G55;
+    var dl = ctx.dl;
+    var ll = ctx.ll;
+    var Lft = ctx.Lft;
+    var considerBw = ctx.considerBeamWeight;
+
+    var T = nominalFlexuralT_kipft(sec, E, Fy, "noDefl");
+    var W = designFlexuralStrength_kipft(method, T);
+    var U = lineLoadWithBeamWeight_klf(method, dl, ll, sec.weightPlf, considerBw);
+    var V = momentFromLineLoad_kipft(U, Lft);
+    var activeMu = Math.max(Number(O45) || 0, Number(O39) || 0, Number(V) || 0);
+    var momentRemark = Number.isFinite(W) && W > activeMu ? "SAFE!" : "UNSAFE :<";
+
+    var shearStrengthAC = shearCapacitySheetDesignStrengthAC_kips(sec, E, Fy, method);
+    var activeVu = Math.max(Number(G51) || 0, Number(G55) || 0);
+    var shearRemark =
+      Number.isFinite(shearStrengthAC) && shearStrengthAC > activeVu ? "SAFE" : "UNSAFE";
+
+    var aeYes = momentRemark === "SAFE!" && shearRemark === "SAFE";
+
+    return {
+      valid: Number.isFinite(shearStrengthAC) && Number.isFinite(W),
+      T: T,
+      W: W,
+      momentRemark: momentRemark,
+      shearDesignP: shearStrengthAC,
+      shearRemark: shearRemark,
+      aeYes: aeYes,
+    };
+  }
+
+  /**
+   * One row of `Shear Capacity w deflection` — moment (W), Ix (X), shear (AD), AE.
+   */
+  function evaluateShearCapacityWDeflectionDesignRow(sec, ctx) {
+    var method = ctx.method;
+    var E = ctx.E;
+    var Fy = ctx.Fy;
+    var O39 = ctx.O39;
+    var O46 = ctx.O46;
+    var Y31 = ctx.Y31;
+    var G51 = ctx.G51;
+    var G55 = ctx.G55;
+
+    var T = nominalFlexuralT_kipft(sec, E, Fy, "wDefl");
+    var U = designFlexuralStrength_kipft(method, T);
+    var activeMu = Number(O46) > 0 ? Number(O46) : Number(O39) || 0;
+    var momentRemark = Number.isFinite(U) && U > activeMu ? "SAFE!" : "UNSAFE :<";
+
+    var Ix = sec.Ix != null && Number.isFinite(Number(sec.Ix)) ? Number(sec.Ix) : NaN;
+    var ixRemark =
+      Number.isFinite(Ix) && Number.isFinite(Y31) && Ix > Y31 ? "SAFE!" : "UNSAFE :<";
+
+    var shearStrengthAC = shearCapacitySheetDesignStrengthAC_kips(sec, E, Fy, method);
+    var activeVu = Math.max(Number(G51) || 0, Number(G55) || 0);
+    var shearRemark =
+      Number.isFinite(shearStrengthAC) && shearStrengthAC > activeVu ? "SAFE" : "UNSAFE";
+
+    var aeYes = ixRemark === "SAFE!" && shearRemark === "SAFE" && momentRemark === "SAFE!";
+
+    return {
+      valid: Number.isFinite(shearStrengthAC) && Number.isFinite(U),
+      T: T,
+      U: U,
+      momentRemark: momentRemark,
+      ixRemark: ixRemark,
+      shearDesignP: shearStrengthAC,
+      shearRemark: shearRemark,
+      aeYes: aeYes,
+    };
+  }
+
+  function lightestShearDesignCapacitySection(orderedLabels, byUpperLabel, ctx) {
+    var best = null;
+    for (var i = 0; i < orderedLabels.length; i++) {
+      var lab = orderedLabels[i];
+      var sec = byUpperLabel[lab];
+      if (!sec) continue;
+      var row = ctx.consideringDeflection
+        ? evaluateShearCapacityWDeflectionDesignRow(sec, ctx)
+        : evaluateShearCapacityNoDeflectionDesignRow(sec, ctx);
+      if (!row.valid || !row.aeYes) continue;
+      var w = Number(sec.weightPlf);
+      if (!best || w < best.weightPlf || (w === best.weightPlf && i < best.orderIndex)) {
+        best = {
+          label: sec.aiscManualLabel,
+          weightPlf: w,
+          phiVnOrAllow: row.shearDesignP,
+          orderIndex: i,
+          flexuralDesign_kipft: ctx.consideringDeflection ? row.U : row.W,
+        };
+      }
+    }
+    return best;
+  }
+
   function computeShearDesign(inputs) {
     var method = inputs.method === "ASD" ? "ASD" : "LRFD";
     var dl = Number(inputs.dl);
@@ -265,13 +500,45 @@
     var Lft = Number(inputs.Lft);
     var E = Number(inputs.E);
     var Fy = Number(inputs.Fy);
+    var deflectionMode =
+      inputs.deflectionMode != null ? inputs.deflectionMode : "without considering deflection";
+    var beamWeightMode =
+      inputs.beamWeightMode != null ? inputs.beamWeightMode : "consider beam weight";
+    var deflDivisor = inputs.deflDivisor != null ? Number(inputs.deflDivisor) : 360;
+    var manualMu = inputs.manualMu != null ? Number(inputs.manualMu) : 0;
+    var G55 = inputs.G55 != null ? Number(inputs.G55) : 0;
+
+    var consideringDeflection = isConsideringDeflectionMode(deflectionMode);
+    var considerBeamWeight = isConsiderBeamWeightMode(beamWeightMode);
+
     var loads = governingUniformLoad(method, dl, ll);
     var Wu = loads.O26;
     var Mu_kipft = momentDemand_kipft(Wu, Lft);
     var Vu = shearDemand_kips(Wu, Lft);
     var orderedLabels = inputs.orderedLabels || [];
     var byUpperLabel = inputs.byUpperLabel || {};
-    var pick = lightestSafeSection(orderedLabels, byUpperLabel, E, Fy, method, Vu);
+
+    var Y31 = requiredIxY31_in4(deflDivisor, ll, Lft, E);
+
+    var ctx = {
+      method: method,
+      E: E,
+      Fy: Fy,
+      O39: Mu_kipft,
+      O45: 0,
+      O46: manualMu,
+      Y31: Y31,
+      G51: Vu,
+      G55: G55,
+      dl: dl,
+      ll: ll,
+      Lft: Lft,
+      considerBeamWeight: considerBeamWeight,
+      consideringDeflection: consideringDeflection,
+    };
+
+    var pick = lightestShearDesignCapacitySection(orderedLabels, byUpperLabel, ctx);
+
     return {
       method: method,
       dl: dl,
@@ -284,6 +551,10 @@
       governingWu: Wu,
       Mu_kipft: Mu_kipft,
       Vu_kips: Vu,
+      Y31_ixRequired_in4: Y31,
+      deflectionMode: deflectionMode,
+      beamWeightMode: beamWeightMode,
+      deflDivisor: deflDivisor,
       lightest: pick,
     };
   }
@@ -305,7 +576,13 @@
     shearAnalysisDesignStrength_kips: shearAnalysisDesignStrength_kips,
     evaluateCapacityRow: evaluateCapacityRow,
     evaluateShearAnalysisRow: evaluateShearAnalysisRow,
+    shearCapacitySheetDesignStrengthAC_kips: shearCapacitySheetDesignStrengthAC_kips,
     lightestSafeSection: lightestSafeSection,
+    requiredIxY31_in4: requiredIxY31_in4,
+    flangeSlendernessClassExcel: flangeSlendernessClassExcel,
+    nominalFlexuralT_kipft: nominalFlexuralT_kipft,
+    evaluateShearCapacityNoDeflectionDesignRow: evaluateShearCapacityNoDeflectionDesignRow,
+    evaluateShearCapacityWDeflectionDesignRow: evaluateShearCapacityWDeflectionDesignRow,
     computeShearDesign: computeShearDesign,
   };
 

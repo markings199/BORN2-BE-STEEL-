@@ -41,6 +41,29 @@
     el.textContent = String(v == null ? "" : v);
   }
 
+  /** Visible text = FN17; `title` carries nested-IF parity (no layout change). */
+  function syncBendClassificationDisplay(v) {
+    var el = getEl("bendClass");
+    if (!el) return;
+    if (!v) {
+      el.textContent = "—";
+      el.removeAttribute("title");
+      return;
+    }
+    var fn17 = v.flangeClassFn17 != null ? v.flangeClassFn17 : v.flangeClass;
+    var nested = v.flangeClassNestedIf != null ? v.flangeClassNestedIf : fn17;
+    el.textContent = String(fn17 != null ? fn17 : "—");
+    var tip =
+      "FN17 (='aisc shapes database (2)'!FN17): " +
+      fn17 +
+      " · Nested IF (IF(FN7<N33),IF(FN7<N35),…)): " +
+      nested;
+    if (v.classificationFormulasMatch === false) {
+      tip += " — workbook paths differ";
+    }
+    el.setAttribute("title", tip);
+  }
+
   function activeBendViewIsAnalysis() {
     var v = getEl("bendAnalysisView");
     return !!(v && v.classList.contains("is-active"));
@@ -59,7 +82,7 @@
     /**
      * Rows for the picker + `computeBorn2BeSteelAnalysis`:
      * Prefer `bendingAnalysisCatalog` from `aisc-sections.json` (Excel `aisc shapes database (2)` row order).
-     * Fallback: Key Geometric Properties rows passing `analysisExcelCatalogRow`.
+     * Fallback: Key Geometric Properties rows passing `analysisExcelCatalogRow` (W-shapes only).
      */
     catalogRows: [],
     /** When true, catalog + order come from Excel `aisc shapes database (2)` (see bendingAnalysisCatalog). */
@@ -73,8 +96,6 @@
     excelTypesActive: { W: false, L: false },
     excelShapeMulti: false,
     excelTypeMulti: false,
-    /** Match shipped workbook startup (FN17 refs blank -> 0) until user edits Design inputs. */
-    useDesignFn17: false,
     selected: null,
     method: "ASD",
     selectedGrade: PREFERRED_ANALYSIS_GRADE,
@@ -94,26 +115,6 @@
     return BEND_ANALYSIS_GEOM_KEYS.every(function (k) {
       return Number.isFinite(Number(s[k]));
     });
-  }
-
-  /** Excel-backed picker lists Type=L angles plus Type=W; only W rows satisfy bending FN geometry checks. */
-  function bendingPickerCatalogRow(s) {
-    if (!s || s.designation == null) return false;
-    var ty = String(s.type || "").toUpperCase();
-    if (ty === "W") return analysisExcelCatalogRow(s);
-    if (ty === "L") {
-      var zx = Number(s.Zx);
-      var sx = Number(s.Sx);
-      var d = Number(s.d);
-      var ag = Number(s.Ag);
-      return (
-        Number.isFinite(zx) &&
-        Number.isFinite(sx) &&
-        (Number.isFinite(d) || Number.isFinite(ag)) &&
-        String(s.designation).trim() !== ""
-      );
-    }
-    return false;
   }
 
   /** Union of Excel `Shapes` symbols for currently active shape chips (see catalog meta). */
@@ -522,7 +523,7 @@
       setVal("bendLambdaRF", "--");
       setVal("bendLambdaPFDesign", "--");
       setVal("bendLambdaRFDesign", "--");
-      setText("bendClass", "—");
+      syncBendClassificationDisplay(null);
       setVal("bendMn", "--");
       setVal("bendMa", "--");
       out.textContent =
@@ -544,7 +545,7 @@
       setVal("bendLambdaRF", "--");
       setVal("bendLambdaPFDesign", "--");
       setVal("bendLambdaRFDesign", "--");
-      setText("bendClass", "—");
+      syncBendClassificationDisplay(null);
       setVal("bendMn", "--");
       setVal("bendMa", "--");
       var isAngle =
@@ -584,21 +585,27 @@
       return;
     }
 
-    /** `Bending Design`!O12 / X10 — drive FN17 λ limits and compact Mp (FN19) like Excel. */
+    /**
+     * λ_pf / λ_rf **(Design)** — same formulas as `Bending Design` slenderness limits: 0.38√(E/Fy) and √(E/Fy)
+     * using **Design** `bendingDesignE` and Design yield when present (`bendingDesignFy`), else Analysis **Fy**
+     * so the fields populate like Final (3).xlsx when the Design row mirrors Analysis material.
+     */
     var eDesign = readNumber(getEl("bendingDesignE"));
     var fyDesign = readNumber(getEl("bendingDesignFy"));
+    var fyForDesignLimits =
+      fyDesign != null && fyDesign > 0 ? fyDesign : fy;
     var lpFn17 = 0;
     var lrFn17 = 0;
     if (
-      state.useDesignFn17 &&
       eDesign != null &&
       eDesign > 0 &&
-      fyDesign != null &&
-      fyDesign > 0
+      fyForDesignLimits != null &&
+      fyForDesignLimits > 0
     ) {
-      lpFn17 = WB.lambdaPfAnalysis(eDesign, fyDesign);
-      lrFn17 = WB.lambdaRfAnalysis(eDesign, fyDesign);
+      lpFn17 = WB.lambdaPfAnalysis(eDesign, fyForDesignLimits);
+      lrFn17 = WB.lambdaRfAnalysis(eDesign, fyForDesignLimits);
     }
+    /** Excel `aisc shapes database (2)`!FN19 = `Bending Design`!X10 × FN9 / 12 — Mp follows Design X10 when set, else Analysis W10. */
     var fyMp =
       fyDesign != null && fyDesign > 0 ? fyDesign : fy;
 
@@ -625,6 +632,8 @@
     if (!r.ok) {
       out.textContent = r.error;
       out.classList.add("is-error");
+      var bcErr = getEl("bendClass");
+      if (bcErr) bcErr.removeAttribute("title");
       return;
     }
 
@@ -647,9 +656,9 @@
       "bendLambdaRFDesign",
       Number.isFinite(v.lambdaRfFn17) ? fmtTrim(v.lambdaRfFn17, 4) : "--"
     );
-    setText("bendClass", v.flangeClass);
-    setVal("bendMn", fmtFixed(v.Mn_kip_in, 4));
-    setVal("bendMa", fmtFixed(v.Mdesign_kip_in, 4));
+    syncBendClassificationDisplay(v);
+    setVal("bendMn", fmtFixed(v.Mn_kip_ft, 4));
+    setVal("bendMa", fmtFixed(v.Mdesign_kip_ft, 4));
 
     out.textContent = "";
   }
@@ -713,14 +722,16 @@
 
   function bind() {
     var list = getEl("bendSectionList");
-    var methodEl = getEl("bendMethodToggle");
-    if (!list || !methodEl) return;
+    if (!list) return;
 
-    methodEl.addEventListener("change", function () {
-      state.method = methodEl.value === "LRFD" ? "LRFD" : "ASD";
-      updateMethodUI();
-      computeAndRender(true);
-    });
+    var methodEl = getEl("bendMethodToggle");
+    if (methodEl) {
+      methodEl.addEventListener("change", function () {
+        state.method = methodEl.value === "LRFD" ? "LRFD" : "ASD";
+        updateMethodUI();
+        computeAndRender(true);
+      });
+    }
 
     var eEl = getEl("bendAnalysisE");
     var gradeEl = getEl("bendAnalysisGrade");
@@ -827,8 +838,7 @@
   /** Recompute Analysis when Design-calculator material inputs change (Excel cross-sheet refs). */
   function bindAnalysisFromDesignInputs() {
     function refresh() {
-      state.useDesignFn17 = true;
-      if (activeBendViewIsAnalysis()) computeAndRender(true);
+      computeAndRender(true);
     }
     ["bendingDesignE", "bendingDesignFy"].forEach(function (id) {
       var el = getEl(id);
@@ -899,9 +909,8 @@
 
         state.catalogRows = srcRows
           .map(function (s) {
-            var ok = state.useExcelDb2Catalog
-              ? bendingPickerCatalogRow(s)
-              : analysisExcelCatalogRow(s);
+            /** Only rolled W-shapes with full FN geometry — matches `computeBorn2BeSteelAnalysis` / workbook U33. */
+            var ok = analysisExcelCatalogRow(s);
             if (!ok) return null;
             var d = String(s.designation).toUpperCase();
             var copy = Object.assign({}, s, { designation: d });

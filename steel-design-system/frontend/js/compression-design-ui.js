@@ -15,30 +15,29 @@
       { label: "PINNED-PINNED", K: 1 },
       { label: "N/A", K: 0 },
     ],
-    /* Key Geometric Properties (AISC-shaped): ASD Pa @ Fy=50, E=29000, Klx=24′, Kly=11.2′ matches workbook screenshot rows. */
-    /* Props aligned with `compression-capacity.json` @ KLx=24′, KLy,max=11.2′ — Pu matches workbook Capacity Analysis. */
+    /* Properties pulled from `compression-capacity.json` rows that match workbook `Compression-Design ` probable sections. */
     champions: [
       { tier: 1, designation: "W14X48", weightPlf: 48, Ag: 14.1, rx: 5.85, ry: 1.91, lambdaFlange: 6.75, lambdaWeb: 33.6 },
-      { tier: 2, designation: "W12X40", weightPlf: 40, Ag: 11.7, rx: 5.13, ry: 1.94, lambdaFlange: 7.77, lambdaWeb: 33.6 },
-      { tier: 3, designation: "W10X26", weightPlf: 26, Ag: 7.61, rx: 4.35, ry: 1.36, lambdaFlange: 6.56, lambdaWeb: 34 },
-      { tier: 4, designation: "W8X24", weightPlf: 24, Ag: 7.08, rx: 3.42, ry: 1.61, lambdaFlange: 8.12, lambdaWeb: 25.9 },
+      { tier: 2, designation: "W12X45", weightPlf: 45, Ag: 13.1, rx: 5.15, ry: 1.95, lambdaFlange: 7.0, lambdaWeb: 29.6 },
+      { tier: 3, designation: "W10X45", weightPlf: 45, Ag: 13.3, rx: 4.32, ry: 2.01, lambdaFlange: 6.47, lambdaWeb: 22.5 },
+      { tier: 4, designation: "W8X40", weightPlf: 40, Ag: 11.7, rx: 3.53, ry: 2.04, lambdaFlange: 7.21, lambdaWeb: 17.6 },
     ],
   };
 
-  /** `Compression-Design ` workbook defaults (Born2BeSteel Final (2).xlsx). */
+  /** `Compression-Design ` workbook defaults (`Born2BeSteel Final (5) (1).xlsx`). */
   var EXCEL_COMPRESSION_DESIGN_DEFAULTS = {
-    method: "LRFD", // G15
+    method: "ASD", // G15
     grade: "A992", // H29
-    deadLoadKips: 90, // H43
-    liveLoadKips: 320, // H53
+    deadLoadKips: 20, // H43
+    liveLoadKips: 80, // H53
     modulusEKsi: 29000, // H61
     slenderness: {
-      X1: { cond: "FIXED-PINNED", L: 30 }, // R45, X45
+      X1: { cond: "PINNED-PINNED", L: 22 }, // R45, X45
       X2: { cond: "N/A", L: "" }, // R49, X49(blank)
       X3: { cond: "N/A", L: "" }, // R52, X52(blank)
-      Y1: { cond: "PINNED-PINNED", L: 8 }, // R55, X55
-      Y2: { cond: "FIXED-PINNED", L: 14 }, // R58, X58
-      Y3: { cond: "PINNED-PINNED", L: 8 }, // R60, X60
+      Y1: { cond: "PINNED-PINNED", L: 22 }, // R55, X55
+      Y2: { cond: "N/A", L: 14 }, // R58, X58
+      Y3: { cond: "N/A", L: 8 }, // R60, X60
     },
   };
 
@@ -76,21 +75,68 @@
   }
 
   function fyFromGrade(grade) {
-    var g = String(grade || "").trim().toUpperCase();
-    if (g === "A36") return 36;
-    if (g === "A572") return 50;
-    return 50; // A992 default in workbook sample
+    var key = String(grade || "").trim();
+    var svc = window.SteelGradesService;
+    if (svc && typeof svc.fyFor === "function") {
+      var fySvc = svc.fyFor(key);
+      if (Number.isFinite(fySvc)) return fySvc;
+    }
+    var born = window.Born2BeSteel && Array.isArray(window.Born2BeSteel.steelGrades)
+      ? window.Born2BeSteel.steelGrades
+      : [];
+    for (var i = 0; i < born.length; i++) {
+      var g = born[i];
+      if (!g || String(g.astm || "").trim() !== key) continue;
+      var fy = Number(g.fy);
+      if (Number.isFinite(fy)) return fy;
+    }
+    return 50;
   }
 
-  /** Demand combinations from workbook mode switch (`LRFD` / `ASD`). */
+  function steelGradeRows() {
+    var svc = window.SteelGradesService;
+    if (svc && typeof svc.getGrades === "function") {
+      var rows = svc.getGrades();
+      if (rows && rows.length) return rows.slice();
+    }
+    var born = window.Born2BeSteel && Array.isArray(window.Born2BeSteel.steelGrades)
+      ? window.Born2BeSteel.steelGrades
+      : [];
+    return born.slice();
+  }
+
+  function populateCompressionSteelGradeOptions() {
+    var gradeSel = el("compressionDesignGrade");
+    if (!gradeSel) return;
+    var rows = steelGradeRows();
+    if (!rows.length) return;
+    var keep = String(gradeSel.value || EXCEL_COMPRESSION_DESIGN_DEFAULTS.grade).trim();
+    gradeSel.innerHTML = "";
+    rows.forEach(function (gr) {
+      if (!gr || !gr.astm) return;
+      var opt = document.createElement("option");
+      opt.value = String(gr.astm).trim();
+      opt.textContent = String(gr.astm).trim();
+      gradeSel.appendChild(opt);
+    });
+    var hasKeep = Array.prototype.some.call(gradeSel.options, function (o) {
+      return o.value === keep;
+    });
+    gradeSel.value = hasKeep ? keep : String(rows[0].astm).trim();
+  }
+
+  /**
+   * Demand combinations — matches `Compression-Design` Tu row:
+   * IF(G15="LRFD",MAX(AG9,AG11),IF(G15="ASD",AG9)) with AG9/AG11 = LRFD combo rows (1.2DL+1.6LL and 1.4DL); ASD uses AG9 = DL+LL.
+   */
   function demandByMethod(method, dl, ll) {
     var isAsd = String(method || "LRFD").toUpperCase() === "ASD";
     if (isAsd) {
+      var asdAg9 = dl + ll;
       return {
-        combo1: dl + ll,
+        combo1: asdAg9,
         combo2: null,
-        /** Workbook Demand Analysis: Ta governing row is 0 kips; DL + LL row still reports DL+LL (informational). */
-        governing: 0,
+        governing: asdAg9,
       };
     }
     var c1 = 1.2 * dl + 1.6 * ll;
@@ -98,8 +144,7 @@
     return {
       combo1: c1,
       combo2: c2,
-      /** Workbook Capacity Analysis: Tu = MIN(1.2DL+1.6LL, 1.4DL) for displayed governing demand. */
-      governing: Math.min(c1, c2),
+      governing: Math.max(c1, c2),
     };
   }
 
@@ -313,7 +358,7 @@
     if (probHead) probHead.textContent = method === "ASD" ? "Pa (kips)" : "Pu (kips)";
     if (d1) d1.value = fmtDemandVal(demandCombo1, 3);
     if (d2) d2.value = Number.isFinite(demandCombo2) ? fmtDemandVal(demandCombo2, 3) : "-";
-    if (dg) dg.value = method === "ASD" ? "0" : fmtDemandVal(demandPu, 3);
+    if (dg) dg.value = fmtDemandVal(demandPu, 3);
 
     var klxMaxFt = readAxisRows("X");
     var klyMaxFt = readAxisRows("Y");
@@ -400,6 +445,13 @@
   }
 
   function wire() {
+    populateCompressionSteelGradeOptions();
+    if (window.SteelGradesService && typeof window.SteelGradesService.onUpdate === "function") {
+      window.SteelGradesService.onUpdate(function () {
+        populateCompressionSteelGradeOptions();
+        recompute();
+      });
+    }
     ["compressionDesignMethod", "compressionDesignGrade", "compressionDesignFy", "compressionDesignE", "compressionDesignDl", "compressionDesignLl"].forEach(function (id) {
       var node = el(id);
       if (!node) return;

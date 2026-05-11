@@ -48,7 +48,10 @@
     var headEl = card && card.querySelector(".bend-a-head.shear-analysis-head-mixed");
     var rowEl = vuInput.closest(".bend-nominal-row");
     var symLabel = rowEl && rowEl.querySelector(".bend-nominal-label");
-    if (headEl) headEl.textContent = asd ? "ALLOWABLE SHEAR" : "ULTIMATE SHEAR";
+    if (headEl) {
+      headEl.textContent = asd ? "ALLOWABLE SHEAR" : "ULTIMATE SHEAR";
+      headEl.classList.toggle("is-ultimate-shear", !asd);
+    }
     if (symLabel) symLabel.innerHTML = asd ? "<em>T</em><sub>a</sub> =" : "<em>T</em><sub>u</sub> =";
     vuInput.readOnly = true;
     vuInput.setAttribute("aria-readonly", "true");
@@ -63,7 +66,7 @@
     );
     if (Number.isFinite(ds)) {
       setShearStrengthOutputTitle(
-        (asd ? "ASD: Ta = Y38 = Ωv·Vn (sheet). " : "LRFD: Tu = Y38 = φv·Vn (sheet). ") +
+        (asd ? "ASD: Ta = Y38 = K39·Y28 = Ωv·Vn (sheet). " : "LRFD: Tu = Y38 = F39·Y28 = φv·Vn (sheet). ") +
           fmt(ds, 4) +
           " kips."
       );
@@ -91,7 +94,7 @@
     typeFilter: "W",
     selected: null,
     _selectedProps: null,
-    method: "LRFD",
+    method: "ASD",
     selectedGrade: PREFERRED_GRADE,
   };
 
@@ -403,7 +406,11 @@
 
         renderFilterChips();
         renderList();
-        var pick = state.byDesignation["W14X193"] || state.byDesignation["W12X45"] || state.catalogRows[0];
+        var pick =
+          state.byDesignation["W30X99"] ||
+          state.byDesignation["W14X193"] ||
+          state.byDesignation["W12X45"] ||
+          state.catalogRows[0];
         if (pick) selectSection(pick.designation);
         else computeAndRender(true);
       });

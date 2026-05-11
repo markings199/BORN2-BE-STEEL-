@@ -62,7 +62,7 @@
   var capDbNavBtn = byId("bendingCapDbNavBtn");
 
   var state = {
-    method: "LRFD",
+    method: "ASD",
     deflectionMode: "without considering deflection",
     beamWeightMode: "consider beam weight",
     grades: [],
@@ -570,14 +570,10 @@
       el.innerHTML =
         m === "LRFD"
           ? "<strong>M<sub>u</sub> (Factored Moment):</strong>"
-          : "<strong>M<sub>a</sub> (Allowable Moment):</strong>";
+          : "<strong>M<sub>u</sub> (Allowable Moment):</strong>";
     });
     var formulaStrip = byId("bendingDemandFormulaDisplay");
-    if (formulaStrip)
-      formulaStrip.innerHTML =
-        m === "LRFD"
-          ? "M<sub>u</sub> = <em>w</em>L²/8"
-          : "M<sub>a</sub> = <em>w</em>L²/8";
+    if (formulaStrip) formulaStrip.innerHTML = "M<sub>u</sub> = <em>w</em>L²/8";
     var manualIns = byId("bendingDemandManualInstruction");
     if (manualIns)
       manualIns.innerHTML =
@@ -794,7 +790,7 @@
     setOut(outIxReq, fmt(ixReq, 6));
     if (outIxFormula)
       outIxFormula.innerHTML =
-        "<span class=\"bending-ix-formula-main\">Δ<sub>max</sub> = 5<em>WL</em>⁴/(384<em>EI</em>)</span>";
+        "<span class=\"bending-ix-formula-main\"><strong>Δ<sub>max</sub> = 5<em>WL</em>⁴/(384<em>EI</em>)</strong></span>";
 
     var deflectionNorm = normalizeMode(state.deflectionMode);
     var beamWeightNorm = normalizeMode(state.beamWeightMode);
@@ -813,6 +809,7 @@
       deflectionNorm: deflectionNorm,
       beamWeightNorm: beamWeightNorm,
     };
+
 
     var pick = null;
     if (
@@ -833,9 +830,32 @@
       safeWeight,
       pick && pick.sec ? fmtLoose(pick.sec.weightPlf, 0) : "--"
     );
+    var safePhiMnDisplay = null;
+    if (pick && Number.isFinite(pick.phiMn)) {
+      /* Workbook `Bending Design!Z47` uses MINIFS over SAFE rows on the active capacity sheet. */
+      if (deflectionNorm === normalizeMode("without considering deflection")) {
+        var rowsNoDefl = WB.capacityAnalysisRowsWithoutDeflection(
+          state.catalog,
+          method,
+          sec0,
+          fy,
+          E
+        );
+        var minSafe = rowsNoDefl
+          .filter(function (r) {
+            return r && r.safe && Number.isFinite(r.phiMn);
+          })
+          .reduce(function (m0, r) {
+            return Math.min(m0, r.phiMn);
+          }, Infinity);
+        safePhiMnDisplay = Number.isFinite(minSafe) ? minSafe : pick.phiMn;
+      } else {
+        safePhiMnDisplay = pick.phiMn;
+      }
+    }
     setOut(
       safePhiMn,
-      pick && Number.isFinite(pick.phiMn) ? fmtLoose(pick.phiMn, 2) : "--"
+      Number.isFinite(safePhiMnDisplay) ? fmtLoose(safePhiMnDisplay, 6) : "--"
     );
 
     if (resultBendingDesign) resultBendingDesign.textContent = "";
@@ -956,10 +976,18 @@
               gradeSel.appendChild(opt);
             });
           }
+          /** Workbook default (`Bending Design`): Grade A992 -> Fy=50 (R9/X10). */
           var pref =
             state.grades.find(function (g) {
-              return String(g.astm).trim() === "A572 Gr. 60";
-            }) || state.grades[0];
+              return String(g.astm).trim() === "A992";
+            }) ||
+            state.grades.find(function (g) {
+              return String(g.astm).trim() === "A572 Gr. 50";
+            }) ||
+            state.grades.find(function (g) {
+              return String(g.astm).trim() === "A618 Gr. I, II";
+            }) ||
+            state.grades[0];
           setGrade(pref ? pref.astm : "");
           recompute();
         });

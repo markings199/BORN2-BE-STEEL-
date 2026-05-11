@@ -519,16 +519,16 @@
     var compressionAnalysisCatalog = [];
     var compressionNsShapeFilter = "all";
     var compressionNsTypeFilter = "all";
-    /** `Compression-Analysis` workbook defaults (Born2BeSteel Final (2).xlsx). */
+    /** `Compression-Analysis` workbook defaults (`Born2BeSteel Final (6).xlsx`). */
     var EXCEL_COMPRESSION_ANALYSIS_DEFAULTS = {
       method: "LRFD", // G15
       grade: "A992", // H25
       fy: 50, // G29 (from grade)
       fu: 65, // K29 (from grade)
       modulusEKsi: 29000, // I31
-      sectionDesignation: "L10X10X1-1/4", // selected list row in workbook snapshot (Ag=23.4, rx=ry=3.02)
-      shapeFilter: "L",
-      typeFilter: "L",
+      sectionDesignation: "W8X48", // P34/U31/U33 row set (Ag=14.1, rx=3.61, ry=2.08, λf=5.92, λw=15.9)
+      shapeFilter: "I",
+      typeFilter: "W",
       slenderness: {
         X1: { cond: "PINNED-PINNED", L: 50 }, // Q47, W47
         X2: { cond: "N/A", L: "" }, // Q51, W51(blank)
@@ -537,9 +537,8 @@
         Y2: { cond: "N/A", L: "" }, // Q60, W60(blank)
         Y3: { cond: "N/A", L: "" }, // Q62, W62(blank)
       },
-      // Load fields are not visibly used in the workbook snapshot but keep deterministic defaults from compression page.
-      deadLoadKips: 90,
-      liveLoadKips: 320,
+      deadLoadKips: 20, // DL (analysis)
+      liveLoadKips: 80, // LL (analysis)
     };
 
     function n(id, fallback) {
@@ -592,14 +591,20 @@
         populateCompressionBoundarySelect(document.getElementById(id));
       });
     }
+    /** Prefer `lambdaF` / `lambdaW` from Key Geometric Properties (Excel export); fall back to geometry when absent. */
     function compressionSectionLambdas(sec) {
       if (!sec || sec.type === "L") return { lf: NaN, lw: NaN };
       var bf = sec.bf,
         tf = sec.tf,
         tw = sec.tw,
         d = sec.d;
-      if (!(bf > 0 && tf > 0 && tw > 0 && d > 0)) return { lf: NaN, lw: NaN };
-      return { lf: bf / (2 * tf), lw: (d - 2 * tf) / tw };
+      var lfCat = Number(sec.lambdaF);
+      var lwCat = Number(sec.lambdaW);
+      var lfGeom = bf > 0 && tf > 0 ? bf / (2 * tf) : NaN;
+      var lwGeom = tw > 0 && d > 0 && tf >= 0 ? (d - 2 * tf) / tw : NaN;
+      var lf = Number.isFinite(lfCat) && lfCat > 0 ? lfCat : lfGeom;
+      var lw = Number.isFinite(lwCat) && lwCat > 0 ? lwCat : lwGeom;
+      return { lf: lf, lw: lw };
     }
     /** UI Shapes map: workbook/I-shape bucket displays as `I` while underlying type remains `W`. */
     function compressionShapeFromSection(sec) {
@@ -836,14 +841,14 @@
       setClassLabel(
         "compressionAFlangeClass",
         flangeCompact,
-        "Slender Flange",
-        "Slender Flange"
+        "COMPACT FLANGE",
+        "SLENDER FLANGE"
       );
       setClassLabel(
         "compressionAWebClass",
         webCompact,
-        "Slender Web",
-        "Slender Web"
+        "COMPACT WEB",
+        "SLENDER WEB"
       );
 
       var elFe = document.getElementById("compressionAFe");
@@ -1197,7 +1202,7 @@
       function defaultPreferDesignation() {
         var order = [
           EXCEL_COMPRESSION_ANALYSIS_DEFAULTS.sectionDesignation,
-          "L10X10X1-1/4",
+          "W8X48",
           "W8X24",
         ];
         for (var i = 0; i < order.length; i++) {

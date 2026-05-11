@@ -195,7 +195,10 @@
     dbg("pre-fix", "H0", "tension-page-ui.js:setView", "Tension top view changed", { view: name });
     // #endregion
     enforceAnalysisScrollLayout();
-    if (name === "analysisStag" && !excelNsAnalysisCalculatorDefaultsApplied) {
+    if (
+      (name === "analysisNon" || name === "analysisStag") &&
+      !excelNsAnalysisCalculatorDefaultsApplied
+    ) {
       if (applyExcelNsAnalysisCalculatorDefaults()) excelNsAnalysisCalculatorDefaultsApplied = true;
     }
     if (name === "analysisStag" || name === "analysisNon") recomputeAll();
@@ -591,16 +594,19 @@
 
   /** Sheet2 `N3:N5` → `O3:O5` (matches `Tension Design`!`V28`). */
   var TENSION_CONNECTION_U = {
-    FLANGE: 0.6,
-    WEB: 0.6,
+    FLANGE: 0.8,
+    WEB: 0.8,
     "FLANGES & WEB": 1,
   };
 
   /** Excel `Tension Design`!`J13` default grade (`Table48`). */
   var EXCEL_TENSION_DESIGN_STEEL_GRADE = "A572 Gr. 65";
 
-  /** Excel `NS -Tension Analysis` sample inputs (distinct from `Tension Design` defaults). */
-  var EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE = "A992";
+  /**
+   * `NS -Tension Analysis` sample inputs (`Born2BeSteel Final (3).xlsx`), distinct from `Tension Design` defaults.
+   * Steel designation column `I25` resolves via lookup table to Fy/Fu (e.g. A36 → 36/58 ksi).
+   */
+  var EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE = "A36";
 
   /**
    * Last-resort grades when `SteelGradesService` / `Born2BeSteel` are still empty (e.g. `main.js` exited early
@@ -1000,11 +1006,11 @@
    * Differs from Design sheet `TENSION_CONNECTION_U` (N3:N5).
    */
   var STAG_ANALYSIS_CONNECTION_U = {
-    FLANGE: 0.896,
-    WEB: 0.896,
+    FLANGE: 0.909,
+    WEB: 0.909,
     "FLANGES & WEB": 1,
   };
-  var STAG_ANALYSIS_CASE2 = 0.896;
+  var STAG_ANALYSIS_CASE2 = 0.909;
 
   function stagAnalysisConnU() {
     var key = mapUiConnectionToExcelKey(connectionSelect && connectionSelect.value);
@@ -1015,7 +1021,7 @@
   /** Sheet2 T3/T2 via `IF(K51=3,T3,T2)` on S -Tension Analysis. */
   function stagAnalysisCase8U() {
     var nf = Math.max(1, Math.round(num(fastenersPerLine.value, 3)));
-    return nf === 3 ? 0.6 : 0.8;
+    return nf <= 3 ? 0.6 : 0.8;
   }
 
   function governingUStaggerAnalysis() {
@@ -1189,8 +1195,14 @@
     var n = Number(v);
     return Number.isFinite(n) ? n : fallback || 0;
   }
+  /** Half-away-from-zero style rounding at `d` decimals, then fixed-width string (matches Excel `ROUND` display vs raw `toFixed` on IEEE tails). */
   function fmt(v, d) {
-    return Number(v).toFixed(typeof d === "number" ? d : 4);
+    var decimals = typeof d === "number" ? d : 4;
+    var x = Number(v);
+    if (!Number.isFinite(x)) return String(v);
+    var p = Math.pow(10, decimals);
+    var rounded = Math.round(x * p) / p;
+    return rounded.toFixed(decimals);
   }
   function clamp(v, lo, hi) {
     return Math.min(hi, Math.max(lo, v));
@@ -1429,9 +1441,12 @@
   }
 
   /**
-   * One-time defaults when opening **Analysis Calculator** (`NS -Tension Analysis`), matching workbook snapshot:
-   * LRFD, A992, DL 20 / LL 80 / length 12 ft, nominal bolt Ø 7/8 in, BOLT (+1/8), 6 fasteners × 2 gage lines,
-   * FLANGES & WEB, Lc 10 in, block shear 9 / 3 & 7.5 / 2.5, uniform tension stress, plate t = 0, shape L8×4×1.
+   * **`NS -Tension Analysis`** / `Born2BeSteel Final (3).xlsx` — Non-Staggered Analysis master inputs (LRFD path shown in workbook + UI reference):
+   * A36 (`I25`), DL `I29`=15 / LL `I31`=40 / length `I33`=15 ft, plate basis `X41`=`I33`×12 → **180** in when plates used (`X45`=0 → section Ag governs),
+   * nominal bolt `K41`=3/4 in **BOLT** (+1/8 hole → **0.875** in), fasteners **5** / gage **1** (workbook input layout + reference screenshot),
+   * connection **FLANGES & WEB**, unsupported length **`S45`=8** in (Case 2 = 1 − x̄/Lc matches spreadsheet),
+   * block shear tension/shear lengths & hole counts **0** (`AC50`=0 → governing MIN skips block shear like Excel),
+   * **UNIFORM** tension stress (`AK40`), angle **L7×4×1/2** (Ag = 5.26 in²).
    * @returns {boolean} false if section catalog not ready (caller may retry on next navigation).
    */
   function applyExcelNsAnalysisCalculatorDefaults() {
@@ -1449,27 +1464,27 @@
     if (analysisSteelMirror && gNs) analysisSteelMirror.value = gNs.astm;
     if (analysisStagSteelMirror && gNs) analysisStagSteelMirror.value = gNs.astm;
 
-    if (dlInput) dlInput.value = "20";
-    if (llInput) llInput.value = "80";
-    if (lengthFt) lengthFt.value = "12";
+    if (dlInput) dlInput.value = "15";
+    if (llInput) llInput.value = "40";
+    if (lengthFt) lengthFt.value = "15";
 
-    if (nominalDia) nominalDia.value = "0.875";
+    if (nominalDia) nominalDia.value = "0.75";
     if (boltType) boltType.value = "BOLT";
 
-    if (fastenersPerLine) fastenersPerLine.value = "6";
-    if (gageLines) gageLines.value = "2";
+    if (fastenersPerLine) fastenersPerLine.value = "5";
+    if (gageLines) gageLines.value = "1";
 
     if (connectionSelect) connectionSelect.value = "FLANGE_WEB";
     if (tensionNonStagConnectionSelect) tensionNonStagConnectionSelect.value = "FLANGE_WEB";
     if (tensionStagConnectionSelect) tensionStagConnectionSelect.value = "FLANGE_WEB";
 
-    if (unsupportedLc) unsupportedLc.value = "10";
-    if (analysisStagUnsupportedLc) analysisStagUnsupportedLc.value = "10";
+    if (unsupportedLc) unsupportedLc.value = "8";
+    if (analysisStagUnsupportedLc) analysisStagUnsupportedLc.value = "8";
 
-    if (analysisBsLt) analysisBsLt.value = "9";
-    if (analysisBsNt) analysisBsNt.value = "3";
-    if (analysisBsLv) analysisBsLv.value = "7.5";
-    if (analysisBsNv) analysisBsNv.value = "2.5";
+    if (analysisBsLt) analysisBsLt.value = "0";
+    if (analysisBsNt) analysisBsNt.value = "0";
+    if (analysisBsLv) analysisBsLv.value = "0";
+    if (analysisBsNv) analysisBsNv.value = "0";
     if (analysisStagBsLt && analysisBsLt) analysisStagBsLt.value = analysisBsLt.value;
     if (analysisStagBsNt && analysisBsNt) analysisStagBsNt.value = analysisBsNt.value;
     if (analysisStagBsLv && analysisBsLv) analysisStagBsLv.value = analysisBsLv.value;
@@ -1479,6 +1494,8 @@
     if (analysisStagStressType) analysisStagStressType.value = "1";
 
     if (plateThickness) plateThickness.value = "0";
+    /** Plate length `X41` = `I33`×12 in workbook when plate thickness is used; mirror Excel 180 in for parity. */
+    if (plateLengthIn) plateLengthIn.value = "180";
     /** Stagger sheet plate `X45` stays independent; first visit to **Staggered** applies `S -Tension Analysis` thickness via `applyExcelStaggerAnalysisCalculatorDefaults`. */
 
     function normShapeName(s) {
@@ -1489,7 +1506,7 @@
         .replace(/×/g, "X");
     }
     var pick = candidateSections.find(function (s) {
-      return normShapeName(s.name) === "L8X4X1";
+      return normShapeName(s.name) === "L7X4X1/2";
     });
     if (shapeSelect && pick) {
       shapeSelect.value = pick.name;
@@ -1503,30 +1520,53 @@
   }
 
   /**
-   * First-time defaults for **`S -Tension Analysis`** (Excel snapshot): Q41 FLANGE, K41 3/4 in, K51 6, K53 2,
-   * AZ40 NON-UNIFORM, AC40/AG40/AK40 = 1 / 1.5 / 1.5, plate **X45 = 5** on stagger card only (`analysisStagPlateThickness`).
+   * First-time defaults for **`S -Tension Analysis`** (`Born2BeSteel Final (6).xlsx`):
+   * method ASD, steel A36, DL/LL/L = 20/80/10.5, Q41 FLANGE, K41 3/4 in BOLT,
+   * K51/K53 = 2/3, S45=10, AZ40 NON-UNIFORM, AC40/AG40/AK40 = 2/3/3.5,
+   * plate length/thickness X41/X45 = 126/0.
    */
   function applyExcelStaggerAnalysisCalculatorDefaults() {
     if (!candidateSections || !candidateSections.length) return false;
 
+    if (methodSelect) methodSelect.value = "ASD";
+    if (analysisMethodMirror) analysisMethodMirror.value = "ASD";
+
+    var grades = tensionGradesList();
+    var gStag = grades && grades.find(function (g) { return g.astm === EXCEL_NS_TENSION_ANALYSIS_STEEL_GRADE; });
+    if (steelSelect && gStag) {
+      steelSelect.value = gStag.astm;
+      syncSteelFields();
+    }
+    if (analysisSteelMirror && gStag) analysisSteelMirror.value = gStag.astm;
+    if (analysisStagSteelMirror && gStag) analysisStagSteelMirror.value = gStag.astm;
+
+    if (dlInput) dlInput.value = "20";
+    if (llInput) llInput.value = "80";
+    if (lengthFt) lengthFt.value = "10.5";
+
     if (connectionSelect) connectionSelect.value = "FLANGE";
     if (tensionNonStagConnectionSelect) tensionNonStagConnectionSelect.value = "FLANGE";
     if (tensionStagConnectionSelect) tensionStagConnectionSelect.value = "FLANGE";
+    if (unsupportedLc) unsupportedLc.value = "10";
+    if (analysisStagUnsupportedLc) analysisStagUnsupportedLc.value = "10";
 
     if (nominalDia) nominalDia.value = "0.75";
     if (boltType) boltType.value = "BOLT";
 
-    if (analysisStagPlateThickness) analysisStagPlateThickness.value = "5";
+    if (plateLengthIn) plateLengthIn.value = "126";
+    if (analysisStagPlateLengthIn) analysisStagPlateLengthIn.value = "126";
+    if (plateThickness) plateThickness.value = "0";
+    if (analysisStagPlateThickness) analysisStagPlateThickness.value = "0";
 
     if (stressType) stressType.value = "0.5";
     if (analysisStagStressType) analysisStagStressType.value = "0.5";
 
-    if (sg1) sg1.value = "1";
-    if (g1) g1.value = "1.5";
-    if (g2) g2.value = "1.5";
+    if (sg1) sg1.value = "2";
+    if (g1) g1.value = "3";
+    if (g2) g2.value = "3.5";
 
-    if (fastenersPerLine) fastenersPerLine.value = "6";
-    if (gageLines) gageLines.value = "2";
+    if (fastenersPerLine) fastenersPerLine.value = "2";
+    if (gageLines) gageLines.value = "3";
 
     calcBoltDiameter();
     mirrorDesignToAnalysis();
@@ -1535,7 +1575,7 @@
 
   /**
    * Design Calculator ASD defaults (Born2BeSteel Design workbook behavior shown in UI reference): A572 Gr. 65, ASD,
-   * DL/LL/length and bolt layout as below, connection WEB (U = 0.6). Yields Ta = 255 kips, fracture demand rows and
+   * DL/LL/length and bolt layout as below, connection WEB (U = 0.8 with current fastener layout). Yields Ta = 255 kips, fracture demand rows and
    * lightest safe L5×5×7/16 when formulas match calcDemandAndAreas / getTensionCapacityDemandInputs.
    */
   function applyExcelTensionDesignCalculatorDefaults() {
@@ -1560,12 +1600,14 @@
     if (nominalDia) nominalDia.value = "0.75";
     if (boltType) boltType.value = "BOLT";
 
-    if (fastenersPerLine) fastenersPerLine.value = "3";
+    if (fastenersPerLine) fastenersPerLine.value = "4";
     if (gageLines) gageLines.value = "1";
 
     if (connectionSelect) connectionSelect.value = "WEB";
     if (tensionNonStagConnectionSelect) tensionNonStagConnectionSelect.value = "WEB";
     if (tensionStagConnectionSelect) tensionStagConnectionSelect.value = "WEB";
+    if (unsupportedLc) unsupportedLc.value = "15";
+    if (analysisStagUnsupportedLc) analysisStagUnsupportedLc.value = "15";
 
     calcBoltDiameter();
     mirrorDesignToAnalysis();
@@ -1746,6 +1788,18 @@
     });
     // #endregion
     return found;
+  }
+
+  /**
+   * `NS -Tension Analysis` `AH56` / `S -Tension Analysis` `AW55`:
+   * `IF(method=LRFD, LET(v,VSTACK(AB25|AP25, AI25|AX25, AE52|AS52), MIN(IF(v>0,v))), IF(method=ASD, … AL52|BA52 …))`.
+   * Zeros and non-positive capacities are skipped (Excel `MIN(IF(v>0,v))`); no qualifying values → **0** here (demand check stays conservative).
+   */
+  function governingCapMinPositiveYieldFracBlock(yieldCap, fracCap, bsDesign) {
+    var vals = [yieldCap, fracCap, bsDesign].filter(function (v) {
+      return typeof v === "number" && Number.isFinite(v) && v > 0;
+    });
+    return vals.length ? Math.min.apply(null, vals) : 0;
   }
 
   function calcNonStaggered() {
@@ -1957,7 +2011,8 @@
       analysisStagStressType.value = stressType.value;
     }
 
-    var govCap = Math.min(yieldCap, fracCap, bsCap);
+    var bsGov = method === "LRFD" ? bsLrfd : bsAsd;
+    var govCap = governingCapMinPositiveYieldFracBlock(yieldCap, fracCap, bsGov);
     /** `NS -Tension Analysis`!`AO57`: `IF(AH56>AF17,"SAFE!","UNSAFE :<")` — strict **greater than**. */
     var isSafe = demand > 0 && govCap > demand;
     if (analysisGovEqLabelNon) analysisGovEqLabelNon.textContent = method === "LRFD" ? "Tu =" : "Ta =";
@@ -1973,7 +2028,7 @@
     }
 
     // Staggered governing uses same fracture basis as the panel (fracCapStagPanel / aeStaggeredDemand).
-    var govCapStag = Math.min(yieldCap, fracCapStagPanel, bsCap);
+    var govCapStag = governingCapMinPositiveYieldFracBlock(yieldCap, fracCapStagPanel, bsGov);
     var safeStag = demand > 0 && govCapStag > demand;
     if (analysisStagGovEqLabel) analysisStagGovEqLabel.textContent = method === "LRFD" ? "Tu =" : "Ta =";
     if (analysisGoverningDisplayStag) analysisGoverningDisplayStag.textContent = demand === 0 ? "--" : fmt(govCapStag, 3);
@@ -2003,7 +2058,8 @@
       fracCap: fracCap,
       bsCap: bsCap,
       govCap: govCap,
-      govCapIsMin: Math.abs(govCap - Math.min(yieldCap, fracCap, bsCap)) < 1e-9,
+      govCapIsMin:
+        Math.abs(govCap - governingCapMinPositiveYieldFracBlock(yieldCap, fracCap, bsGov)) < 1e-9,
       demand: demand,
       safe: isSafe,
       safeRuleOk: demand > 0 ? isSafe === (govCap > demand) : true,
@@ -2775,19 +2831,23 @@
       hydrateNsMasterOptionsFromAiscDataset(function () {
         populateShapes();
         initStagSectionUi();
-        /** Excel `NS -Tension Analysis` inputs as initial master state (matches workbook on load). */
-        if (applyExcelNsAnalysisCalculatorDefaults()) excelNsAnalysisCalculatorDefaultsApplied = true;
-        /** Excel `S -Tension Analysis` defaults applied at load so stagger inputs match workbook without opening the sub-tab. */
+        /** Excel `S -Tension Analysis` defaults (stagger-only plate thickness / geometry where applicable). */
         if (applyExcelStaggerAnalysisCalculatorDefaults()) excelStaggerAnalysisCalculatorDefaultsApplied = true;
-        /** Last: Design Calculator + Capacity and Demand (Tension Design shared inputs). */
+        /** `Tension Design` workbook defaults (design calculator reference state). */
         if (applyExcelTensionDesignCalculatorDefaults()) {
           excelTensionDesignCalculatorDefaultsApplied = true;
-          /** Shared fields were overwritten — allow one-time NS / stagger reapplies on those tabs. */
-          excelNsAnalysisCalculatorDefaultsApplied = false;
           excelStaggerAnalysisCalculatorDefaultsApplied = false;
         }
+        /**
+         * Keep Design Calculator pinned to `Tension Design` defaults on initial load.
+         * `NS -Tension Analysis` defaults are applied lazily when user opens Analysis tab
+         * (see `setView("analysisNon"|"analysisStag")` guard above).
+         */
+        excelNsAnalysisCalculatorDefaultsApplied = false;
         setView("design");
         setAnalysisMode("non");
+        // Final lock: ensure Design Calculator keeps Tension Design workbook defaults.
+        applyExcelTensionDesignCalculatorDefaults();
         recomputeAll();
         if (typeof window.requestAnimationFrame === "function") {
           window.requestAnimationFrame(function () {
