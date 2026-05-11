@@ -4558,7 +4558,7 @@
     #compressionSection .compression-probable-head,
     #compressionSection .compression-probable-row {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 0.2rem;
       align-items: center;
       font-size: 0.8rem;
@@ -19216,8 +19216,8 @@
                         <div>
                           <div class="t-row t-row-unit"><span>Shear length</span><input id="analysisStagBsLv" class="in-yellow" type="number" step="any" min="0" inputmode="decimal"><span class="t-unit">in</span></div>
                           <div class="t-row"><span>No. of holes (shear)</span><input id="analysisStagBsNv" class="in-yellow" type="number" step="any" min="0" inputmode="decimal"></div>
-                          <div class="t-row t-row-unit"><span>Avg</span><input id="analysisStagBsAvg" class="out-green" readonly><span class="t-unit">in²</span></div>
-                          <div class="t-row t-row-unit"><span>Avn</span><input id="analysisStagBsAvn" class="out-green" readonly><span class="t-unit">in²</span></div>
+                          <div class="t-row t-row-unit"><span>Agv</span><input id="analysisStagBsAvg" class="out-green" readonly><span class="t-unit">in²</span></div>
+                          <div class="t-row t-row-unit"><span>Anv</span><input id="analysisStagBsAvn" class="out-green" readonly><span class="t-unit">in²</span></div>
                         </div>
                       </div>
                       <hr>
@@ -19300,8 +19300,8 @@
                 <div class="tension-card compression-card">
                   <h4>Design Method</h4>
                   <select id="compressionDesignMethod" class="compression-method-chip in-yellow" aria-label="Compression design method">
-                    <option value="LRFD" selected>LRFD</option>
-                    <option value="ASD">ASD</option>
+                    <option value="LRFD">LRFD</option>
+                    <option value="ASD" selected>ASD</option>
                   </select>
                 </div>
                 <div class="tension-card compression-card">
@@ -19329,7 +19329,7 @@
                     <div class="compression-given-box">
                       <span class="compression-given-label">Dead Load</span>
                       <div class="compression-given-value-row">
-                        <input id="compressionDesignDl" class="in-yellow" type="number" step="any" min="0" value="90">
+                        <input id="compressionDesignDl" class="in-yellow" type="number" step="any" min="0" value="20">
                         <span class="compression-given-unit">kips</span>
                       </div>
                     </div>
@@ -19337,7 +19337,7 @@
                     <div class="compression-given-box">
                       <span class="compression-given-label">Live Load</span>
                       <div class="compression-given-value-row">
-                        <input id="compressionDesignLl" class="in-yellow" type="number" step="any" min="0" value="320">
+                        <input id="compressionDesignLl" class="in-yellow" type="number" step="any" min="0" value="80">
                         <span class="compression-given-unit">kips</span>
                       </div>
                     </div>
@@ -19367,24 +19367,24 @@
               <div class="compression-col compression-col-center">
                 <div class="tension-card compression-card compression-probable-card">
                   <h4>Probable Section</h4>
-                  <div class="compression-probable-head"><span>W (lb/ft)</span><span>Section</span><span id="compressionProbDemandHead">Pu (kips)</span><span>Remarks</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW1">48</span><span id="compressionProbName1">W14X48</span><span id="compressionProbPu1">441.7753</span><span id="compressionProbRm1" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW2">40</span><span id="compressionProbName2">W12X40</span><span id="compressionProbPu2">370.6750</span><span id="compressionProbRm2" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW3">26</span><span id="compressionProbName3">W10X26</span><span id="compressionProbPu3">167.6797</span><span id="compressionProbRm3" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW4">24</span><span id="compressionProbName4">W8X24</span><span id="compressionProbPu4">189.6977</span><span id="compressionProbRm4" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-head"><span>W (lb/ft)</span><span>Section</span><span>Pa (kips)</span><span>Pu (kips)</span><span>Remarks</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW1">48</span><span id="compressionProbName1">W14X48</span><span id="compressionProbPa1">110.9325</span><span id="compressionProbPu1"></span><span id="compressionProbRm1" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW2">45</span><span id="compressionProbName2">W12X45</span><span id="compressionProbPa2">107.4270</span><span id="compressionProbPu2"></span><span id="compressionProbRm2" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW3">45</span><span id="compressionProbName3">W10X45</span><span id="compressionProbPa3">115.8822</span><span id="compressionProbPu3"></span><span id="compressionProbRm3" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW4">40</span><span id="compressionProbName4">W8X40</span><span id="compressionProbPa4">105.0072</span><span id="compressionProbPu4"></span><span id="compressionProbRm4" class="capacity-remark is-safe">SAFE</span></div>
                 </div>
                 <div class="tension-card compression-card compression-slender-card">
                   <h4>Critical Slenderness Ratio</h4>
                   <div class="compression-slen-head"><span>Element</span><span>Condition</span><span>K</span><span>L (ft)</span><span>KL</span></div>
-                  <div class="compression-slen-row"><span>x₁</span><select id="compressionX1Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₁"></select><span id="compressionX1K" class="compression-cell">0.8</span><input id="compressionX1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="30"><span id="compressionX1KL" class="compression-cell">24</span></div>
+                  <div class="compression-slen-row"><span>x₁</span><select id="compressionX1Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₁"></select><span id="compressionX1K" class="compression-cell">1</span><input id="compressionX1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="22"><span id="compressionX1KL" class="compression-cell">22</span></div>
                   <div class="compression-slen-row"><span>x₂</span><select id="compressionX2Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₂"></select><span id="compressionX2K" class="compression-cell">0</span><input id="compressionX2L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" placeholder=""><span id="compressionX2KL" class="compression-cell"></span></div>
                   <div class="compression-slen-row"><span>x₃</span><select id="compressionX3Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₃"></select><span id="compressionX3K" class="compression-cell">0</span><input id="compressionX3L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" placeholder=""><span id="compressionX3KL" class="compression-cell"></span></div>
-                  <div class="compression-slen-row"><span>y₁</span><select id="compressionY1Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₁"></select><span id="compressionY1K" class="compression-cell">1</span><input id="compressionY1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="8"><span id="compressionY1KL" class="compression-cell">8</span></div>
-                  <div class="compression-slen-row"><span>y₂</span><select id="compressionY2Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₂"></select><span id="compressionY2K" class="compression-cell">0.8</span><input id="compressionY2L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="14"><span id="compressionY2KL" class="compression-cell">11.2</span></div>
+                  <div class="compression-slen-row"><span>y₁</span><select id="compressionY1Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₁"></select><span id="compressionY1K" class="compression-cell">1</span><input id="compressionY1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="22"><span id="compressionY1KL" class="compression-cell">22</span></div>
+                  <div class="compression-slen-row"><span>y₂</span><select id="compressionY2Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₂"></select><span id="compressionY2K" class="compression-cell">0</span><input id="compressionY2L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="14"><span id="compressionY2KL" class="compression-cell"></span></div>
                   <div class="compression-slen-row"><span>y₃</span><select id="compressionY3Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₃"></select><span id="compressionY3K" class="compression-cell">1</span><input id="compressionY3L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="8"><span id="compressionY3KL" class="compression-cell">8</span></div>
                   <div class="compression-slen-govern">
                     <span id="compressionKLGovCaption" class="compression-slen-govern-caption">Assuming Kly Governs</span>
-                    <input id="compressionKLGovValue" type="text" class="compression-kl-gov-ft" readonly value="11.2000" aria-label="Governing KL, ft">
+                    <input id="compressionKLGovValue" type="text" class="compression-kl-gov-ft" readonly value="22.0000" aria-label="Governing KL, ft">
                   </div>
                   <div class="calc-result" id="resultCompression" style="display:none;white-space:pre-wrap;" aria-hidden="true"></div>
                 </div>
@@ -19399,26 +19399,26 @@
               <div class="compression-col compression-col-right">
                 <div class="tension-card compression-card compression-mini-stack">
                   <h4>Demand Analysis</h4>
-                  <div class="compression-mini-row"><span id="compressionDemandLabel1">1.2DL+1.6LL</span><input id="compressionDemandCombo1" class="out-green" readonly value="620"><span>kips</span></div>
-                  <div class="compression-mini-row"><span id="compressionDemandLabel2">1.4DL</span><input id="compressionDemandCombo2" class="out-green" readonly value="126"><span>kips</span></div>
-                  <div class="compression-mini-row"><span id="compressionDemandGovLabel">Tu</span><input id="compressionDemandGov" class="out-green" readonly value="620"><span>kips</span></div>
+                  <div class="compression-mini-row"><span id="compressionDemandLabel1">DL + LL</span><input id="compressionDemandCombo1" class="out-green" readonly value="100"><span>kips</span></div>
+                  <div class="compression-mini-row"><span id="compressionDemandLabel2">-</span><input id="compressionDemandCombo2" class="out-green" readonly value="-"><span>kips</span></div>
+                  <div class="compression-mini-row"><span id="compressionDemandGovLabel">Ta</span><input id="compressionDemandGov" class="out-green" readonly value="100"><span>kips</span></div>
                 </div>
                 <div class="tension-card compression-card compression-mini-stack">
                   <h4>Check Compactness</h4>
                   <div class="compression-check-block">
-                    <div class="compression-mini-row"><span>Flange λ<sub>f</sub></span><input id="compressionDesignFlangeLambda" class="out-green" readonly value="8.12"><span></span></div>
+                    <div class="compression-mini-row"><span>Flange λ<sub>f</sub></span><input id="compressionDesignFlangeLambda" class="out-green" readonly value="7.21"><span></span></div>
                     <div class="compression-mini-row"><span>Flange λ<sub>r</sub></span><input id="compressionDesignFlangeLim" class="out-green" readonly value="13.4866"><span></span></div>
                     <div id="compressionDesignFlangeClass" class="compression-mini-label compression-class-status is-compact"><em>COMPACT FLANGE</em></div>
                   </div>
                   <div class="compression-check-block">
-                    <div class="compression-mini-row"><span>Web λ<sub>w</sub></span><input id="compressionDesignWebLambda" class="out-green" readonly value="25.9"><span></span></div>
+                    <div class="compression-mini-row"><span>Web λ<sub>w</sub></span><input id="compressionDesignWebLambda" class="out-green" readonly value="17.6"><span></span></div>
                     <div class="compression-mini-row"><span>Web λ<sub>r</sub></span><input id="compressionDesignWebLim" class="out-green" readonly value="35.8840"><span></span></div>
                     <div id="compressionDesignWebClass" class="compression-mini-label compression-class-status is-compact"><em>COMPACT WEB</em></div>
                   </div>
                 </div>
                 <div class="tension-card safe-card compression-safe-card">
                   <h4>Lightest Adequate Section</h4>
-                  <div class="safe-name" id="compressionSafeSection">W8X24</div>
+                  <div class="safe-name" id="compressionSafeSection">W8X40</div>
                   <span id="compressionSafeRemarkLabel" class="compression-safe-remark-label-paired is-safe">SAFE</span>
                   <div class="compression-lightest-title">Lightest Section</div>
                 </div>
@@ -20241,7 +20241,7 @@
                     <div class="design-method-select-wrap">
                       <label class="sr-only" for="shearMethod">Analysis method LRFD or ASD</label>
                       <select id="shearMethod" class="in-yellow big-select" aria-label="Analysis method">
-                        <option value="ASD">ASD</option>
+                        <option value="ASD" selected>ASD</option>
                         <option value="LRFD">LRFD</option>
                       </select>
                       <span class="design-method-caret" aria-hidden="true">▼</span>
@@ -20253,21 +20253,21 @@
                       <div class="compression-given-box">
                         <span class="compression-given-label">Dead load</span>
                         <div class="compression-given-value-row">
-                          <input id="shearDL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="2" aria-label="Dead load DL">
+                          <input id="shearDL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0.2" aria-label="Dead load DL">
                           <span class="compression-given-unit">kips/ft</span>
                         </div>
                       </div>
                       <div class="compression-given-box">
                         <span class="compression-given-label">Live load</span>
                         <div class="compression-given-value-row">
-                          <input id="shearLL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="18" aria-label="Live load LL">
+                          <input id="shearLL" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0.8" aria-label="Live load LL">
                           <span class="compression-given-unit">kips/ft</span>
                         </div>
                       </div>
                       <div class="compression-given-box">
                         <span class="compression-given-label">Beam length</span>
                         <div class="compression-given-value-row">
-                          <input id="shearBeamLength" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="7" aria-label="Beam length">
+                          <input id="shearBeamLength" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="35" aria-label="Beam length">
                           <span class="compression-given-unit">ft</span>
                         </div>
                       </div>
@@ -20339,7 +20339,7 @@
                         <div class="compression-given-box shear-material-fy-col" aria-label="Yield Fy workbook X10">
                           <span class="compression-given-label shear-material-label-excel shear-material-inline-equation"><em>F<sub>y</sub></em> =</span>
                           <div class="compression-given-value-row shear-material-compact-row">
-                            <input id="shearFy" class="out-green shear-fy-readonly" type="text" readonly tabindex="-1" aria-live="polite" value="100" title="Shear Design sheet X10 (design strength ksi); grade name R9 is separate">
+                            <input id="shearFy" class="out-green shear-fy-readonly" type="text" readonly tabindex="-1" aria-live="polite" value="36" title="Shear Design sheet X10 (design strength ksi); grade name R9 is separate">
                             <span class="compression-given-unit">ksi</span>
                           </div>
                         </div>
@@ -20438,7 +20438,7 @@
                         <span id="shearLineG38Unit" class="bending-result-unit">lb/ft</span>
                       </div>
                       <div class="bending-result-row">
-                        <span id="shearLineMaLbl" class="bending-result-lbl"><em>M</em><sub>a</sub>=</span>
+                        <span id="shearLineMaLbl" class="bending-result-lbl"><em>M</em><sub>u</sub>=</span>
                         <input id="shearLineMa" class="in-yellow bending-result-val bending-safe-yellow-val" type="text" readonly value="--" aria-live="polite" aria-readonly="true" title="Design flexural strength for lightest section (workbook flexural line)">
                         <span class="bending-result-unit">kips-ft</span>
                       </div>
@@ -20557,7 +20557,7 @@
                           <div class="bend-a-head shear-analysis-head-mixed">Allowable shear (<em>T</em><sub>a</sub>):</div>
                           <div class="bend-nominal-row">
                             <span class="bend-nominal-label"><em>T</em><sub>a</sub> =</span>
-                            <input id="shearUltimateVu" class="out-green-a bend-nominal-input" type="text" readonly tabindex="-1" value="--" aria-label="Design shear strength Ta or Tu (workbook Y38, kips)" inputmode="decimal" aria-readonly="true" title="Computed from SHEAR ANALYSIS Y38; switches with LRFD (Tu) / ASD (Ta).">
+                            <input id="shearUltimateVu" class="out-green-a bend-nominal-input" type="text" readonly tabindex="-1" value="--" aria-label="Design shear strength Va or Vu (workbook Y38, kips)" inputmode="decimal" aria-readonly="true" title="Computed from SHEAR ANALYSIS Y38; LRFD: Vu = φvVn; ASD: Va = Vn/Ωv.">
                             <span class="bend-a-unit">kips</span>
                           </div>
                         </div>

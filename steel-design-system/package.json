@@ -10,6 +10,7 @@
     "export:aisc-sections": "node scripts/export-aisc-sections.js",
     "export:shear-design-order": "node scripts/export-shear-design-order.js",
     "export:tension-angles": "node scripts/export-tension-angles.js",
+    "export:compression-capacity": "node scripts/export-compression-capacity.js",
     "export:bending-capacity-benchmarks": "node scripts/extract-bending-capacity-benchmarks.js scripts/bending-capacity-benchmarks.json",
     "test:bending-design": "node scripts/bending-design-regression.js",
     "test:bending-analysis": "node scripts/bending-analysis-regression.js",

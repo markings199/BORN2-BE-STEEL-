@@ -11,17 +11,17 @@
   if (!WB) return;
 
   /**
-   * `Shear Design` sheet defaults — Born2BeSteel Final (6).xlsx:
-   * F8 method, G22/G27/G33 loads & span, R9 grade label, P12 E, X10 strength Fy (may differ from ASTM nominal for R9);
-   * O46/G55/T50 manual zeros; F39/F42 member options.
+   * `Shear Design` sheet defaults — `Born2BeSteel Final (6) (1).xlsx`:
+   * F8 method, G22/G27/G33 (DL/LL klf, span ft), R9 grade, P12 E; O46/G55 manual zeros; F39/F42 member options.
+   * Fy display follows selected grade (X10 tracks grade in workbook).
    */
   var EXCEL_SHEAR_DESIGN_DEFAULTS = {
-    steelGrade: "A992",
-    dl: 2,
-    ll: 18,
-    Lft: 7,
+    steelGrade: "A36",
+    dl: 0.2,
+    ll: 0.8,
+    Lft: 35,
     E: 29000,
-    fyKsi: 50,
+    fyKsi: 36,
     method: "ASD",
   };
 
@@ -106,12 +106,29 @@
     return Number.isFinite(n) ? n : fb;
   }
 
+  /**
+   * Excel `Shear Capacity no deflection` X-column demand uses `Bending Design` O39/O45 (not Shear O39).
+   * Prefer live values from the Bending Design calculator when present.
+   */
+  function readBendingDesignDemandForShearNoDefl() {
+    var muCalc = document.getElementById("bendingDesignMuCalc");
+    if (muCalc && muCalc.value != null && String(muCalc.value).trim() !== "" && String(muCalc.value).trim() !== "--") {
+      var o39 = parseFloat(String(muCalc.value).replace(/,/g, ""));
+      if (Number.isFinite(o39)) return { bendingO39: o39, bendingO45: 0 };
+    }
+    return {
+      bendingO39: WB.EXCEL_BENDING_DESIGN_DEFAULT_O39_KIPFT,
+      bendingO45: 0,
+    };
+  }
+
   function syncSteelFields() {
-    var fyX10 = Number(EXCEL_SHEAR_DESIGN_DEFAULTS.fyKsi);
-    if (fyOut && Number.isFinite(fyX10) && fyX10 > 0) fyOut.value = fmt(fyX10, 0);
     var g = gradesList().find(function (x) {
       return steelSelect && x.astm === steelSelect.value;
     });
+    var fyGrade = g && Number.isFinite(Number(g.fy)) ? Number(g.fy) : NaN;
+    var fyX10 = Number.isFinite(fyGrade) ? fyGrade : Number(EXCEL_SHEAR_DESIGN_DEFAULTS.fyKsi);
+    if (fyOut && Number.isFinite(fyX10) && fyX10 > 0) fyOut.value = fmt(fyX10, 0);
     if (g && window.Born2BeSteel && typeof window.Born2BeSteel.setActiveMaterial === "function") {
       window.Born2BeSteel.setActiveMaterial(g.astm);
     }
@@ -207,8 +224,8 @@
         method === "LRFD" ? "Mu (Factored Moment):" : "Ma (Factored Moment):";
     }
     if (lineMaLbl) {
-      lineMaLbl.innerHTML =
-        method === "LRFD" ? "<em>M</em><sub>u</sub>=" : "<em>M</em><sub>a</sub>=";
+      /* Lightest safe section: ASD must show M_u (not M_a), per workbook display on this row. */
+      lineMaLbl.innerHTML = "<em>M</em><sub>u</sub>=";
     }
   }
 
@@ -217,15 +234,15 @@
     var method = methodSel && methodSel.value === "ASD" ? "ASD" : "LRFD";
     updateComboLabels(method);
 
-    var dl = num(dlIn, 0);
-    var ll = num(llIn, 0);
-    var Lft = num(lenIn, 0);
+    var dl = num(dlIn, EXCEL_SHEAR_DESIGN_DEFAULTS.dl);
+    var ll = num(llIn, EXCEL_SHEAR_DESIGN_DEFAULTS.ll);
+    var Lft = num(lenIn, EXCEL_SHEAR_DESIGN_DEFAULTS.Lft);
     var E = num(EIn, 29000);
     var Fy = num(fyOut, NaN);
     if (!Number.isFinite(Fy) || Fy <= 0) {
       Fy = Number(EXCEL_SHEAR_DESIGN_DEFAULTS.fyKsi);
     }
-    if (!Number.isFinite(Fy) || Fy <= 0) Fy = 50;
+    if (!Number.isFinite(Fy) || Fy <= 0) Fy = 36;
 
     var loads = WB.governingUniformLoad(method, dl, ll);
     var autoVu = WB.shearDemand_kips(loads.O26, Lft);
@@ -247,6 +264,7 @@
     }
     if (govVal) govVal.value = fmtExcel(loads.O26);
 
+    var bendDem = readBendingDesignDemandForShearNoDefl();
     var out = WB.computeShearDesign({
       method: method,
       dl: dl,
@@ -261,6 +279,8 @@
       deflDivisor: num(deflDivIn, 360),
       manualMu: num(manualMuIn, 0),
       G55: g55Input,
+      bendingO39: bendDem.bendingO39,
+      bendingO45: bendDem.bendingO45,
     });
 
     if (muVal) muVal.value = fmtExcel(out.Mu_kipft);
@@ -286,6 +306,8 @@
           Fy: Fy,
           O39: out.Mu_kipft,
           O45: 0,
+          bendingO39: bendDem.bendingO39,
+          bendingO45: bendDem.bendingO45,
           O46: num(manualMuIn, 0),
           Y31: out.Y31_ixRequired_in4,
           G51: out.Vu_kips,

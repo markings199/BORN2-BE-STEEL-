@@ -5,7 +5,8 @@
 (function () {
   "use strict";
 
-  var PREFERRED_GRADE = "A501 Gr. A";
+  /** `SHEAR ANALYSIS` initial grade — `Born2BeSteel Final (2) (5).xlsx` cell P9. */
+  var PREFERRED_GRADE = "A36";
   /** Fallback tooltip on Tu/Ta (Y38) output until computed. */
   var SHEAR_STRENGTH_TITLE_IDLE =
     "Workbook SHEAR ANALYSIS Y38 (Tu LRFD, Ta ASD); readonly.";
@@ -52,7 +53,7 @@
       headEl.textContent = asd ? "ALLOWABLE SHEAR" : "ULTIMATE SHEAR";
       headEl.classList.toggle("is-ultimate-shear", !asd);
     }
-    if (symLabel) symLabel.innerHTML = asd ? "<em>T</em><sub>a</sub> =" : "<em>T</em><sub>u</sub> =";
+    if (symLabel) symLabel.innerHTML = asd ? "<em>V</em><sub>a</sub> =" : "<em>V</em><sub>u</sub> =";
     vuInput.readOnly = true;
     vuInput.setAttribute("aria-readonly", "true");
     vuInput.setAttribute("tabindex", "-1");
@@ -61,12 +62,12 @@
     vuInput.setAttribute(
       "aria-label",
       asd
-        ? "Allowable shear design strength Ta — workbook SHEAR ANALYSIS Y38 (kips)"
-        : "Ultimate shear design strength Tu — workbook SHEAR ANALYSIS Y38 (kips)"
+        ? "Allowable shear design strength Va — workbook SHEAR ANALYSIS Y38 (kips)"
+        : "Ultimate shear design strength Vu — workbook SHEAR ANALYSIS Y38 (kips)"
     );
     if (Number.isFinite(ds)) {
       setShearStrengthOutputTitle(
-        (asd ? "ASD: Ta = Y38 = K39·Y28 = Ωv·Vn (sheet). " : "LRFD: Tu = Y38 = F39·Y28 = φv·Vn (sheet). ") +
+        (asd ? "ASD: Va = Y38 = Y28/K39 = Vn/Ωv (sheet). " : "LRFD: Vu = Y38 = F39·Y28 = φv·Vn (sheet). ") +
           fmt(ds, 4) +
           " kips."
       );
@@ -406,7 +407,9 @@
 
         renderFilterChips();
         renderList();
+        /** Default W-shape: workbook `G32` h/tw = 53.6 matches W21X44 in Key Geometric Properties. */
         var pick =
+          state.byDesignation["W21X44"] ||
           state.byDesignation["W30X99"] ||
           state.byDesignation["W14X193"] ||
           state.byDesignation["W12X45"] ||

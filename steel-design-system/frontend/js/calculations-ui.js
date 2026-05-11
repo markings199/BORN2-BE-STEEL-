@@ -1598,7 +1598,12 @@
     if (capacityBtn) {
       capacityBtn.addEventListener("click", function () {
         syncCompressionDesignToAnalysis();
-        window.location.href = "pages/capacity-analysis.html";
+        var methodSel = document.getElementById("compressionDesignMethod");
+        var m = methodSel && String(methodSel.value || "").toUpperCase() === "ASD" ? "ASD" : "LRFD";
+        try {
+          window.localStorage.setItem("compressionCapacityDbMethod", m);
+        } catch (eLs) {}
+        window.location.href = "pages/capacity-analysis.html?method=" + encodeURIComponent(m);
       });
     }
     initCompressionAnalysisSectionSelection();

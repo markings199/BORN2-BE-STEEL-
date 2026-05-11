@@ -71,9 +71,9 @@ check("LRFD O26", lrfd.governingWu, 28.8);
 check("LRFD R38 (Mu)", lrfd.Mu_kipft, 90);
 check("LRFD Z38 (Vu)", lrfd.Vu_kips, 72);
 check("LRFD Y31 Ix req (in4)", lrfd.Y31_ixRequired_in4, 34.91379310344828);
-check("LRFD F44 (lightest)", lrfd.lightest && lrfd.lightest.label, "W12X19");
-check("LRFD G38 (min weight plf)", lrfd.lightest && lrfd.lightest.weightPlf, 19);
-check("LRFD G41 (\u03c6Vn)", lrfd.lightest && lrfd.lightest.phiVnOrAllow, 86.01);
+check("LRFD F44 (lightest)", lrfd.lightest && lrfd.lightest.label, "W12X16");
+check("LRFD G38 (min weight plf)", lrfd.lightest && lrfd.lightest.weightPlf, 16);
+check("LRFD G41 (\u03c6Vn)", lrfd.lightest && lrfd.lightest.phiVnOrAllow, 79.2);
 
 const asd = api.computeShearDesign(
   Object.assign(

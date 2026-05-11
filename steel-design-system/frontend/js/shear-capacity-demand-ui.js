@@ -212,6 +212,19 @@
 
     var considerBeamWeight = bwSel && trimLower(bwSel.value) === "consider beam weight";
 
+    var bendMuEl = document.getElementById("bendingDesignMuCalc");
+    var bendingO39 = WB.EXCEL_BENDING_DESIGN_DEFAULT_O39_KIPFT;
+    var bendingO45 = 0;
+    if (
+      bendMuEl &&
+      bendMuEl.value != null &&
+      String(bendMuEl.value).trim() !== "" &&
+      String(bendMuEl.value).trim() !== "--"
+    ) {
+      var bo = parseFloat(String(bendMuEl.value).replace(/,/g, ""));
+      if (Number.isFinite(bo)) bendingO39 = bo;
+    }
+
     return {
       consideringDeflection: capMode() === "defl",
       ctx: {
@@ -220,6 +233,8 @@
         Fy: fy,
         O39: O39,
         O45: 0,
+        bendingO39: bendingO39,
+        bendingO45: bendingO45,
         O46: manualMu,
         Y31: Y31,
         G51: G51,

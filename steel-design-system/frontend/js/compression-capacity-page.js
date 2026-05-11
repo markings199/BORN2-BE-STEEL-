@@ -29,9 +29,89 @@
     type: "",
     label: "",
     safeOnly: false,
+    /** "LRFD" | "ASD" — drives which of Pa / Pu is shown (φPn vs Pn/Ω). */
+    method: "LRFD",
   };
 
+  function readCapacityDbMethod() {
+    try {
+      var q = new URLSearchParams(window.location.search || "").get("method");
+      if (q) {
+        var u = String(q).trim().toUpperCase();
+        if (u === "ASD" || u === "LRFD") return u;
+      }
+    } catch (e1) {}
+    try {
+      var ls = window.localStorage.getItem("compressionCapacityDbMethod");
+      if (ls === "ASD" || ls === "LRFD") return ls;
+    } catch (e2) {}
+    return "LRFD";
+  }
+
+  function applyMethodHeaderChrome() {
+    var isAsd = state.method === "ASD";
+    var thPu = el("capacityThPu");
+    var thPuRm = el("capacityThPuRm");
+    var thPa = el("capacityThPa");
+    var thPaRm = el("capacityThPaRm");
+    if (thPu) thPu.classList.toggle("capdb-col-key", !isAsd);
+    if (thPuRm) thPuRm.classList.toggle("capdb-col-key", !isAsd);
+    if (thPa) thPa.classList.toggle("capdb-col-key", isAsd);
+    if (thPaRm) thPaRm.classList.toggle("capdb-col-key", isAsd);
+  }
+
+  function numericField(v) {
+    if (v === "" || v === null || v === undefined) return NaN;
+    var n = Number(v);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  /** ASD allowable strength (kips): prefer row Pa; else Pn/1.67 when Pn is known. */
+  function designPaKips(r) {
+    if (!r || r.kind !== "row") return "";
+    var a = numericField(r.Pa);
+    if (Number.isFinite(a) && a > 0) return a;
+    var pn = numericField(r.Pn);
+    if (Number.isFinite(pn) && pn > 0) return pn / 1.67;
+    return "";
+  }
+
+  /** LRFD design strength (kips): prefer row Pu; else 0.9·Pn when Pn is known. */
+  function designPuKips(r) {
+    if (!r || r.kind !== "row") return "";
+    var u = numericField(r.Pu);
+    if (Number.isFinite(u) && u > 0) return u;
+    var pn = numericField(r.Pn);
+    if (Number.isFinite(pn) && pn > 0) return 0.9 * pn;
+    return "";
+  }
+
+  function strTrim(v) {
+    if (v == null) return "";
+    return String(v).trim();
+  }
+
+  /**
+   * Remark beside **Pu** (LRFD): use `PuRemarks` when set; otherwise `PaRemarks`
+   * (workbook export often leaves Pu demand column blank but puts SAFE on the Pa path).
+   */
+  function remarkForPuColumn(r) {
+    if (!r || r.kind !== "row") return "";
+    if (strTrim(r.PuRemarks) !== "") return r.PuRemarks;
+    return r.PaRemarks != null ? r.PaRemarks : "";
+  }
+
+  /**
+   * Remark beside **Pa** (ASD): use `PaRemarks` when set; otherwise `PuRemarks`.
+   */
+  function remarkForPaColumn(r) {
+    if (!r || r.kind !== "row") return "";
+    if (strTrim(r.PaRemarks) !== "") return r.PaRemarks;
+    return r.PuRemarks != null ? r.PuRemarks : "";
+  }
+
   function fmt(n, dp) {
+    if (n === "" || n === null || n === undefined) return "";
     var num = Number(n);
     if (!Number.isFinite(num)) return "";
     var d = typeof dp === "number" ? dp : 4;
@@ -44,7 +124,11 @@
   }
 
   function isSafeRow(r) {
-    return normalizeText(r && r.PuRemarks) === "SAFE";
+    if (!r) return false;
+    if (state.method === "ASD") return normalizeText(r.PaRemarks) === "SAFE";
+    var puRm = normalizeText(r.PuRemarks);
+    if (puRm === "SAFE") return true;
+    return normalizeText(r.PaRemarks) === "SAFE";
   }
 
   function computeGroups(rows) {
@@ -177,11 +261,17 @@
       tr.appendChild(td(fmt(r.KLOverR, 4)));
       tr.appendChild(td(fmt(r.Fe, 4)));
       tr.appendChild(td(fmt(r.Fcr, 4)));
+      var isAsd = state.method === "ASD";
+      var puVal = isAsd ? "" : designPuKips(r);
+      var paVal = isAsd ? designPaKips(r) : "";
+      var puRm = isAsd ? "" : remarkForPuColumn(r);
+      var paRm = isAsd ? remarkForPaColumn(r) : "";
+
       tr.appendChild(td(fmt(r.Pn, 4)));
-      tr.appendChild(td(fmt(r.Pu, 4), "capacity-key-value"));
-      tr.appendChild(remarkTd(r.PuRemarks));
-      tr.appendChild(td(fmt(r.Pa, 4)));
-      tr.appendChild(remarkTd(r.PaRemarks));
+      tr.appendChild(td(fmt(puVal, 4), isAsd ? "" : "capacity-key-value"));
+      tr.appendChild(remarkTd(puRm));
+      tr.appendChild(td(fmt(paVal, 4), isAsd ? "capacity-key-value" : ""));
+      tr.appendChild(remarkTd(paRm));
 
       frag.appendChild(tr);
     });
@@ -251,9 +341,11 @@
   tbody.innerHTML = '<tr><td colspan="22">Loading data…</td></tr>';
   API.listCompressionCapacity()
     .then(function (data) {
+      state.method = readCapacityDbMethod();
       state.rows = (data && data.rows) ? data.rows : [];
       state.groups = computeGroups(state.rows);
       populateGroups(state.groups);
+      applyMethodHeaderChrome();
       bind();
       rerender();
     })

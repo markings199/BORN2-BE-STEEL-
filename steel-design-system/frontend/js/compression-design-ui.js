@@ -24,7 +24,7 @@
     ],
   };
 
-  /** `Compression-Design ` workbook defaults (`Born2BeSteel Final (5) (1).xlsx`). */
+  /** `Compression-Design ` workbook defaults (`Born2BeSteel Final (6).xlsx` — G15, H29, H43/H53, H61, R45/X45…). */
   var EXCEL_COMPRESSION_DESIGN_DEFAULTS = {
     method: "ASD", // G15
     grade: "A992", // H29
@@ -175,18 +175,25 @@
 
   /**
    * Excel row logic: R = max(KLx_ft)*12/rx, S = max(KLy_ft)*12/ry, T = max(R,S);
-   * Pu only if section compact; SAFE iff phiPn > Pu_req (strict).
+   * Nominal Pn = Fcr*Ag; Pa = Pn/1.67 (ASD), Pu = 0.9*Pn (LRFD). Capacities only if compact.
+   * Governing check uses the active method strength vs demand (strict >).
    */
   function strengthForSection(sec, state) {
     var cs = compactStatus(sec, state.E, state.Fy);
     if (!cs.overallCompact) {
       return {
+        pa: NaN,
+        pu: NaN,
         phiPn: NaN,
         remark: "UNSAFE",
         compact: cs,
         KLrX: NaN,
         KLrY: NaN,
         KLrGov: NaN,
+        Fe: NaN,
+        Fcr: NaN,
+        Pn: NaN,
+        strongAxisGovernsKLr: false,
       };
     }
     var R = (state.klxMaxFt * 12) / sec.rx;
@@ -194,10 +201,13 @@
     var T = Math.max(R, S);
     var fb = flexuralBucklingStress(state.Fy, state.E, T);
     var Pn = sec.Ag * fb.Fcr;
-    var designStrength =
-      state.method === "ASD" ? Pn / 1.67 : 0.9 * Pn;
+    var pa = Pn / 1.67;
+    var pu = 0.9 * Pn;
+    var designStrength = state.method === "ASD" ? pa : pu;
     var remark = designStrength > state.demandPu ? "SAFE" : "UNSAFE";
     return {
+      pa: pa,
+      pu: pu,
       phiPn: designStrength,
       remark: remark,
       compact: cs,
@@ -337,8 +347,8 @@
     }
     var Fy = Math.max(1e-6, num(fyIn, 50));
     var E = Math.max(1e-6, num(eIn, 29000));
-    var dl = Math.max(0, num(dlIn, 90));
-    var ll = Math.max(0, num(llIn, 320));
+    var dl = Math.max(0, num(dlIn, EXCEL_COMPRESSION_DESIGN_DEFAULTS.deadLoadKips));
+    var ll = Math.max(0, num(llIn, EXCEL_COMPRESSION_DESIGN_DEFAULTS.liveLoadKips));
 
     var demand = demandByMethod(method, dl, ll);
     var demandCombo1 = demand.combo1;
@@ -351,11 +361,9 @@
     var d1Lbl = el("compressionDemandLabel1");
     var d2Lbl = el("compressionDemandLabel2");
     var dgLbl = el("compressionDemandGovLabel");
-    var probHead = el("compressionProbDemandHead");
     if (d1Lbl) d1Lbl.textContent = method === "ASD" ? "DL + LL" : "1.2DL+1.6LL";
     if (d2Lbl) d2Lbl.textContent = method === "ASD" ? "-" : "1.4DL";
     if (dgLbl) dgLbl.textContent = method === "ASD" ? "Ta" : "Tu";
-    if (probHead) probHead.textContent = method === "ASD" ? "Pa (kips)" : "Pu (kips)";
     if (d1) d1.value = fmtDemandVal(demandCombo1, 3);
     if (d2) d2.value = Number.isFinite(demandCombo2) ? fmtDemandVal(demandCombo2, 3) : "-";
     if (dg) dg.value = fmtDemandVal(demandPu, 3);
@@ -379,18 +387,26 @@
       };
     });
 
+    function capCellText(v) {
+      return Number.isFinite(v) ? fmt(v, 4) : "";
+    }
+
     results.forEach(function (row, idx) {
       var i = idx + 1;
       var wEl = el("compressionProbW" + i);
       var nEl = el("compressionProbName" + i);
-      var pEl = el("compressionProbPu" + i);
+      var paEl = el("compressionProbPa" + i);
+      var puEl = el("compressionProbPu" + i);
       var rEl = el("compressionProbRm" + i);
       if (wEl) wEl.textContent = String(row.sec.weightPlf);
       if (nEl) nEl.textContent = row.sec.designation;
-      if (pEl)
-        pEl.textContent = Number.isFinite(row.out.phiPn)
-          ? fmt(row.out.phiPn, 4)
-          : "--";
+      if (method === "ASD") {
+        if (paEl) paEl.textContent = capCellText(row.out.pa);
+        if (puEl) puEl.textContent = "";
+      } else {
+        if (paEl) paEl.textContent = "";
+        if (puEl) puEl.textContent = capCellText(row.out.pu);
+      }
       if (rEl) {
         rEl.textContent = row.out.remark;
         rEl.classList.toggle("is-safe", row.out.remark === "SAFE");

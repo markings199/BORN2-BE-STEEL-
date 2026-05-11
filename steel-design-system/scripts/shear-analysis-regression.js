@@ -46,8 +46,8 @@ check("Omega K39 (snapshot)", api.shearAnalysisOmegaASD(51.9, E, Fy), 1.5);
 
 var snap = api.evaluateShearAnalysisRow(secSnapshot(), E, Fy, "ASD", 0);
 check("Vn Y28 (snapshot)", snap.Vn, 333.5904);
-/** ASD Y38 = K39*Y28 = Ωv·Vn (Born2BeSteel Final (2) (3).xlsx); Ω=1.5 for this h/tw. */
-check("Y38 (ASD snapshot)", snap.designStrength, 333.5904 * 1.5);
+/** ASD Y38 = Y28/K39 = Vn/Ωv (`SHEAR ANALYSIS`); Ω=1.5 for this h/tw. */
+check("Y38 (ASD snapshot)", snap.designStrength, 333.5904 / 1.5);
 
 var lrfd = api.evaluateShearAnalysisRow(secSnapshot(), E, Fy, "LRFD", 0);
 check("Y38 (LRFD snapshot)", lrfd.designStrength, 333.5904);

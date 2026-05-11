@@ -3,6 +3,7 @@
  * References:
  * - SHEAR DESIGN !I10:AA30, !O26, !R38, !Z38/Z49 (lightest flexure & **`AC`** shear strength), !F38:G41
  * - Shear Capacity no deflection / w deflection **`AC`** (design shear for **`AD`** SAFE vs `MAX(G51,G55)`), not legacy **`P`**
+ * - Shear Capacity no deflection **`X`** (moment SAFE): `MAX('Bending Design'!O45,'Bending Design'!O39,V)` — not `Shear Design` O39
  * - Shear-Capacity !L:N, !O:P, !Q:S (table helper column **`P`** remains available via `evaluateCapacityRow`)
  * - SHEAR ANALYSIS !Q39 (Cv — Web Factor), !F39 (LRFD φv), !K39 (ASD Ωv), !Y28 (Vn), !Y38 (design strength)
  *   Y38: IF(F9="LRFD",F39*Y28,IF(F9="ASD",Y28/K39)); Cv matches IF(G32<=1.1*√(5N12/X10),1,…)
@@ -124,12 +125,12 @@
 
   /**
    * Excel `SHEAR ANALYSIS` !Y38 — IF(F9="LRFD",F39*Y28,IF(F9="ASD",Y28/K39)).
-   * LRFD: φv·Vn; ASD: Ωv·Vn (sheet multiplies by K39).
+   * LRFD: φv·Vn (F39·Y28); ASD: Vn/Ωv (Y28/K39).
    */
   function shearAnalysisDesignStrength_kips(method, phiLRFD, omegaASD, Vn) {
     if (!Number.isFinite(Vn)) return NaN;
     if (method === "ASD") {
-      return Number.isFinite(omegaASD) ? Vn * omegaASD : NaN;
+      return Number.isFinite(omegaASD) && omegaASD !== 0 ? Vn / omegaASD : NaN;
     }
     return Number.isFinite(phiLRFD) ? phiLRFD * Vn : NaN;
   }
@@ -307,6 +308,12 @@
   }
 
   /**
+   * Excel `Bending Design` default O39 (kip·ft) with initial G22=8, G27=12, G33=5 ft, ASD: (DL+LL)L²/8.
+   * Used by `Shear Capacity no deflection` column X Active_Mu when bending inputs are not supplied.
+   */
+  var EXCEL_BENDING_DESIGN_DEFAULT_O39_KIPFT = ((8 + 12) * (5 * 5)) / 8;
+
+  /**
    * Shear Design `Y31` — required Ix (in⁴) for LL-only uniform load and span L (ft).
    * (T50*5*(G27*1/12)*(G33*12)^4)/(384*P12*(G33*12))
    */
@@ -394,8 +401,6 @@
     var method = ctx.method;
     var E = ctx.E;
     var Fy = ctx.Fy;
-    var O39 = ctx.O39;
-    var O45 = ctx.O45;
     var G51 = ctx.G51;
     var G55 = ctx.G55;
     var dl = ctx.dl;
@@ -407,7 +412,11 @@
     var W = designFlexuralStrength_kipft(method, T);
     var U = lineLoadWithBeamWeight_klf(method, dl, ll, sec.weightPlf, considerBw);
     var V = momentFromLineLoad_kipft(U, Lft);
-    var activeMu = Math.max(Number(O45) || 0, Number(O39) || 0, Number(V) || 0);
+    var bend39 = Number(ctx.bendingO39);
+    if (!Number.isFinite(bend39)) bend39 = EXCEL_BENDING_DESIGN_DEFAULT_O39_KIPFT;
+    var bend45 = Number(ctx.bendingO45);
+    if (!Number.isFinite(bend45)) bend45 = 0;
+    var activeMu = Math.max(bend45, bend39, Number(V) || 0);
     var momentRemark = Number.isFinite(W) && W > activeMu ? "SAFE!" : "UNSAFE :<";
 
     var shearStrengthAC = shearCapacitySheetDesignStrengthAC_kips(sec, E, Fy, method);
@@ -511,6 +520,15 @@
     var consideringDeflection = isConsideringDeflectionMode(deflectionMode);
     var considerBeamWeight = isConsiderBeamWeightMode(beamWeightMode);
 
+    var bendingO39 =
+      inputs.bendingO39 != null && Number.isFinite(Number(inputs.bendingO39))
+        ? Number(inputs.bendingO39)
+        : EXCEL_BENDING_DESIGN_DEFAULT_O39_KIPFT;
+    var bendingO45 =
+      inputs.bendingO45 != null && Number.isFinite(Number(inputs.bendingO45))
+        ? Number(inputs.bendingO45)
+        : 0;
+
     var loads = governingUniformLoad(method, dl, ll);
     var Wu = loads.O26;
     var Mu_kipft = momentDemand_kipft(Wu, Lft);
@@ -526,6 +544,8 @@
       Fy: Fy,
       O39: Mu_kipft,
       O45: 0,
+      bendingO39: bendingO39,
+      bendingO45: bendingO45,
       O46: manualMu,
       Y31: Y31,
       G51: Vu,
@@ -563,6 +583,7 @@
   var SHEAR_ANALYSIS_DEFAULT_E_KSI = 29000;
 
   var api = {
+    EXCEL_BENDING_DESIGN_DEFAULT_O39_KIPFT: EXCEL_BENDING_DESIGN_DEFAULT_O39_KIPFT,
     SHEAR_ANALYSIS_DEFAULT_E_KSI: SHEAR_ANALYSIS_DEFAULT_E_KSI,
     governingUniformLoad: governingUniformLoad,
     momentDemand_kipft: momentDemand_kipft,
