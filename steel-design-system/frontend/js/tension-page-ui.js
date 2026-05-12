@@ -277,6 +277,9 @@
   var demandEq1 = byId("tensionDemandEq1");
   var demandEq2 = byId("tensionDemandEq2");
   var demandGov = byId("tensionDemandGov");
+  /** Excel `Tension Design`!`O39` — manual Ta (ASD) / Tu (LRFD) override; 0 uses load combinations (`J39`). */
+  var taManualInput = byId("tensionDemandTaManual");
+  var taManualLabel = byId("tensionDemandTaManualLabel");
   var minROut = byId("tensionMinR");
   var agYieldOut = byId("tensionAgYield");
   var anFractureOut = byId("tensionAnFracture");
@@ -324,7 +327,6 @@
   var unsupportedLc = byId("analysisUnsupportedLc");
   var analysisStagUnsupportedLc = byId("analysisStagUnsupportedLc");
   var plateLengthIn = byId("analysisPlateLengthIn");
-  var analysisPlateLengthOverride = byId("analysisPlateLengthIn");
 
   var analysisMethodMirror = byId("analysisMethodMirror");
   var analysisSteelMirror = byId("analysisSteelMirror");
@@ -390,6 +392,12 @@
   var analysisBsAnt = byId("analysisBsAnt");
   var analysisBsAvg = byId("analysisBsAvg");
   var analysisBsAvn = byId("analysisBsAvn");
+  var analysisBsFt = byId("analysisBsFt");
+  var analysisBsF1v = byId("analysisBsF1v");
+  var analysisBsF2v = byId("analysisBsF2v");
+  var analysisBsTn = byId("analysisBsTn");
+  var analysisBsLrfdTu = byId("analysisBsLrfdTu");
+  var analysisBsAsdTa = byId("analysisBsAsdTa");
   var analysisBlockShearCap = byId("analysisBlockShearCap");
   var analysisStagStressType = byId("analysisStagStressType");
   var analysisStagBlockShearCap = byId("analysisStagBlockShearCap");
@@ -1037,12 +1045,18 @@
     return unsupportedLc ? Math.max(0.0001, num(unsupportedLc.value, 1)) : 1;
   }
 
+  function linkedPlateLengthInchesFromMemberLengthFt() {
+    return Math.max(0, num(lengthFt && lengthFt.value, 0) * 12);
+  }
+
   function activePlateLengthIn(defaultLen) {
     if (isStaggeredAnalysisActive() && analysisStagPlateLengthIn) {
-      var linkedLen = num(lengthFt && lengthFt.value, 0) * 12;
+      var linkedLen = linkedPlateLengthInchesFromMemberLengthFt();
       return linkedLen > 0 ? linkedLen : defaultLen;
     }
-    return plateLengthIn ? num(plateLengthIn.value, defaultLen) : defaultLen;
+    /** Non-staggered NS: plate length (in) tracks `I33×12` — Length (ft) in Steel Properties / Design (`tensionLengthFt`). */
+    var linkedNs = linkedPlateLengthInchesFromMemberLengthFt();
+    return linkedNs > 0 ? linkedNs : (Number.isFinite(defaultLen) && defaultLen > 0 ? defaultLen : 0);
   }
 
   function activePlateThicknessIn() {
@@ -1250,6 +1264,10 @@
     var rounded = Math.round(x * p) / p;
     return rounded.toFixed(decimals);
   }
+  /** Read-only engineering display: finite → fixed decimals, else em dash. */
+  function fmtFinite3(v) {
+    return Number.isFinite(Number(v)) ? fmt(v, 3) : "--";
+  }
   function clamp(v, lo, hi) {
     return Math.min(hi, Math.max(lo, v));
   }
@@ -1298,6 +1316,26 @@
     return u;
   }
 
+  /** Excel `Tension Design` `J39` — governing tension from load combinations only (display row 3, left). */
+  function tensionGovDemandFromLoadsKips(dl, ll, method) {
+    if (method === "LRFD") {
+      return Math.max(1.2 * dl + 1.6 * ll, 1.4 * dl);
+    }
+    return dl + ll;
+  }
+
+  /**
+   * Excel `Tension Design` LET `_xlpm.Active_Ta` in `L44` / `P48`: `IF(O39>0,O39,J39)` (LRFD uses same `O39` with `Tu`).
+   */
+  function tensionActiveDemandKips() {
+    var dl = num(dlInput && dlInput.value, 0);
+    var ll = num(llInput && llInput.value, 0);
+    var method = methodSelect ? methodSelect.value || "ASD" : "ASD";
+    var j39 = tensionGovDemandFromLoadsKips(dl, ll, method);
+    var o39 = taManualInput ? num(taManualInput.value, 0) : 0;
+    return o39 > 0 ? o39 : j39;
+  }
+
   /** Mirrors Tension Design sheet inputs used by `Tension(Capacity and Demand )` columns Q,R,S. */
   function getTensionCapacityDemandInputs() {
     var fy = num(fyInput.value, 0);
@@ -1307,12 +1345,9 @@
     var method = methodSelect.value;
     var u = num(uOut.value, 0);
     if (!Number.isFinite(u) || u <= 0) u = calcU();
-    var gov;
-    if (method === "LRFD") {
-      gov = Math.max(1.2 * dl + 1.6 * ll, 1.4 * dl);
-    } else {
-      gov = dl + ll;
-    }
+    var govLoads = tensionGovDemandFromLoadsKips(dl, ll, method);
+    var o39 = taManualInput ? num(taManualInput.value, 0) : 0;
+    var gov = o39 > 0 ? o39 : govLoads;
     var lenFt = num(lengthFt.value, 0);
     var rReq = lenFt * 12 / 300;
     var anReq;
@@ -1544,7 +1579,7 @@
 
     if (plateThickness) plateThickness.value = "0";
     /** Plate length `X41` = `I33`×12 in workbook when plate thickness is used; mirror Excel 180 in for parity. */
-    if (plateLengthIn) plateLengthIn.value = "180";
+    if (plateLengthIn) plateLengthIn.value = fmt(linkedPlateLengthInchesFromMemberLengthFt(), 3);
     /** Stagger sheet plate `X45` stays independent; first visit to **Staggered** applies `S -Tension Analysis` thickness via `applyExcelStaggerAnalysisCalculatorDefaults`. */
 
     function normShapeName(s) {
@@ -1612,7 +1647,7 @@
     if (nominalDia) nominalDia.value = "0.75";
     if (boltType) boltType.value = "BOLT";
 
-    if (plateLengthIn) plateLengthIn.value = "126";
+    if (plateLengthIn) plateLengthIn.value = fmt(num(lengthFt && lengthFt.value, 0) * 12, 3);
     if (analysisStagPlateLengthIn) analysisStagPlateLengthIn.value = "126";
     if (plateThickness) plateThickness.value = "0";
     if (analysisStagPlateThickness) analysisStagPlateThickness.value = "0";
@@ -1706,6 +1741,7 @@
     if (tensionStagConnectionSelect) tensionStagConnectionSelect.value = "WEB";
     if (unsupportedLc) unsupportedLc.value = "15";
     if (analysisStagUnsupportedLc) analysisStagUnsupportedLc.value = "15";
+    if (taManualInput) taManualInput.value = "0";
 
     calcBoltDiameter();
     mirrorDesignToAnalysis();
@@ -1751,9 +1787,11 @@
       tLoad2 = 0;
       gov = tLoad1;
     }
+    if (taManualLabel) taManualLabel.textContent = method === "LRFD" ? "Tu =" : "Ta =";
     demandEq1.value = fmt(tLoad1, 3);
     demandEq2.value = method === "LRFD" ? fmt(tLoad2, 3) : "-";
     demandGov.value = fmt(gov, 3);
+    var activeT = tensionActiveDemandKips();
 
     var lenFt = num(lengthFt && lengthFt.value, 0);
     var rReq = lenFt * 12 / 300;
@@ -1762,12 +1800,12 @@
     var agYieldDisplay;
     var anFracture;
     if (method === "LRFD") {
-      agYieldDisplay = fy > 0 ? gov / (0.9 * fy) : NaN;
-      anFracture = fu > 0 && u > 0 ? gov / (0.75 * fu * u) : NaN;
+      agYieldDisplay = fy > 0 ? activeT / (0.9 * fy) : NaN;
+      anFracture = fu > 0 && u > 0 ? activeT / (0.75 * fu * u) : NaN;
     } else {
-      agYieldDisplay = fu > 0 && u > 0 ? (gov * 1.67 * u) / fu : NaN;
+      agYieldDisplay = fu > 0 && u > 0 ? (activeT * 1.67 * u) / fu : NaN;
       /** ASD: required An = Ta·Ωt·U / Fu (Ωt = 2), matching Design Calculator fracture row + MINIFS scan. */
-      anFracture = fu > 0 && u > 0 ? (gov * 2 * u) / fu : NaN;
+      anFracture = fu > 0 && u > 0 ? (activeT * 2 * u) / fu : NaN;
     }
     agYieldOut.value = Number.isFinite(agYieldDisplay) ? fmt(agYieldDisplay, 4) : "--";
     anFractureOut.value = Number.isFinite(anFracture) ? fmt(anFracture, 4) : "--";
@@ -1812,13 +1850,14 @@
       }
       dbg("post-fix", "H_non_comp", "tension-page-ui.js:calcDemandAndAreas", "Design demand / Excel tension capacity scan", {
         method: method,
-        gov: gov,
+        govLoads: gov,
+        activeT: activeT,
         u: u,
         rReq: rReq,
         anReq: anReq,
         pick: null,
       });
-      return { gov: gov, reqAg: NaN };
+      return { gov: gov, activeT: activeT, reqAg: NaN };
     }
 
     if (safeSectionOut) {
@@ -1844,7 +1883,8 @@
       method: method,
       dl: dl,
       ll: ll,
-      gov: gov,
+      govLoads: gov,
+      activeT: activeT,
       u: u,
       rReq: rReq,
       anReq: anReq,
@@ -1853,7 +1893,7 @@
       pickedAg: picked.Ag,
     });
 
-    return { gov: gov, reqAg: picked.Ag };
+    return { gov: gov, activeT: activeT, reqAg: picked.Ag };
   }
 
   function populateShapes() {
@@ -1908,7 +1948,10 @@
     if (shapeXStag) shapeXStag.value = shapeX.value;
     if (shapeYStag) shapeYStag.value = shapeY.value;
 
-    var lengthIn = num(lengthFt.value, 0) * 12;
+    var lengthIn = linkedPlateLengthInchesFromMemberLengthFt();
+    if (!isStaggeredAnalysisActive() && plateLengthIn) {
+      plateLengthIn.value = fmt(lengthIn, 3);
+    }
     var plateLen = activePlateLengthIn(lengthIn);
     lengthInOut.value = fmt(plateLen, 3);
     var tPlate = activePlateThicknessIn();
@@ -1975,7 +2018,7 @@
     if (analysisAe) analysisAe.value = fmt(aeUse, 3);
 
     var method = methodSelect.value;
-    var demand = num(demandGov.value, 0);
+    var demand = tensionActiveDemandKips();
     var phiY = 0.9;
     var phiR = 0.75;
     var omegaY = 1.67;
@@ -2069,13 +2112,13 @@
     if (analysisDemandGovLabel) analysisDemandGovLabel.textContent = demandGovLabel ? demandGovLabel.textContent : (method === "LRFD" ? "Tu" : "Ta");
     if (analysisDemand1) analysisDemand1.value = demandEq1 ? demandEq1.value : fmt(0, 3);
     if (analysisDemand2) analysisDemand2.value = demandEq2 ? demandEq2.value : "-";
-    if (analysisDemandGov) analysisDemandGov.value = demandGov ? demandGov.value : fmt(demand, 3);
+    if (analysisDemandGov) analysisDemandGov.value = fmt(demand, 3);
     if (analysisStagDemand1Label) analysisStagDemand1Label.textContent = analysisDemand1Label ? analysisDemand1Label.textContent : (method === "LRFD" ? "Tu = 1.2DL+1.6LL" : "Ta = DL + LL");
     if (analysisStagDemand2Label) analysisStagDemand2Label.textContent = analysisDemand2Label ? analysisDemand2Label.textContent : (method === "LRFD" ? "Tu = 1.4DL" : "-");
     if (analysisStagDemandGovLabel) analysisStagDemandGovLabel.textContent = analysisDemandGovLabel ? analysisDemandGovLabel.textContent : (method === "LRFD" ? "Tu" : "Ta");
     if (analysisStagDemand1) analysisStagDemand1.value = analysisDemand1 ? analysisDemand1.value : fmt(0, 3);
     if (analysisStagDemand2) analysisStagDemand2.value = analysisDemand2 ? analysisDemand2.value : "-";
-    if (analysisStagDemandGov) analysisStagDemandGov.value = analysisDemandGov ? analysisDemandGov.value : fmt(demand, 3);
+    if (analysisStagDemandGov) analysisStagDemandGov.value = fmt(demand, 3);
 
     // Block shear — non-stagger: legacy rn1/rn2 path; stagger: `S -Tension Analysis` AQ50 / AS52
     var lt = analysisBsLt ? num(analysisBsLt.value, 0) : 0;
@@ -2142,12 +2185,22 @@
     }
     if (analysisBlockShearCap) analysisBlockShearCap.value = fmt(bsCap, 3);
     if (analysisStagBlockShearCap) analysisStagBlockShearCap.value = fmt(bsCap, 3);
-    if (analysisStagBsFt) analysisStagBsFt.value = fmt(bsFt, 3);
-    if (analysisStagBsF1v) analysisStagBsF1v.value = fmt(bsF1v, 3);
-    if (analysisStagBsF2v) analysisStagBsF2v.value = fmt(bsF2v, 3);
-    if (analysisStagBsTn) analysisStagBsTn.value = fmt(bsTn, 3);
-    if (analysisStagBsLrfdTu) analysisStagBsLrfdTu.value = fmt(bsLrfd, 3);
-    if (analysisStagBsAsdTa) analysisStagBsAsdTa.value = fmt(bsAsd, 3);
+    if (isStaggeredAnalysisActive()) {
+      if (analysisStagBsFt) analysisStagBsFt.value = fmtFinite3(bsFt);
+      if (analysisStagBsF1v) analysisStagBsF1v.value = fmtFinite3(bsF1v);
+      if (analysisStagBsF2v) analysisStagBsF2v.value = fmtFinite3(bsF2v);
+      if (analysisStagBsTn) analysisStagBsTn.value = fmtFinite3(bsTn);
+      if (analysisStagBsLrfdTu) analysisStagBsLrfdTu.value = fmtFinite3(bsLrfd);
+      if (analysisStagBsAsdTa) analysisStagBsAsdTa.value = fmtFinite3(bsAsd);
+    } else {
+      if (analysisBsFt) analysisBsFt.value = fmtFinite3(bsFt);
+      if (analysisBsF1v) analysisBsF1v.value = fmtFinite3(bsF1v);
+      if (analysisBsF2v) analysisBsF2v.value = fmtFinite3(bsF2v);
+      if (analysisBsTn) analysisBsTn.value = fmtFinite3(bsTn);
+      /** Excel `NS -Tension Analysis` `AE52` / `AL52`: LRFD Tu vs ASD Ta only for active method. */
+      if (analysisBsLrfdTu) analysisBsLrfdTu.value = method === "LRFD" ? fmtFinite3(bsLrfd) : "-";
+      if (analysisBsAsdTa) analysisBsAsdTa.value = method === "ASD" ? fmtFinite3(bsAsd) : "-";
+    }
     if (analysisStagStressType && stressType) {
       analysisStagStressType.value = stressType.value;
     }
@@ -2921,12 +2974,12 @@
     connectionSelect,
     dlInput,
     llInput,
+    taManualInput,
     lengthFt,
     plateThickness,
     stressType,
     unsupportedLc,
     analysisStagUnsupportedLc,
-    plateLengthIn,
     analysisStagPlateLengthIn,
     analysisStagPlateThickness,
     analysisBsLt,

@@ -15,16 +15,16 @@
       { label: "PINNED-PINNED", K: 1 },
       { label: "N/A", K: 0 },
     ],
-    /* Properties pulled from `compression-capacity.json` rows that match workbook `Compression-Design ` probable sections. */
+    /* Properties pulled from `compression-capacity.json` (exported from `Compression-Capacity` in Born2BeSteel Final workbook). */
     champions: [
       { tier: 1, designation: "W14X48", weightPlf: 48, Ag: 14.1, rx: 5.85, ry: 1.91, lambdaFlange: 6.75, lambdaWeb: 33.6 },
-      { tier: 2, designation: "W12X45", weightPlf: 45, Ag: 13.1, rx: 5.15, ry: 1.95, lambdaFlange: 7.0, lambdaWeb: 29.6 },
-      { tier: 3, designation: "W10X45", weightPlf: 45, Ag: 13.3, rx: 4.32, ry: 2.01, lambdaFlange: 6.47, lambdaWeb: 22.5 },
-      { tier: 4, designation: "W8X40", weightPlf: 40, Ag: 11.7, rx: 3.53, ry: 2.04, lambdaFlange: 7.21, lambdaWeb: 17.6 },
+      { tier: 2, designation: "W12X40", weightPlf: 40, Ag: 11.7, rx: 5.13, ry: 1.94, lambdaFlange: 7.77, lambdaWeb: 33.6 },
+      { tier: 3, designation: "W10X39", weightPlf: 39, Ag: 11.5, rx: 4.27, ry: 1.98, lambdaFlange: 7.53, lambdaWeb: 25 },
+      { tier: 4, designation: "W8X35", weightPlf: 35, Ag: 10.3, rx: 3.51, ry: 2.03, lambdaFlange: 8.1, lambdaWeb: 20.5 },
     ],
   };
 
-  /** `Compression-Design ` workbook defaults (`Born2BeSteel Final (6).xlsx` — G15, H29, H43/H53, H61, R45/X45…). */
+  /** `Compression-Design ` workbook defaults (`Born2BeSteel Final (LAST) (1).xlsx` — G15, H29, H43/H53, H61, R45/X45…). */
   var EXCEL_COMPRESSION_DESIGN_DEFAULTS = {
     method: "ASD", // G15
     grade: "A992", // H29
@@ -32,12 +32,12 @@
     liveLoadKips: 80, // H53
     modulusEKsi: 29000, // H61
     slenderness: {
-      X1: { cond: "PINNED-PINNED", L: 22 }, // R45, X45
-      X2: { cond: "N/A", L: "" }, // R49, X49(blank)
-      X3: { cond: "N/A", L: "" }, // R52, X52(blank)
-      Y1: { cond: "PINNED-PINNED", L: 22 }, // R55, X55
-      Y2: { cond: "N/A", L: 14 }, // R58, X58
-      Y3: { cond: "N/A", L: 8 }, // R60, X60
+      X1: { cond: "PINNED-PINNED", L: 20 }, // R45, X45
+      X2: { cond: "N/A", L: "" }, // R49, X49 (blank)
+      X3: { cond: "N/A", L: "" }, // R52, X52 (blank)
+      Y1: { cond: "PINNED-PINNED", L: 20 }, // R55, X55
+      Y2: { cond: "N/A", L: 0 }, // R58, X58
+      Y3: { cond: "N/A", L: 0 }, // R60, X60
     },
   };
 

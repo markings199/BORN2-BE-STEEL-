@@ -14,6 +14,7 @@ router.get("/health", (req, res) => {
 
 router.get("/steel/sections", steelController.listSections);
 router.get("/steel/sections/:designation", steelController.getSection);
+router.get("/steel/compression-capacity", steelController.listCompressionCapacity);
 
 router.use("/calculations", calculationRoutes);
 

@@ -7,6 +7,8 @@
  *
  * Optional env:
  *   COMPRESSION_CAPACITY_XLSX=path/to/workbook.xlsx
+ *
+ * Default workbook is the current Born2BeSteel release used as capacity DB source of truth.
  */
 "use strict";
 
@@ -15,7 +17,7 @@ const path = require("path");
 const XLSX = require("xlsx");
 
 const ROOT = path.join(__dirname, "..");
-const defaultXlsx = path.join(ROOT, "Born2BeSteel Final (6).xlsx");
+const defaultXlsx = path.join(ROOT, "Born2BeSteel Final (LAST) (1).xlsx");
 const xlsxPath = process.env.COMPRESSION_CAPACITY_XLSX || defaultXlsx;
 const outPath = path.join(ROOT, "frontend", "data", "compression-capacity.json");
 

@@ -13768,7 +13768,7 @@
     }
     #tensionSection #tensionViewDesign .design-demand-card { grid-column: 1 / span 2; grid-row: 3; }
     #tensionSection #tensionViewDesign .design-demand-card {
-      min-height: 236px;
+      min-height: 268px;
       padding-bottom: 0.24rem;
       align-self: stretch;
       overflow: visible;
@@ -13839,6 +13839,37 @@
       font-size: 0.66rem;
       border-radius: 3px;
       text-align: center;
+    }
+    #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-stack {
+      margin-top: 0.12rem;
+      padding-top: 0.12rem;
+      border-top: 1px dashed #b9cfde;
+      display: grid;
+      gap: 0.06rem;
+    }
+    #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-label {
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: #0f3044;
+    }
+    #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-row {
+      display: grid;
+      grid-template-columns: minmax(86px, 106px) auto;
+      gap: 0.2rem;
+      align-items: center;
+    }
+    #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-row input.in-yellow {
+      height: 1.08rem;
+      font-size: 0.66rem;
+      border-radius: 3px;
+      text-align: center;
+    }
+    #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-hint {
+      margin: 0.04rem 0 0;
+      font-size: 0.58rem;
+      font-weight: 600;
+      line-height: 1.25;
+      color: #224b63;
     }
     #tensionSection #tensionViewDesign .design-demand-card .dra-section-title {
       margin: 0.12rem 0 0.08rem;
@@ -16177,7 +16208,8 @@
       }
       #tensionSection #tensionViewDesign .design-demand-card .dra-eq-row input,
       #tensionSection #tensionViewDesign .design-demand-card .dra-area-row input,
-      #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input {
+      #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input,
+      #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-row input.in-yellow {
         height: 1.02rem !important;
         min-height: 1.02rem !important;
         font-size: 0.63rem !important;
@@ -16343,7 +16375,8 @@
       }
       #tensionSection #tensionViewDesign .design-demand-card .dra-eq-row input,
       #tensionSection #tensionViewDesign .design-demand-card .dra-area-row input,
-      #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input {
+      #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input,
+      #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-row input.in-yellow {
         height: 1.16rem !important;
         min-height: 1.16rem !important;
         font-size: 0.7rem !important;
@@ -16475,7 +16508,8 @@
       }
       #tensionSection #tensionViewDesign .design-demand-card .dra-eq-row input,
       #tensionSection #tensionViewDesign .design-demand-card .dra-area-row input,
-      #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input {
+      #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input,
+      #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-row input.in-yellow {
         height: 1.18rem !important;
         min-height: 1.18rem !important;
       }
@@ -17182,7 +17216,8 @@
     }
     html body #tensionSection #tensionViewDesign .design-demand-card .dra-eq-row input,
     html body #tensionSection #tensionViewDesign .design-demand-card .dra-area-row input,
-    html body #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input {
+    html body #tensionSection #tensionViewDesign .design-demand-card .dra-r-row input,
+    html body #tensionSection #tensionViewDesign .design-demand-card .dra-ta-manual-row input.in-yellow {
       height: 1.35rem !important;
       border-radius: 10px !important;
       border: 1px solid #a5c7d9 !important;
@@ -17577,7 +17612,7 @@
       overflow-x: visible !important;
       overflow-y: visible !important;
       box-sizing: border-box !important;
-      min-height: 14.6rem !important;
+      min-height: 16.2rem !important;
       padding: 0.38rem clamp(0.52rem, 2vw, 0.88rem) 0.55rem !important;
     }
     html body #analysisCalcNon .analysis-block-shear hr {
@@ -19064,6 +19099,14 @@
                   <div class="dra-r-block">
                     <span class="dra-r-label">Minimum radius of gyration, r =</span>
                     <div class="dra-r-row"><input id="tensionMinR" class="out-green" readonly><span class="dra-unit">in</span></div>
+                    <div class="dra-ta-manual-stack" aria-label="Manual governing tension override">
+                      <span id="tensionDemandTaManualLabel" class="dra-ta-manual-label">Ta =</span>
+                      <div class="dra-ta-manual-row">
+                        <input id="tensionDemandTaManual" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0" title="Excel Tension Design O39: use 0 to take governing tension from load combinations (J39); enter a value only when the problem specifies it.">
+                        <span class="dra-unit">kips</span>
+                      </div>
+                      <p class="dra-ta-manual-hint">Keep as 0 unless the problem specifies an alternate governing Ta (ASD) or Tu (LRFD); if so, enter that value.</p>
+                    </div>
                   </div>
                 </div>
                 <hr>
@@ -19212,14 +19255,14 @@
 
                     <div class="tension-card analysis-for-plates" style="margin:0;">
                       <h4>For Plates</h4>
-                      <div class="t-row"><span>Length (in)</span><input id="analysisPlateLengthIn" class="out-green" type="number" step="any" min="0" inputmode="decimal" value="180"></div>
+                      <div class="t-row"><span>Length (in)</span><input id="analysisPlateLengthIn" class="out-green" type="text" readonly inputmode="decimal" value="0" title="Length (in) = Length (ft) in Steel Properties × 12 (NS -Tension Analysis)"></div>
                       <div class="t-row"><span>Thickness (in)</span><input id="tensionPlateThickness" class="in-yellow" type="number" step="any" min="0" inputmode="decimal" value="0"></div>
                       <div class="t-row t-row-unit"><span>Ag (plate)</span><input id="tensionPlateAg" class="out-green" readonly><span class="t-unit">in²</span></div>
                       <div class="t-row ns-length-used-row"><span>Length used (in)</span><input id="tensionLengthIn" class="out-green" readonly></div>
                       <div class="plate-instructions">
                         <div class="pi-title">Instruction</div>
                         <div class="pi-text">
-                          Enter <strong>Thickness (in)</strong> and <strong>Length (in)</strong> to compute plate gross area \(Ag = L\times t\) per <strong>NS -Tension Analysis</strong> (<code>W50</code>). If thickness is <strong>0</strong>, plate values are ignored and the selected section properties govern.
+                          <strong>Length (in)</strong> is computed as <strong>Length (ft) × 12</strong> from Steel Properties (same as Design member length). Enter <strong>Thickness (in)</strong> to compute plate gross area \(Ag = L\times t\) per <strong>NS -Tension Analysis</strong> (<code>W50</code>). If thickness is <strong>0</strong>, plate values are ignored and the selected section properties govern.
                         </div>
                       </div>
                     </div>
@@ -19270,6 +19313,25 @@
                       <hr>
                       <div class="analysis-bs-footer" aria-label="Block shear tension stress and capacity">
                         <div class="t-row"><span>Tension stress</span><select id="tensionStressType" class="in-yellow"><option value="1">UNIFORM (1.0)</option><option value="0.5">NON-UNIFORM (0.5)</option></select></div>
+                        <div class="analysis-blockshear-grid">
+                          <div>
+                            <div class="t-row t-row-unit"><span>Ft</span><input id="analysisBsFt" class="out-green" readonly aria-label="Block shear Ft"><span class="t-unit">kips</span></div>
+                            <div class="t-row t-row-unit"><span>Tn</span><input id="analysisBsTn" class="out-green" readonly aria-label="Block shear Tn nominal"><span class="t-unit">kips</span></div>
+                          </div>
+                          <div>
+                            <div class="t-row t-row-unit"><span>F1v</span><input id="analysisBsF1v" class="out-green" readonly aria-label="Block shear F1v"><span class="t-unit">kips</span></div>
+                            <div class="t-row t-row-unit"><span>F2v</span><input id="analysisBsF2v" class="out-green" readonly aria-label="Block shear F2v"><span class="t-unit">kips</span></div>
+                          </div>
+                        </div>
+                        <hr>
+                        <div class="analysis-blockshear-grid">
+                          <div>
+                            <div class="t-row t-row-unit"><span>LRFD: Tu</span><input id="analysisBsLrfdTu" class="out-green" readonly aria-label="LRFD block shear Tu"><span class="t-unit">kips</span></div>
+                          </div>
+                          <div>
+                            <div class="t-row t-row-unit"><span>ASD: Ta</span><input id="analysisBsAsdTa" class="out-green" readonly aria-label="ASD block shear Ta"><span class="t-unit">kips</span></div>
+                          </div>
+                        </div>
                         <div class="t-row t-row-unit analysis-bs-cap-row"><span>Block shear capacity</span><input id="analysisBlockShearCap" class="out-green" readonly><span class="t-unit">kips</span></div>
                       </div>
                     </div>
@@ -19644,23 +19706,23 @@
                 <div class="tension-card compression-card compression-probable-card">
                   <h4>Probable Section</h4>
                   <div class="compression-probable-head"><span>W (lb/ft)</span><span>Section</span><span>Pa (kips)</span><span>Pu (kips)</span><span>Remarks</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW1">48</span><span id="compressionProbName1">W14X48</span><span id="compressionProbPa1">110.9325</span><span id="compressionProbPu1"></span><span id="compressionProbRm1" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW2">45</span><span id="compressionProbName2">W12X45</span><span id="compressionProbPa2">107.4270</span><span id="compressionProbPu2"></span><span id="compressionProbRm2" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW3">45</span><span id="compressionProbName3">W10X45</span><span id="compressionProbPa3">115.8822</span><span id="compressionProbPu3"></span><span id="compressionProbRm3" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW4">40</span><span id="compressionProbName4">W8X40</span><span id="compressionProbPa4">105.0072</span><span id="compressionProbPu4"></span><span id="compressionProbRm4" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW1">48</span><span id="compressionProbName1">W14X48</span><span id="compressionProbPa1">134.2283</span><span id="compressionProbPu1"></span><span id="compressionProbRm1" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW2">40</span><span id="compressionProbName2">W12X40</span><span id="compressionProbPa2">114.9073</span><span id="compressionProbPu2"></span><span id="compressionProbRm2" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW3">39</span><span id="compressionProbName3">W10X39</span><span id="compressionProbPa3">117.6486</span><span id="compressionProbPu3"></span><span id="compressionProbRm3" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW4">35</span><span id="compressionProbName4">W8X35</span><span id="compressionProbPa4">110.7612</span><span id="compressionProbPu4"></span><span id="compressionProbRm4" class="capacity-remark is-safe">SAFE</span></div>
                 </div>
                 <div class="tension-card compression-card compression-slender-card">
                   <h4>Critical Slenderness Ratio</h4>
                   <div class="compression-slen-head"><span>Element</span><span>Condition</span><span>K</span><span>L (ft)</span><span>KL</span></div>
-                  <div class="compression-slen-row"><span>x₁</span><select id="compressionX1Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₁"></select><span id="compressionX1K" class="compression-cell">1</span><input id="compressionX1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="22"><span id="compressionX1KL" class="compression-cell">22</span></div>
+                  <div class="compression-slen-row"><span>x₁</span><select id="compressionX1Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₁"></select><span id="compressionX1K" class="compression-cell">1</span><input id="compressionX1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="20"><span id="compressionX1KL" class="compression-cell">20</span></div>
                   <div class="compression-slen-row"><span>x₂</span><select id="compressionX2Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₂"></select><span id="compressionX2K" class="compression-cell">0</span><input id="compressionX2L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" placeholder=""><span id="compressionX2KL" class="compression-cell"></span></div>
                   <div class="compression-slen-row"><span>x₃</span><select id="compressionX3Cond" class="in-yellow compression-slen-select" aria-label="Boundary x₃"></select><span id="compressionX3K" class="compression-cell">0</span><input id="compressionX3L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" placeholder=""><span id="compressionX3KL" class="compression-cell"></span></div>
-                  <div class="compression-slen-row"><span>y₁</span><select id="compressionY1Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₁"></select><span id="compressionY1K" class="compression-cell">1</span><input id="compressionY1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="22"><span id="compressionY1KL" class="compression-cell">22</span></div>
-                  <div class="compression-slen-row"><span>y₂</span><select id="compressionY2Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₂"></select><span id="compressionY2K" class="compression-cell">0</span><input id="compressionY2L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="14"><span id="compressionY2KL" class="compression-cell"></span></div>
-                  <div class="compression-slen-row"><span>y₃</span><select id="compressionY3Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₃"></select><span id="compressionY3K" class="compression-cell">1</span><input id="compressionY3L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="8"><span id="compressionY3KL" class="compression-cell">8</span></div>
+                  <div class="compression-slen-row"><span>y₁</span><select id="compressionY1Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₁"></select><span id="compressionY1K" class="compression-cell">1</span><input id="compressionY1L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="20"><span id="compressionY1KL" class="compression-cell">20</span></div>
+                  <div class="compression-slen-row"><span>y₂</span><select id="compressionY2Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₂"></select><span id="compressionY2K" class="compression-cell">0</span><input id="compressionY2L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="0"><span id="compressionY2KL" class="compression-cell"></span></div>
+                  <div class="compression-slen-row"><span>y₃</span><select id="compressionY3Cond" class="in-yellow compression-slen-select" aria-label="Boundary y₃"></select><span id="compressionY3K" class="compression-cell">0</span><input id="compressionY3L" class="in-yellow compression-slen-lft" type="number" step="any" min="0" value="0"><span id="compressionY3KL" class="compression-cell"></span></div>
                   <div class="compression-slen-govern">
                     <span id="compressionKLGovCaption" class="compression-slen-govern-caption">Assuming Kly Governs</span>
-                    <input id="compressionKLGovValue" type="text" class="compression-kl-gov-ft" readonly value="22.0000" aria-label="Governing KL, ft">
+                    <input id="compressionKLGovValue" type="text" class="compression-kl-gov-ft" readonly value="20.0000" aria-label="Governing KL, ft">
                   </div>
                   <div class="calc-result" id="resultCompression" style="display:none;white-space:pre-wrap;" aria-hidden="true"></div>
                 </div>
@@ -19682,19 +19744,19 @@
                 <div class="tension-card compression-card compression-mini-stack">
                   <h4>Check Compactness</h4>
                   <div class="compression-check-block">
-                    <div class="compression-mini-row"><span>Flange λ<sub>f</sub></span><input id="compressionDesignFlangeLambda" class="out-green" readonly value="7.21"><span></span></div>
+                    <div class="compression-mini-row"><span>Flange λ<sub>f</sub></span><input id="compressionDesignFlangeLambda" class="out-green" readonly value="8.10"><span></span></div>
                     <div class="compression-mini-row"><span>Flange λ<sub>r</sub></span><input id="compressionDesignFlangeLim" class="out-green" readonly value="13.4866"><span></span></div>
                     <div id="compressionDesignFlangeClass" class="compression-mini-label compression-class-status is-compact"><em>COMPACT FLANGE</em></div>
                   </div>
                   <div class="compression-check-block">
-                    <div class="compression-mini-row"><span>Web λ<sub>w</sub></span><input id="compressionDesignWebLambda" class="out-green" readonly value="17.6"><span></span></div>
+                    <div class="compression-mini-row"><span>Web λ<sub>w</sub></span><input id="compressionDesignWebLambda" class="out-green" readonly value="20.5"><span></span></div>
                     <div class="compression-mini-row"><span>Web λ<sub>r</sub></span><input id="compressionDesignWebLim" class="out-green" readonly value="35.8840"><span></span></div>
                     <div id="compressionDesignWebClass" class="compression-mini-label compression-class-status is-compact"><em>COMPACT WEB</em></div>
                   </div>
                 </div>
                 <div class="tension-card safe-card compression-safe-card">
                   <h4>Lightest Adequate Section</h4>
-                  <div class="safe-name" id="compressionSafeSection">W8X40</div>
+                  <div class="safe-name" id="compressionSafeSection">W8X35</div>
                   <span id="compressionSafeRemarkLabel" class="compression-safe-remark-label-paired is-safe">SAFE</span>
                   <div class="compression-lightest-title">Lightest Section</div>
                 </div>
