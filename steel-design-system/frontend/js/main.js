@@ -591,6 +591,12 @@
       dashboardMain.classList.toggle("section-props-active", sectionId === "sectionPropsSection");
       dashboardMain.classList.toggle("tension-rod-active", sectionId === "tensionRodSection");
     }
+
+    if (sectionId === "compressionSection" && typeof window.recomputeCompressionDesignCalculator === "function") {
+      window.requestAnimationFrame(function () {
+        window.recomputeCompressionDesignCalculator();
+      });
+    }
   }
 
   navItems.forEach(function (item) {

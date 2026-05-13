@@ -4240,6 +4240,14 @@
       border-color: #9eb8cb !important;
       color: #12384d !important;
     }
+    #compressionSection #compressionLightestMeta {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #335a72;
+      margin: 0.3rem 0 0.15rem;
+      line-height: 1.25;
+      text-align: center;
+    }
     #compressionSection .compression-guide {
       border-radius: 12px;
       border-color: #a7c5d7;
@@ -19706,10 +19714,10 @@
                 <div class="tension-card compression-card compression-probable-card">
                   <h4>Probable Section</h4>
                   <div class="compression-probable-head"><span>W (lb/ft)</span><span>Section</span><span>Pa (kips)</span><span>Pu (kips)</span><span>Remarks</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW1">48</span><span id="compressionProbName1">W14X48</span><span id="compressionProbPa1">134.2283</span><span id="compressionProbPu1"></span><span id="compressionProbRm1" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW2">40</span><span id="compressionProbName2">W12X40</span><span id="compressionProbPa2">114.9073</span><span id="compressionProbPu2"></span><span id="compressionProbRm2" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW3">39</span><span id="compressionProbName3">W10X39</span><span id="compressionProbPa3">117.6486</span><span id="compressionProbPu3"></span><span id="compressionProbRm3" class="capacity-remark is-safe">SAFE</span></div>
-                  <div class="compression-probable-row"><span id="compressionProbW4">35</span><span id="compressionProbName4">W8X35</span><span id="compressionProbPa4">110.7612</span><span id="compressionProbPu4"></span><span id="compressionProbRm4" class="capacity-remark is-safe">SAFE</span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW1">—</span><span id="compressionProbName1">—</span><span id="compressionProbPa1"></span><span id="compressionProbPu1"></span><span id="compressionProbRm1" class="capacity-remark"></span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW2">—</span><span id="compressionProbName2">—</span><span id="compressionProbPa2"></span><span id="compressionProbPu2"></span><span id="compressionProbRm2" class="capacity-remark"></span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW3">—</span><span id="compressionProbName3">—</span><span id="compressionProbPa3"></span><span id="compressionProbPu3"></span><span id="compressionProbRm3" class="capacity-remark"></span></div>
+                  <div class="compression-probable-row"><span id="compressionProbW4">—</span><span id="compressionProbName4">—</span><span id="compressionProbPa4"></span><span id="compressionProbPu4"></span><span id="compressionProbRm4" class="capacity-remark"></span></div>
                 </div>
                 <div class="tension-card compression-card compression-slender-card">
                   <h4>Critical Slenderness Ratio</h4>
@@ -19756,7 +19764,8 @@
                 </div>
                 <div class="tension-card safe-card compression-safe-card">
                   <h4>Lightest Adequate Section</h4>
-                  <div class="safe-name" id="compressionSafeSection">W8X35</div>
+                  <div class="safe-name" id="compressionSafeSection" aria-live="polite" aria-atomic="true">—</div>
+                  <div id="compressionLightestMeta" class="compression-lightest-meta" aria-live="polite"></div>
                   <span id="compressionSafeRemarkLabel" class="compression-safe-remark-label-paired is-safe">SAFE</span>
                   <div class="compression-lightest-title">Lightest Section</div>
                 </div>
@@ -21131,7 +21140,7 @@
   <script src="js/main.js"></script>
   <script src="js/section-properties-ui.js"></script>
   <script src="js/calculations-ui.js"></script>
-  <script src="js/compression-design-ui.js?v=20260511a"></script>
+  <script src="js/compression-design-ui.js?v=20260513e"></script>
   <script src="js/tension-page-ui.js?v=20260511c"></script>
   <script src="js/tension-rod-ui.js"></script>
   <script src="js/bending-design-workbook.js"></script>

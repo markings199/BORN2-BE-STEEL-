@@ -1003,6 +1003,9 @@
         ["input", "change"].forEach(function (ev) {
           node.addEventListener(ev, function () {
             computeCompressionAnalysis("pre-fix");
+            if (typeof window.recomputeCompressionDesignCalculator === "function") {
+              window.recomputeCompressionDesignCalculator();
+            }
           });
         });
       });
@@ -1010,6 +1013,9 @@
       if (gradeNode) {
         gradeNode.addEventListener("change", function () {
           applyCompressionAnalysisGradeFromSelect(true);
+          if (typeof window.recomputeCompressionDesignCalculator === "function") {
+            window.recomputeCompressionDesignCalculator();
+          }
         });
       }
       computeCompressionAnalysis("pre-fix");
@@ -1600,10 +1606,26 @@
         syncCompressionDesignToAnalysis();
         var methodSel = document.getElementById("compressionDesignMethod");
         var m = methodSel && String(methodSel.value || "").toUpperCase() === "ASD" ? "ASD" : "LRFD";
+        var dlDesign = document.getElementById("compressionDesignDl");
+        var llDesign = document.getElementById("compressionDesignLl");
+        var dlV = dlDesign && String(dlDesign.value || "").trim() !== "" ? String(dlDesign.value) : "20";
+        var llV = llDesign && String(llDesign.value || "").trim() !== "" ? String(llDesign.value) : "80";
         try {
           window.localStorage.setItem("compressionCapacityDbMethod", m);
         } catch (eLs) {}
-        window.location.href = "pages/capacity-analysis.html?method=" + encodeURIComponent(m);
+        try {
+          window.sessionStorage.setItem(
+            "compressionCapacityDemand",
+            JSON.stringify({ m: m, dl: dlV, ll: llV })
+          );
+        } catch (eSs) {}
+        window.location.href =
+          "pages/capacity-analysis.html?method=" +
+          encodeURIComponent(m) +
+          "&dl=" +
+          encodeURIComponent(dlV) +
+          "&ll=" +
+          encodeURIComponent(llV);
       });
     }
     initCompressionAnalysisSectionSelection();

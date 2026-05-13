@@ -31,6 +31,8 @@
     safeOnly: false,
     /** "LRFD" | "ASD" — drives which of Pa / Pu is shown (φPn vs Pn/Ω). */
     method: "LRFD",
+    /** Governing demand (kips) from Compression-Design DL/LL — recomputed each render. */
+    demandGovKips: NaN,
   };
 
   function readCapacityDbMethod() {
@@ -45,7 +47,88 @@
       var ls = window.localStorage.getItem("compressionCapacityDbMethod");
       if (ls === "ASD" || ls === "LRFD") return ls;
     } catch (e2) {}
+    try {
+      var cap = sessionStorage.getItem("compressionCapacityDemand");
+      if (cap) {
+        var o = JSON.parse(cap);
+        var mm = String(o.m || "").toUpperCase();
+        if (mm === "ASD" || mm === "LRFD") return mm;
+      }
+    } catch (e3) {}
     return "LRFD";
+  }
+
+  /**
+   * DL/LL (kips) for workbook `Compression-Design` demand — URL `?dl=&ll=`, else sessionStorage
+   * from Compression Dashboard "Capacity Analysis" button, else Excel defaults (20, 80).
+   */
+  function readDemandLoads() {
+    try {
+      var sp = new URLSearchParams(window.location.search || "");
+      var dls = sp.get("dl");
+      var lls = sp.get("ll");
+      if (dls != null && dls !== "" && lls != null && lls !== "") {
+        var dl0 = Math.max(0, Number(dls));
+        var ll0 = Math.max(0, Number(lls));
+        if (Number.isFinite(dl0) && Number.isFinite(ll0)) return { dl: dl0, ll: ll0 };
+      }
+    } catch (e0) {}
+    try {
+      var raw = sessionStorage.getItem("compressionCapacityDemand");
+      if (raw) {
+        var o = JSON.parse(raw);
+        var dl = Math.max(0, Number(o.dl));
+        var ll = Math.max(0, Number(o.ll));
+        if (Number.isFinite(dl) && Number.isFinite(ll)) return { dl: dl, ll: ll };
+      }
+    } catch (e1) {}
+    return { dl: 20, ll: 80 };
+  }
+
+  /** Same governing demand as `Compression-Design` Tu/Ta row (`demandByMethod` in compression-design-ui.js). */
+  function demandGoverningKips(method, dl, ll) {
+    var isAsd = String(method || "LRFD").toUpperCase() === "ASD";
+    if (isAsd) return dl + ll;
+    return Math.max(1.2 * dl + 1.6 * ll, 1.4 * dl);
+  }
+
+  function isCompactCapacityRow(r) {
+    return normalizeText(r && r.finalRemarks) === "COMPACT";
+  }
+
+  /**
+   * Excel `Compression-Capacity` **Pa** remark (ASD), e.g.
+   * `IF(OR(U="",LRFD),"",IF(AND(Q="COMPACT",Z>AG13),"SAFE","UNSAFE"))`.
+   * Workbook rows: **COMPACT** + Pa vs demand → SAFE/UNSAFE; **SLENDER** with no tabulated Pa → blank;
+   * SLENDER with Pa but failing demand → UNSAFE (matches small shapes all-UNSAFE in client sheets).
+   */
+  function dynamicPaRemark(r, method, demandGov) {
+    if (String(method || "").toUpperCase() === "LRFD") return "";
+    if (!Number.isFinite(demandGov) || demandGov <= 0) return "";
+    var pa = designPaKips(r);
+    var paNum = typeof pa === "number" ? pa : Number(pa);
+    if (!isCompactCapacityRow(r)) {
+      if (!Number.isFinite(paNum) || paNum <= 0) return "";
+      return "UNSAFE";
+    }
+    if (!Number.isFinite(paNum) || paNum <= 0) return "UNSAFE";
+    return paNum > demandGov ? "SAFE" : "UNSAFE";
+  }
+
+  /**
+   * Excel **Pu** remark (LRFD): `IF(OR(U="",ASD),"",IF(AND(Q="COMPACT",X>AG13),"SAFE","UNSAFE"))`.
+   * `U=""` when **Pu** (φPn) is missing — use computed Pu only; do **not** gate on exported Pa only (that hid valid Pu from Pn and broke SAFE/UNSAFE vs Excel).
+   */
+  function dynamicPuRemark(r, method, demandGov) {
+    if (String(method || "").toUpperCase() === "ASD") return "";
+    if (!Number.isFinite(demandGov) || demandGov <= 0) return "";
+    var pu = designPuKips(r);
+    var puNum = typeof pu === "number" ? pu : Number(pu);
+    if (!Number.isFinite(puNum) || puNum <= 0) return "";
+    if (!isCompactCapacityRow(r)) {
+      return "UNSAFE";
+    }
+    return puNum > demandGov ? "SAFE" : "UNSAFE";
   }
 
   function applyMethodHeaderChrome() {
@@ -86,28 +169,18 @@
     return "";
   }
 
-  function strTrim(v) {
-    if (v == null) return "";
-    return String(v).trim();
-  }
-
-  /**
-   * Remark beside **Pu** (LRFD): use `PuRemarks` when set; otherwise `PaRemarks`
-   * (workbook export often leaves Pu demand column blank but puts SAFE on the Pa path).
-   */
+  /** LRFD **Pu** remark cell — live demand vs φPn (see `dynamicPuRemark`). */
   function remarkForPuColumn(r) {
     if (!r || r.kind !== "row") return "";
-    if (strTrim(r.PuRemarks) !== "") return r.PuRemarks;
-    return r.PaRemarks != null ? r.PaRemarks : "";
+    return dynamicPuRemark(r, state.method, state.demandGovKips);
   }
 
   /**
-   * Remark beside **Pa** (ASD): use `PaRemarks` when set; otherwise `PuRemarks`.
+   * Remark beside **Pa** (ASD): workbook formula vs live `Compression-Design` demand (AG13).
    */
   function remarkForPaColumn(r) {
     if (!r || r.kind !== "row") return "";
-    if (strTrim(r.PaRemarks) !== "") return r.PaRemarks;
-    return r.PuRemarks != null ? r.PuRemarks : "";
+    return dynamicPaRemark(r, state.method, state.demandGovKips);
   }
 
   function fmt(n, dp) {
@@ -124,11 +197,9 @@
   }
 
   function isSafeRow(r) {
-    if (!r) return false;
-    if (state.method === "ASD") return normalizeText(r.PaRemarks) === "SAFE";
-    var puRm = normalizeText(r.PuRemarks);
-    if (puRm === "SAFE") return true;
-    return normalizeText(r.PaRemarks) === "SAFE";
+    if (!r || r.kind !== "row") return false;
+    if (state.method === "ASD") return dynamicPaRemark(r, state.method, state.demandGovKips) === "SAFE";
+    return dynamicPuRemark(r, state.method, state.demandGovKips) === "SAFE";
   }
 
   function computeGroups(rows) {
@@ -290,6 +361,8 @@
   }
 
   function rerender() {
+    var loads = readDemandLoads();
+    state.demandGovKips = demandGoverningKips(state.method, loads.dl, loads.ll);
     var filtered = applyFilters(state.rows);
     render(filtered);
     updateMetrics(state.rows, filtered);
@@ -342,6 +415,8 @@
   API.listCompressionCapacity()
     .then(function (data) {
       state.method = readCapacityDbMethod();
+      var loads0 = readDemandLoads();
+      state.demandGovKips = demandGoverningKips(state.method, loads0.dl, loads0.ll);
       state.rows = (data && data.rows) ? data.rows : [];
       state.groups = computeGroups(state.rows);
       populateGroups(state.groups);

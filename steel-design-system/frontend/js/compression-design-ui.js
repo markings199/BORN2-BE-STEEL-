@@ -24,6 +24,69 @@
     ],
   };
 
+  /** Sorted lightest-first W shapes from `data/aisc-sections.json` (fallback: `TIERS.champions` only). */
+  var wShapeCatalog = null;
+  var wShapeCatalogFetch = null;
+
+  function adaptCatalogWShape(raw) {
+    if (!raw || String(raw.type || "").toUpperCase() !== "W") return null;
+    var Ag = Number(raw.Ag);
+    var rx = Number(raw.rx);
+    var ry = Number(raw.ry);
+    var w = Number(raw.weightPlf);
+    if (!Number.isFinite(Ag) || Ag <= 0) return null;
+    if (!Number.isFinite(rx) || rx <= 0) return null;
+    if (!Number.isFinite(ry) || ry <= 0) return null;
+    if (!Number.isFinite(w) || w <= 0) return null;
+    var lf = Number(raw.lambdaF != null ? raw.lambdaF : raw.lambdaFlange);
+    var lw = Number(raw.lambdaW != null ? raw.lambdaW : raw.lambdaWeb);
+    if (!Number.isFinite(lf) || lf <= 0) return null;
+    if (!Number.isFinite(lw) || lw <= 0) return null;
+    var name = String(raw.designation || raw.aiscManualLabel || "").trim();
+    if (!name) return null;
+    return {
+      tier: 0,
+      designation: name,
+      weightPlf: w,
+      Ag: Ag,
+      rx: rx,
+      ry: ry,
+      lambdaFlange: lf,
+      lambdaWeb: lw,
+    };
+  }
+
+  function ensureWShapeCatalog(done) {
+    if (wShapeCatalog && wShapeCatalog.length) {
+      if (typeof done === "function") done();
+      return;
+    }
+    if (!wShapeCatalogFetch) {
+      wShapeCatalogFetch = fetch("data/aisc-sections.json", { credentials: "same-origin" })
+        .then(function (r) {
+          return r.ok ? r.json() : Promise.reject(new Error("aisc-sections.json"));
+        })
+        .then(function (payload) {
+          var arr = (payload && payload.sections) || [];
+          var out = [];
+          for (var i = 0; i < arr.length; i++) {
+            var sec = adaptCatalogWShape(arr[i]);
+            if (sec) out.push(sec);
+          }
+          out.sort(function (a, b) {
+            return a.weightPlf - b.weightPlf || String(a.designation).localeCompare(String(b.designation));
+          });
+          wShapeCatalog = out;
+        })
+        .catch(function () {
+          wShapeCatalog = null;
+        });
+    }
+    wShapeCatalogFetch.finally(function () {
+      if (typeof done === "function") done();
+    });
+  }
+
   /** `Compression-Design ` workbook defaults (`Born2BeSteel Final (LAST) (1).xlsx` — G15, H29, H43/H53, H61, R45/X45…). */
   var EXCEL_COMPRESSION_DESIGN_DEFAULTS = {
     method: "ASD", // G15
@@ -41,8 +104,20 @@
     },
   };
 
+  /**
+   * Resolve controls inside `#compressionSection` first so the Design Calculator always reads/writes
+   * the live DOM (avoids stale `getElementById` hits if duplicate ids ever appear elsewhere).
+   */
   function el(id) {
-    return document.getElementById(id);
+    var sid = String(id || "").trim();
+    if (!sid) return null;
+    if (root && typeof root.querySelector === "function") {
+      try {
+        var hit = root.querySelector("#" + sid);
+        if (hit) return hit;
+      } catch (e) {}
+    }
+    return document.getElementById(sid);
   }
 
   function num(inp, fallback) {
@@ -74,12 +149,13 @@
     return row ? row.K : 1;
   }
 
+  /** Fy (ksi) for the selected ASTM grade — prefers `SteelGradesService.fyFor` (same as Steel Grade DB). */
   function fyFromGrade(grade) {
     var key = String(grade || "").trim();
     var svc = window.SteelGradesService;
     if (svc && typeof svc.fyFor === "function") {
       var fySvc = svc.fyFor(key);
-      if (Number.isFinite(fySvc)) return fySvc;
+      if (Number.isFinite(fySvc) && fySvc > 0) return fySvc;
     }
     var born = window.Born2BeSteel && Array.isArray(window.Born2BeSteel.steelGrades)
       ? window.Born2BeSteel.steelGrades
@@ -174,13 +250,14 @@
   }
 
   /**
-   * Excel row logic: R = max(KLx_ft)*12/rx, S = max(KLy_ft)*12/ry, T = max(R,S);
-   * Nominal Pn = Fcr*Ag; Pa = Pn/1.67 (ASD), Pu = 0.9*Pn (LRFD). Capacities only if compact.
-   * Governing check uses the active method strength vs demand (strict >).
+   * Member axial strength from flexural buckling — **same model as Analysis** (`computeCompressionAnalysis`
+   * in `calculations-ui.js`): R = max(KLx_ft)*12/rx, S = max(KLy_ft)*12/ry, T = max(R,S); Pn = Fcr*Ag;
+   * Pa = Pn/1.67 (ASD), Pu = 0.9*Pn (LRFD). Strength is **not** zeroed when flange/web are slender; compactness
+   * is diagnostic only (matches Analysis). SAFE when design strength > governing demand (strict `>`).
    */
   function strengthForSection(sec, state) {
     var cs = compactStatus(sec, state.E, state.Fy);
-    if (!cs.overallCompact) {
+    if (!Number.isFinite(sec.rx) || sec.rx <= 0 || !Number.isFinite(sec.ry) || sec.ry <= 0 || !Number.isFinite(sec.Ag) || sec.Ag <= 0) {
       return {
         pa: NaN,
         pu: NaN,
@@ -204,7 +281,8 @@
     var pa = Pn / 1.67;
     var pu = 0.9 * Pn;
     var designStrength = state.method === "ASD" ? pa : pu;
-    var remark = designStrength > state.demandPu ? "SAFE" : "UNSAFE";
+    var remark =
+      Number.isFinite(designStrength) && designStrength > state.demandPu ? "SAFE" : "UNSAFE";
     return {
       pa: pa,
       pu: pu,
@@ -236,6 +314,21 @@
       var klOut = el("compression" + prefix + i + "KL");
       if (kOut) kOut.textContent = label === "N/A" ? "0" : String(K);
       if (klOut) klOut.textContent = kl > 0 ? fmt(kl, 4) : "";
+    }
+    return maxKl;
+  }
+
+  /** Max K·L (ft) from Analysis Calculator slenderness rows (`compressionACond*`, `compressionAL*`). */
+  function readAnalysisAxisMaxFt(axis) {
+    var maxKl = 0;
+    for (var i = 1; i <= 3; i++) {
+      var cond = el("compressionACond" + axis + i);
+      var Lin = el("compressionAL" + axis.toLowerCase() + i);
+      var label = cond ? cond.value : "N/A";
+      var K = kLookup(label);
+      var Lft = Lin && String(Lin.value).trim() !== "" ? num(Lin, 0) : 0;
+      var kl = label === "N/A" || label === "" ? 0 : K * Lft;
+      if (kl > maxKl) maxKl = kl;
     }
     return maxKl;
   }
@@ -332,20 +425,30 @@
   }
 
   function recompute() {
-    var methodSel = el("compressionDesignMethod");
+    var analysisMode = root.classList.contains("is-analysis-tab");
+
+    var methodSel = el(analysisMode ? "compressionAMethod" : "compressionDesignMethod");
     var method = methodSel ? String(methodSel.value || "LRFD").toUpperCase() : "LRFD";
-    if (!designView.classList.contains("is-active")) return;
 
-    var gradeSel = el("compressionDesignGrade");
-    var fyIn = el("compressionDesignFy");
-    var eIn = el("compressionDesignE");
-    var dlIn = el("compressionDesignDl");
-    var llIn = el("compressionDesignLl");
+    var gradeSel = el(analysisMode ? "compressionAGrade" : "compressionDesignGrade");
+    var fyIn = el(analysisMode ? "compressionAFy" : "compressionDesignFy");
+    var eIn = el(analysisMode ? "compressionAE" : "compressionDesignE");
+    var dlIn = el(analysisMode ? "compressionADl" : "compressionDesignDl");
+    var llIn = el(analysisMode ? "compressionALl" : "compressionDesignLl");
 
-    if (gradeSel && fyIn) {
+    if (!analysisMode && gradeSel && fyIn) {
       fyIn.value = String(fyFromGrade(gradeSel.value));
     }
     var Fy = Math.max(1e-6, num(fyIn, 50));
+    if (!analysisMode && gradeSel) {
+      var fySvc = window.SteelGradesService && typeof window.SteelGradesService.fyFor === "function"
+        ? window.SteelGradesService.fyFor(gradeSel.value)
+        : null;
+      if (Number.isFinite(fySvc) && fySvc > 0) {
+        Fy = Math.max(1e-6, fySvc);
+        if (fyIn) fyIn.value = String(fySvc);
+      }
+    }
     var E = Math.max(1e-6, num(eIn, 29000));
     var dl = Math.max(0, num(dlIn, EXCEL_COMPRESSION_DESIGN_DEFAULTS.deadLoadKips));
     var ll = Math.max(0, num(llIn, EXCEL_COMPRESSION_DESIGN_DEFAULTS.liveLoadKips));
@@ -368,8 +471,8 @@
     if (d2) d2.value = Number.isFinite(demandCombo2) ? fmtDemandVal(demandCombo2, 3) : "-";
     if (dg) dg.value = fmtDemandVal(demandPu, 3);
 
-    var klxMaxFt = readAxisRows("X");
-    var klyMaxFt = readAxisRows("Y");
+    var klxMaxFt = analysisMode ? readAnalysisAxisMaxFt("X") : readAxisRows("X");
+    var klyMaxFt = analysisMode ? readAnalysisAxisMaxFt("Y") : readAxisRows("Y");
 
     var state = {
       method: method,
@@ -380,24 +483,62 @@
       klyMaxFt: klyMaxFt,
     };
 
-    var results = TIERS.champions.map(function (sec) {
+    var usingCatalog = !!(wShapeCatalog && wShapeCatalog.length);
+    var catalogList = usingCatalog ? wShapeCatalog : TIERS.champions;
+
+    var results = catalogList.map(function (sec) {
       return {
         sec: sec,
         out: strengthForSection(sec, state),
       };
     });
 
+    var adequate = results.filter(function (row) {
+      return Number.isFinite(row.out.phiPn) && row.out.phiPn > demandPu;
+    });
+    adequate.sort(function (a, b) {
+      return a.sec.weightPlf - b.sec.weightPlf || String(a.sec.designation).localeCompare(String(b.designation));
+    });
+
+    /** Lightest member that passes demand (same object as Probable row 1 when catalog is used). */
+    var heroForDisplay = adequate.length ? adequate[0] : null;
+
+    var probableRows = [];
+    if (adequate.length > 0) {
+      probableRows = adequate.slice(0, 4);
+    } else if (usingCatalog) {
+      probableRows = results.slice(0, 4);
+    } else {
+      probableRows = results.slice();
+      probableRows.sort(function (a, b) {
+        return a.sec.weightPlf - b.sec.weightPlf || String(a.sec.designation).localeCompare(String(b.designation));
+      });
+    }
+
     function capCellText(v) {
       return Number.isFinite(v) ? fmt(v, 4) : "";
     }
 
-    results.forEach(function (row, idx) {
-      var i = idx + 1;
+    for (var pIdx = 0; pIdx < 4; pIdx++) {
+      var row = probableRows[pIdx];
+      var i = pIdx + 1;
       var wEl = el("compressionProbW" + i);
       var nEl = el("compressionProbName" + i);
       var paEl = el("compressionProbPa" + i);
       var puEl = el("compressionProbPu" + i);
       var rEl = el("compressionProbRm" + i);
+      if (!row) {
+        if (wEl) wEl.textContent = "";
+        if (nEl) nEl.textContent = "";
+        if (paEl) paEl.textContent = "";
+        if (puEl) puEl.textContent = "";
+        if (rEl) {
+          rEl.textContent = "";
+          rEl.classList.remove("is-safe");
+          rEl.classList.remove("is-unsafe");
+        }
+        continue;
+      }
       if (wEl) wEl.textContent = String(row.sec.weightPlf);
       if (nEl) nEl.textContent = row.sec.designation;
       if (method === "ASD") {
@@ -412,35 +553,109 @@
         rEl.classList.toggle("is-safe", row.out.remark === "SAFE");
         rEl.classList.toggle("is-unsafe", row.out.remark === "UNSAFE");
       }
-    });
+    }
 
-    var adequate = results.filter(function (row) {
-      return Number.isFinite(row.out.phiPn) && row.out.phiPn > demandPu;
-    });
-    adequate.sort(function (a, b) {
-      return a.sec.weightPlf - b.sec.weightPlf;
-    });
-
-    var lightest = adequate.length ? adequate[0] : null;
     var safeSec = el("compressionSafeSection");
     var safeAg = el("compressionSafeAg");
     var safeRm = el("compressionSafeRemark");
     var safeRmLbl = el("compressionSafeRemarkLabel");
+    var metaEl = el("compressionLightestMeta");
 
-    if (lightest) {
-      if (safeSec) safeSec.textContent = lightest.sec.designation;
-      if (safeAg) safeAg.value = fmt(lightest.sec.Ag, 3);
-      if (safeRm) safeRm.value = lightest.out.remark;
-      if (safeRmLbl) {
-        safeRmLbl.textContent = lightest.out.remark;
-        safeRmLbl.classList.toggle("is-safe", lightest.out.remark === "SAFE");
-        safeRmLbl.classList.toggle("is-unsafe", lightest.out.remark === "UNSAFE");
+    function fyDisplayKsi(fyVal) {
+      if (!Number.isFinite(fyVal)) return "--";
+      if (Math.abs(fyVal - Math.round(fyVal)) < 1e-6) return String(Math.round(fyVal));
+      return fyVal.toFixed(2);
+    }
+
+    function updateLightestMeta(sectionName, adequateCount, catalogMode, heroOut) {
+      if (!metaEl || analysisMode) return;
+      var g = gradeSel ? String(gradeSel.value || "").trim() : "";
+      var fyStr = fyDisplayKsi(Fy);
+      var base = (g ? g + " · " : "") + "Fy = " + fyStr + " ksi";
+      var capLine = "";
+      if (sectionName && heroOut) {
+        var capV = method === "ASD" ? heroOut.pa : heroOut.pu;
+        if (Number.isFinite(capV)) {
+          var capLbl = method === "ASD" ? "P_a" : "P_u";
+          capLine =
+            " — " +
+            sectionName +
+            ": " +
+            capLbl +
+            " = " +
+            fmt(capV, 2) +
+            " kips vs governing demand " +
+            fmtDemandVal(demandPu, 3) +
+            " kips.";
+        }
       }
-      updateCompactnessPanel(lightest.sec, E, Fy);
+      if (sectionName && adequateCount > 0) {
+        if (catalogMode) {
+          metaEl.textContent =
+            base +
+            ". " +
+            String(adequateCount) +
+            " W-shape(s) pass demand; headline = lightest passing (same as Probable row 1)." +
+            capLine;
+        } else {
+          metaEl.textContent =
+            base +
+            ". " +
+            String(adequateCount) +
+            " of 4 workbook probable shapes exceed demand; lightest by plf listed." +
+            capLine;
+        }
+      } else if (!sectionName) {
+        metaEl.textContent = catalogMode
+          ? base + ". No W-shape in the catalog exceeds demand for the current KL and method."
+          : base + ". None of the four listed shapes exceed demand.";
+      } else {
+        metaEl.textContent = base + ".";
+      }
+    }
+
+    function setSafeSectionName(elNode, name) {
+      if (!elNode) return;
+      var s = String(name || "").trim();
+      if (typeof elNode.replaceChildren === "function") {
+        elNode.replaceChildren(document.createTextNode(s));
+      } else {
+        elNode.textContent = s;
+      }
+    }
+
+    if (typeof window !== "undefined" && window.__COMPRESSION_DESIGN_DEBUG) {
+      console.log("[compression-design]", {
+        hero: heroForDisplay && heroForDisplay.sec.designation,
+        adequateCount: adequate.length,
+        demand: demandPu,
+        method: method,
+        Fy: Fy,
+        catalog: usingCatalog,
+      });
+    }
+
+    if (heroForDisplay) {
+      if (safeSec) {
+        setSafeSectionName(safeSec, heroForDisplay.sec.designation);
+        safeSec.setAttribute("data-weight-plf", String(heroForDisplay.sec.weightPlf));
+      }
+      if (safeAg) safeAg.value = fmt(heroForDisplay.sec.Ag, 3);
+      if (safeRm) safeRm.value = heroForDisplay.out.remark;
+      if (safeRmLbl) {
+        safeRmLbl.textContent = heroForDisplay.out.remark;
+        safeRmLbl.classList.toggle("is-safe", heroForDisplay.out.remark === "SAFE");
+        safeRmLbl.classList.toggle("is-unsafe", heroForDisplay.out.remark === "UNSAFE");
+      }
+      updateCompactnessPanel(heroForDisplay.sec, E, Fy);
 
       setDesignGovernKlFooter(klyMaxFt);
+      updateLightestMeta(heroForDisplay.sec.designation, adequate.length, usingCatalog, heroForDisplay.out);
     } else {
-      if (safeSec) safeSec.textContent = "NO SAFE SECTION";
+      if (safeSec) {
+        setSafeSectionName(safeSec, "NO SAFE SECTION");
+        safeSec.removeAttribute("data-weight-plf");
+      }
       if (safeAg) safeAg.value = "--";
       if (safeRm) safeRm.value = "UNSAFE";
       if (safeRmLbl) {
@@ -448,9 +663,14 @@
         safeRmLbl.classList.remove("is-safe");
         safeRmLbl.classList.add("is-unsafe");
       }
-      updateCompactnessPanel(TIERS.champions[TIERS.champions.length - 1], E, Fy);
+      var refSec =
+        probableRows.length && probableRows[0] && probableRows[0].sec
+          ? probableRows[0].sec
+          : TIERS.champions[TIERS.champions.length - 1];
+      updateCompactnessPanel(refSec, E, Fy);
 
       setDesignGovernKlFooter(klyMaxFt);
+      updateLightestMeta("", adequate.length, usingCatalog, null);
     }
 
     var dbg = el("resultCompression");
@@ -468,21 +688,22 @@
         recompute();
       });
     }
-    ["compressionDesignMethod", "compressionDesignGrade", "compressionDesignFy", "compressionDesignE", "compressionDesignDl", "compressionDesignLl"].forEach(function (id) {
-      var node = el(id);
-      if (!node) return;
-      ["input", "change"].forEach(function (ev) {
-        node.addEventListener(ev, recompute);
-      });
+    /** One bubbling path for Design + Analysis fields inside the same form (no missed controls, no duplicate handlers). */
+    function onFormFieldActivity() {
+      recompute();
+    }
+    form.addEventListener("input", onFormFieldActivity, false);
+    form.addEventListener("change", onFormFieldActivity, false);
+
+    ["X", "Y"].forEach(function (axis) {
+      for (var i = 1; i <= 3; i++) {
+        fillBoundarySelect(el("compression" + axis + i + "Cond"));
+      }
     });
 
     ["X", "Y"].forEach(function (axis) {
       for (var i = 1; i <= 3; i++) {
-        var cond = el("compression" + axis + i + "Cond");
-        var Lin = el("compression" + axis + i + "L");
-        fillBoundarySelect(cond);
-        if (cond) cond.addEventListener("change", recompute);
-        if (Lin) Lin.addEventListener("input", recompute);
+        fillBoundarySelect(el("compressionACond" + axis + i));
       }
     });
 
@@ -496,8 +717,20 @@
       });
     });
 
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible" && root.classList.contains("active-panel")) {
+        window.requestAnimationFrame(recompute);
+      }
+    });
+
     applyExcelCompressionDesignDefaults();
     recompute();
+    ensureWShapeCatalog(function () {
+      recompute();
+    });
+    try {
+      window.recomputeCompressionDesignCalculator = recompute;
+    } catch (eWin) {}
   }
 
   if (document.readyState === "loading") {
